@@ -116,6 +116,187 @@ Review guidelines here.
       );
     });
 
+    group('user-invocable guard edge cases', () {
+      test(
+        'preserves explicit user-invocable: true',
+        () async {
+          await d.dir('claude_pkg_true', [
+            d.dir('skills', [
+              d.dir('claude_pkg_true-review', [
+                d.file('SKILL.md', '''
+---
+name: claude_pkg_true-review
+description: Reviews code.
+user-invocable: true
+---
+
+# Code Review
+'''),
+              ]),
+            ]),
+          ]).create();
+
+          final skill = ScannedSkill(
+            packageName: 'claude_pkg_true',
+            skillName: 'claude_pkg_true-review',
+            skillPath: d.path('claude_pkg_true/skills/claude_pkg_true-review'),
+          );
+
+          await adapter.installSkill(skill);
+
+          final content = await File(
+            p.join(
+              d.path('project'),
+              '.claude',
+              'skills',
+              'claude_pkg_true-review',
+              'SKILL.md',
+            ),
+          ).readAsString();
+
+          expect(content, contains('user-invocable: true'));
+          expect(content, isNot(contains('user-invocable: false')));
+        },
+      );
+
+      test(
+        'no duplication when user-invocable: false already present',
+        () async {
+          await d.dir('claude_pkg_dup', [
+            d.dir('skills', [
+              d.dir('claude_pkg_dup-lint', [
+                d.file('SKILL.md', '''
+---
+name: claude_pkg_dup-lint
+description: Lints code.
+user-invocable: false
+---
+
+# Lint
+'''),
+              ]),
+            ]),
+          ]).create();
+
+          final skill = ScannedSkill(
+            packageName: 'claude_pkg_dup',
+            skillName: 'claude_pkg_dup-lint',
+            skillPath: d.path('claude_pkg_dup/skills/claude_pkg_dup-lint'),
+          );
+
+          await adapter.installSkill(skill);
+
+          final content = await File(
+            p.join(
+              d.path('project'),
+              '.claude',
+              'skills',
+              'claude_pkg_dup-lint',
+              'SKILL.md',
+            ),
+          ).readAsString();
+
+          final matches = 'user-invocable: false'.allMatches(content).length;
+          expect(matches, equals(1));
+        },
+      );
+
+      test(
+        'preserves nested frontmatter fields byte-for-byte',
+        () async {
+          await d.dir('claude_pkg_nested', [
+            d.dir('skills', [
+              d.dir('claude_pkg_nested-deploy', [
+                d.file('SKILL.md', '''
+---
+name: claude_pkg_nested-deploy
+description: Deploys stuff.
+metadata:
+  version: 2
+  tags:
+    - deploy
+    - ci
+---
+
+# Deploy
+'''),
+              ]),
+            ]),
+          ]).create();
+
+          final skill = ScannedSkill(
+            packageName: 'claude_pkg_nested',
+            skillName: 'claude_pkg_nested-deploy',
+            skillPath: d.path(
+              'claude_pkg_nested/skills/claude_pkg_nested-deploy',
+            ),
+          );
+
+          await adapter.installSkill(skill);
+
+          final content = await File(
+            p.join(
+              d.path('project'),
+              '.claude',
+              'skills',
+              'claude_pkg_nested-deploy',
+              'SKILL.md',
+            ),
+          ).readAsString();
+
+          expect(content, contains('user-invocable: false'));
+          expect(content, contains('metadata:'));
+          expect(content, contains('  version: 2'));
+          expect(content, contains('  tags:'));
+          expect(content, contains('    - deploy'));
+          expect(content, contains('    - ci'));
+        },
+      );
+
+      test(
+        'handles SKILL.md with no body',
+        () async {
+          await d.dir('claude_pkg_nobody', [
+            d.dir('skills', [
+              d.dir('claude_pkg_nobody-empty', [
+                d.file('SKILL.md', '''
+---
+name: claude_pkg_nobody-empty
+description: Empty body skill.
+---'''),
+              ]),
+            ]),
+          ]).create();
+
+          final skill = ScannedSkill(
+            packageName: 'claude_pkg_nobody',
+            skillName: 'claude_pkg_nobody-empty',
+            skillPath: d.path(
+              'claude_pkg_nobody/skills/claude_pkg_nobody-empty',
+            ),
+          );
+
+          await adapter.installSkill(skill);
+
+          final content = await File(
+            p.join(
+              d.path('project'),
+              '.claude',
+              'skills',
+              'claude_pkg_nobody-empty',
+              'SKILL.md',
+            ),
+          ).readAsString();
+
+          expect(content, contains('user-invocable: false'));
+          expect(content, contains('---'));
+          // Verify valid format: opening and closing ---
+          final dashes = '---'.allMatches(content).length;
+          expect(dashes, greaterThanOrEqualTo(2));
+        },
+      );
+    });
+
     test('when removing then deletes the skill directory', () async {
       await d.dir('project', [
         d.dir('.claude', [
