@@ -65,22 +65,55 @@ Review guidelines here.
         },
       );
 
-      test('when installing then SKILL.md is copied unchanged', () async {
-        await adapter.installSkill(skill);
+      test(
+        'when installing then SKILL.md includes user-invocable: false',
+        () async {
+          await adapter.installSkill(skill);
 
-        final content = await File(
-          p.join(
-            d.path('project'),
-            '.claude',
-            'skills',
-            'claude_pkg-code-review',
-            'SKILL.md',
-          ),
-        ).readAsString();
+          final content = await File(
+            p.join(
+              d.path('project'),
+              '.claude',
+              'skills',
+              'claude_pkg-code-review',
+              'SKILL.md',
+            ),
+          ).readAsString();
 
-        expect(content, contains('name: claude_pkg-code-review'));
-        expect(content, contains('# Code Review'));
-      });
+          expect(content, contains('name: claude_pkg-code-review'));
+          expect(content, contains('user-invocable: false'));
+          expect(content, contains('# Code Review'));
+        },
+      );
+
+      test(
+        'when installing a SKILL.md without user-invocable '
+        'then injects user-invocable: false and preserves content',
+        () async {
+          final name = await adapter.installSkill(skill);
+
+          expect(name, equals('claude_pkg-code-review'));
+
+          final content = await File(
+            p.join(
+              d.path('project'),
+              '.claude',
+              'skills',
+              'claude_pkg-code-review',
+              'SKILL.md',
+            ),
+          ).readAsString();
+
+          expect(content, contains('user-invocable: false'));
+          expect(content, contains('name: claude_pkg-code-review'));
+          expect(content, contains('description: Reviews code.'));
+          expect(content, contains('# Code Review'));
+          expect(
+            content,
+            contains('Review guidelines here.'),
+          );
+        },
+      );
     });
 
     test('when removing then deletes the skill directory', () async {
