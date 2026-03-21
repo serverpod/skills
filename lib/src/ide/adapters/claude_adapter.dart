@@ -11,8 +11,7 @@ import 'agent_skills_adapter.dart';
 /// Installs skills to `.claude/skills/<skill-name>/` per
 /// [Claude Code skills](https://code.claude.com/docs/en/skills).
 class ClaudeAdapter extends AgentSkillsAdapter {
-  ClaudeAdapter(String projectPath)
-      : super(Ide.claude.skillsPath(projectPath));
+  ClaudeAdapter(String projectPath) : super(Ide.claude.skillsPath(projectPath));
 
   @override
   Future<String> installSkill(ScannedSkill skill) async {
@@ -26,9 +25,10 @@ class ClaudeAdapter extends AgentSkillsAdapter {
       if (!content.contains('user-invocable:')) {
         final closingIndex = content.indexOf('---', 3);
         if (closingIndex != -1) {
-          content = content.substring(0, closingIndex) +
-              'user-invocable: false\n' +
-              content.substring(closingIndex);
+          content =
+              '${content.substring(0, closingIndex)}'
+              'user-invocable: false\n'
+              '${content.substring(closingIndex)}';
           await skillMd.writeAsString(content);
         }
       }
