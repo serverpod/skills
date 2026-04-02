@@ -47,6 +47,17 @@ void main() {
     });
   });
 
+  group('Given a project with a .qoderwork directory', () {
+    test('when detecting IDE then returns qoder', () async {
+      await d.dir('qoder_project', [d.dir('.qoderwork')]).create();
+
+      const detector = IdeDetector();
+      final ide = detector.detect(d.path('qoder_project'));
+
+      expect(ide, equals(Ide.qoder));
+    });
+  });
+
   group('Given a project with a .qwen directory', () {
     test('when detecting IDE then returns qwen', () async {
       await d.dir('qwen_project', [d.dir('.qwen')]).create();
@@ -130,6 +141,7 @@ void main() {
       expect(Ide.fromCliName('claude'), equals(Ide.claude));
       expect(Ide.fromCliName('copilot'), equals(Ide.copilot));
       expect(Ide.fromCliName('cline'), equals(Ide.cline));
+      expect(Ide.fromCliName('qoder'), equals(Ide.qoder));
       expect(Ide.fromCliName('qwen'), equals(Ide.qwen));
     });
 

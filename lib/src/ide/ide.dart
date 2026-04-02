@@ -13,6 +13,7 @@ enum Ide {
   claude('claude', '.claude/skills'),
   copilot('copilot', '.github/skills'),
   cline('cline', '.cline/skills'),
+  qoder('qoder', '.qoderwork/skills'),
   qwen('qwen', '.qwen/skills');
 
   final String cliName;
@@ -44,6 +45,7 @@ enum Ide {
       Ide.claude => Directory(p.join(projectPath, '.claude')).existsSync(),
       Ide.cline => Directory(p.join(projectPath, '.cline')).existsSync() ||
           Directory(p.join(projectPath, '.clinerules')).existsSync(),
+      Ide.qoder => Directory(p.join(projectPath, '.qoderwork')).existsSync(),
       Ide.qwen => Directory(p.join(projectPath, '.qwen')).existsSync(),
       Ide.copilot => false,
     };
