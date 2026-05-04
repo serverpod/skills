@@ -19,7 +19,7 @@ Future<bool> getSkills({
   required List<Ide> ides,
   required WorkspaceLayout workspace,
   required GitRunner gitRunner,
-  required String usage,
+  String usage = '',
   String? packageName,
   IOSink? stdout,
   IOSink? stderr,
