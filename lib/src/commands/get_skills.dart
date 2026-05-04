@@ -80,6 +80,10 @@ Future<bool> getSkills({
       skills: skills,
       manifest: manifest,
     );
+    if (result == null) {
+      stdout.writeln('Installation aborted for IDE ${ide.cliName}');
+      continue;
+    }
     manifest = result.manifest;
     for (final info in result.installed) {
       stdout.writeln('  [${info.ideName}] Installed ${info.skillName}');

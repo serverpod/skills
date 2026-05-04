@@ -88,7 +88,7 @@ Instructions for debugging.
     setUp(() async {
       await d.dir('project', [
         d.dir('.cursor', [d.dir('skills')]),
-        d.dir('.agent', [d.dir('skills')]),
+        d.dir('.agents', [d.dir('skills')]),
       ]).create();
 
       rootPath = d.path('project');
@@ -101,14 +101,14 @@ Instructions for debugging.
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
       result = await installer.installSkillsForIde(
         ide: Ide.generic,
         rootPath: rootPath,
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
     });
 
     test('when removing all then both IDEs are cleaned up', () async {
@@ -118,7 +118,7 @@ Instructions for debugging.
         isTrue,
       );
       expect(
-        Directory('$rootPath/.agent/skills/pkg_a-code-gen').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_a-code-gen').existsSync(),
         isTrue,
       );
 
@@ -141,15 +141,15 @@ Instructions for debugging.
         isFalse,
       );
       expect(
-        Directory('$rootPath/.agent/skills/pkg_a-code-gen').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_a-code-gen').existsSync(),
         isFalse,
       );
       expect(
-        Directory('$rootPath/.agent/skills/pkg_b-testing').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_b-testing').existsSync(),
         isFalse,
       );
       expect(
-        Directory('$rootPath/.agent/skills/pkg_b-debugging').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_b-debugging').existsSync(),
         isFalse,
       );
 
@@ -175,13 +175,13 @@ Instructions for debugging.
         isFalse,
       );
 
-      // Generic (.agent) files still present.
+      // Generic (.agents) files still present.
       expect(
-        Directory('$rootPath/.agent/skills/pkg_a-code-gen').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_a-code-gen').existsSync(),
         isTrue,
       );
       expect(
-        Directory('$rootPath/.agent/skills/pkg_b-testing').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_b-testing').existsSync(),
         isTrue,
       );
 
@@ -211,7 +211,7 @@ Instructions for debugging.
           isFalse,
         );
         expect(
-          Directory('$rootPath/.agent/skills/pkg_a-code-gen').existsSync(),
+          Directory('$rootPath/.agents/skills/pkg_a-code-gen').existsSync(),
           isFalse,
         );
 
@@ -221,7 +221,7 @@ Instructions for debugging.
           isTrue,
         );
         expect(
-          Directory('$rootPath/.agent/skills/pkg_b-debugging').existsSync(),
+          Directory('$rootPath/.agents/skills/pkg_b-debugging').existsSync(),
           isTrue,
         );
 
@@ -239,7 +239,7 @@ Instructions for debugging.
     setUp(() async {
       await d.dir('project', [
         d.dir('.cursor', [d.dir('skills')]),
-        d.dir('.agent', [d.dir('skills')]),
+        d.dir('.agents', [d.dir('skills')]),
       ]).create();
 
       rootPath = d.path('project');
@@ -252,14 +252,14 @@ Instructions for debugging.
         skills: pkgASkills,
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
       result = await installer.installSkillsForIde(
         ide: Ide.generic,
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
     });
 
     test(
@@ -280,9 +280,9 @@ Instructions for debugging.
 
         expect(manifest.isEmpty, isTrue);
 
-        // Generic (.agent) was removed normally.
+        // Generic (.agents) was removed normally.
         expect(
-          Directory('$rootPath/.agent/skills/pkg_a-code-gen').existsSync(),
+          Directory('$rootPath/.agents/skills/pkg_a-code-gen').existsSync(),
           isFalse,
         );
       },
@@ -298,7 +298,7 @@ Instructions for debugging.
         skills: pkgBSkills,
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
 
       // Manually delete pkg_a skill from cursor.
       Directory(
@@ -327,7 +327,7 @@ Instructions for debugging.
     setUp(() async {
       await d.dir('project2', [
         d.dir('.cursor', [d.dir('skills')]),
-        d.dir('.agent', [d.dir('skills')]),
+        d.dir('.agents', [d.dir('skills')]),
       ]).create();
 
       rootPath = d.path('project2');
@@ -340,14 +340,14 @@ Instructions for debugging.
         skills: pkgASkills,
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
       result = await installer.installSkillsForIde(
         ide: Ide.generic,
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
     });
 
     test('when reinstalling to one IDE then the other is untouched', () async {
@@ -359,7 +359,7 @@ Instructions for debugging.
         skills: pkgASkills,
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
 
       // Cursor reinstalled.
       expect(
@@ -367,9 +367,9 @@ Instructions for debugging.
         isTrue,
       );
 
-      // Generic (.agent) untouched.
+      // Generic (.agents) untouched.
       expect(
-        Directory('$rootPath/.agent/skills/pkg_a-code-gen').existsSync(),
+        Directory('$rootPath/.agents/skills/pkg_a-code-gen').existsSync(),
         isTrue,
       );
 
@@ -397,14 +397,14 @@ Instructions for debugging.
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
       result = await installer.installSkillsForIde(
         ide: Ide.claude,
         rootPath: rootPath,
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
       );
-      manifest = result.manifest;
+      manifest = result!.manifest;
     });
 
     test('when listing then manifest reports both IDEs correctly', () {
@@ -465,7 +465,7 @@ Instructions for debugging.
       'when installing then manifest stores canonical name generic only',
       () async {
         await d.dir('generic_project', [
-          d.dir('.agent', [d.dir('skills')]),
+          d.dir('.agents', [d.dir('skills')]),
         ]).create();
         final rootPath = d.path('generic_project');
 
@@ -476,7 +476,7 @@ Instructions for debugging.
           skills: pkgASkills,
           manifest: manifest,
         );
-        manifest = result.manifest;
+        manifest = result!.manifest;
 
         expect(manifest.allIdes, equals(['generic']));
         expect(manifest.packagesForIde('generic'), hasLength(1));

@@ -1,4 +1,5 @@
 import '../ide/ide.dart';
+import '../ide/adapters/agent_skills_adapter.dart';
 import '../ide/ide_adapter_factory.dart';
 import '../models/skill_manifest.dart';
 import 'skill_scanner.dart';
@@ -59,13 +60,18 @@ class SkillInstaller {
 
   /// Installs [skills] for the given [ide] at [rootPath], updating [manifest].
   /// Removes existing skills for each package before reinstalling.
-  Future<SkillInstallResult> installSkillsForIde({
+  Future<SkillInstallResult?> installSkillsForIde({
     required Ide ide,
     required String rootPath,
     required List<ScannedSkill> skills,
     required SkillManifest manifest,
   }) async {
     final adapter = createIdeAdapter(ide, rootPath);
+    if (adapter is AgentSkillsAdapter) {
+      if (!await adapter.performMigrations(manifest)) {
+        return null;
+      }
+    }
     await adapter.ensureSkillsDirectory();
 
     final skillsByPackage = <String, List<ScannedSkill>>{};
