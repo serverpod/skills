@@ -49,7 +49,7 @@ Future<bool> getSkills({
   var registrySkills = <ScannedSkill>[];
   if (await gitRunner.isAvailable) {
     const registrySync = RegistrySync();
-    await registrySync.sync(rootPath, onProgress: stdout?.writeln);
+    await registrySync.sync(rootPath, onProgress: stdout.writeln);
     const registryScanner = RegistryScanner();
     registrySkills = await registryScanner.scan(rootPath);
   } else {
