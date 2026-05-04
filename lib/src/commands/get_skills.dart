@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:io' as io; // to distinguish stdout from io.stdout, etc.
 
 import 'package:args/command_runner.dart';
 import 'package:skills/src/commands/skills_command.dart';
@@ -14,13 +15,18 @@ import 'package:skills/src/core/workspace_resolver.dart';
 import 'package:skills/src/ide/ide.dart';
 
 /// Installs skills from package dependencies for [ides].
-Future<void> getSkills({
+Future<bool> getSkills({
   required List<Ide> ides,
   required WorkspaceLayout workspace,
   required GitRunner gitRunner,
   required String usage,
   String? packageName,
+  IOSink? stdout,
+  IOSink? stderr,
 }) async {
+  stdout ??= io.stdout;
+  stderr ??= io.stderr;
+
   final ready = await PubRunner.ensureWorkspaceConfigs(workspace);
   if (!ready) {
     throw UsageException('Failed to run pub get.', usage);
@@ -33,7 +39,7 @@ Future<void> getSkills({
 
   if (packageName != null && packages.isEmpty) {
     stderr.writeln('Package "$packageName" not found in dependencies.');
-    return;
+    return false;
   }
 
   const scanner = SkillScanner();
@@ -43,7 +49,7 @@ Future<void> getSkills({
   var registrySkills = <ScannedSkill>[];
   if (await gitRunner.isAvailable) {
     const registrySync = RegistrySync();
-    await registrySync.sync(rootPath, onProgress: stdout.writeln);
+    await registrySync.sync(rootPath, onProgress: stdout?.writeln);
     const registryScanner = RegistryScanner();
     registrySkills = await registryScanner.scan(rootPath);
   } else {
@@ -61,7 +67,7 @@ Future<void> getSkills({
 
   if (skills.isEmpty) {
     stdout.writeln('No skills found in ${packageName ?? "any"} packages.');
-    return;
+    return false;
   }
 
   const installer = SkillInstaller();
@@ -84,4 +90,6 @@ Future<void> getSkills({
 
   final ideNames = ides.map((e) => e.cliName).join(', ');
   stdout.writeln('Installed ${skills.length} skill(s) for $ideNames.');
+
+  return true;
 }
