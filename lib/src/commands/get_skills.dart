@@ -18,7 +18,7 @@ import 'package:skills/src/ide/ide.dart';
 Future<bool> getSkills({
   required List<Ide> ides,
   required WorkspaceLayout workspace,
-  required GitRunner gitRunner,
+  GitRunner gitRunner = const GitRunner(),
   String usage = '',
   String? packageName,
   IOSink? stdout,
