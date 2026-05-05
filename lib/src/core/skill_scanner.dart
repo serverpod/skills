@@ -43,6 +43,7 @@ class SkillScanner {
     if (!await skillsDir.exists()) return [];
 
     final prefix = '${package.name}-';
+    final prefixWithDashes = '${package.name.replaceAll('_', '-')}-';
     final skills = <ScannedSkill>[];
 
     await for (final entity in skillsDir.list()) {
@@ -53,10 +54,11 @@ class SkillScanner {
       final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
       if (!await skillMdFile.exists()) continue;
 
-      if (!skillName.startsWith(prefix)) {
+      if (!(skillName.startsWith(prefix) ||
+          skillName.startsWith(prefixWithDashes))) {
         stderr.writeln(
           'Warning: Skipping skill "$skillName" in ${package.name} '
-          '-- name must start with "${package.name}-"',
+          '-- name must start with "$prefix" or "$prefixWithDashes"',
         );
         continue;
       }

@@ -107,6 +107,59 @@ Body.
     },
   );
 
+  group(
+    'Given a package with underscores in its name and dash-normalized skill names',
+    () {
+      test('when scanning then accepts dash-normalized prefix', () async {
+        await d.dir('my_cool_pkg', [
+          d.dir('skills', [
+            d.dir('my-cool-pkg-code-gen', [
+              d.file('SKILL.md', '''
+---
+name: my-cool-pkg-code-gen
+description: Generates code.
+---
+Body.
+'''),
+            ]),
+            d.dir('my_cool_pkg-api-design', [
+              d.file('SKILL.md', '''
+---
+name: my_cool_pkg-api-design
+description: Designs APIs.
+---
+Body.
+'''),
+            ]),
+            d.dir('wrong-prefix-skill', [
+              d.file('SKILL.md', '''
+---
+name: wrong-prefix-skill
+description: Invalid.
+---
+Body.
+'''),
+            ]),
+          ]),
+        ]).create();
+
+        final package = ResolvedPackage(
+          name: 'my_cool_pkg',
+          rootPath: d.path('my_cool_pkg'),
+        );
+
+        const scanner = SkillScanner();
+        final skills = await scanner.scanPackage(package);
+
+        expect(skills, hasLength(2));
+        expect(
+          skills.map((s) => s.skillName).toSet(),
+          equals({'my-cool-pkg-code-gen', 'my_cool_pkg-api-design'}),
+        );
+      });
+    },
+  );
+
   group('Given a package without a skills directory', () {
     test('when scanning then returns empty list', () async {
       await d.dir('no_skills_package', [

@@ -88,6 +88,8 @@ The CLI auto-detects your IDE from project directory markers. If multiple IDEs a
 | [Cursor](https://cursor.com/docs/skills) | `--ide cursor` | `.cursor/skills/` | Agent Skills |
 | [GitHub Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) | `--ide copilot` | `.github/skills/` | Agent Skills |
 | Generic | `--ide generic` | `.agent/skills/` | Agent Skills |
+| [Qoder](https://docs.qoder.com/qoderwork/skills) | `--ide qoder` | `.qoderwork/skills/` | Agent Skills |
+| [Qwen Code](https://qwenlm.github.io/qwen-code-docs/en/users/features/skills/) | `--ide qwen` | `.qwen/skills/` | Agent Skills |
 
 Antigravity, Codex, and generic all install to the same `.agent/skills/` directory (only `generic` is stored in the config). GitHub Copilot is not auto-detected (`.github/` is often used for other purposes); use `--ide copilot` to install skills for Copilot explicitly.
 
