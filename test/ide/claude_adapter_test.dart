@@ -18,7 +18,7 @@ void main() {
       adapter = ClaudeAdapter(d.path('project'));
     });
 
-    group('and a scanned skill', () {
+    group('and a scanned skill without user-invocable', () {
       late ScannedSkill skill;
 
       setUp(() async {
@@ -65,65 +65,37 @@ Review guidelines here.
         },
       );
 
-      test(
-        'when installing then SKILL.md includes user-invocable: false',
-        () async {
-          await adapter.installSkill(skill);
+      test('when installing then SKILL.md is copied with user-invocable: false',
+          () async {
+        await adapter.installSkill(skill);
 
-          final content = await File(
-            p.join(
-              d.path('project'),
-              '.claude',
-              'skills',
-              'claude_pkg-code-review',
-              'SKILL.md',
-            ),
-          ).readAsString();
+        final content = await File(
+          p.join(
+            d.path('project'),
+            '.claude',
+            'skills',
+            'claude_pkg-code-review',
+            'SKILL.md',
+          ),
+        ).readAsString();
 
-          expect(content, contains('name: claude_pkg-code-review'));
-          expect(content, contains('user-invocable: false'));
-          expect(content, contains('# Code Review'));
-        },
-      );
+        expect(content, '''
+---
+name: claude_pkg-code-review
+description: Reviews code.
+user-invocable: false
+---
 
-      test(
-        'when installing a SKILL.md without user-invocable '
-        'then injects user-invocable: false and preserves content',
-        () async {
-          final name = await adapter.installSkill(skill);
+# Code Review
 
-          expect(name, equals('claude_pkg-code-review'));
-
-          final content = await File(
-            p.join(
-              d.path('project'),
-              '.claude',
-              'skills',
-              'claude_pkg-code-review',
-              'SKILL.md',
-            ),
-          ).readAsString();
-
-          expect(content, contains('user-invocable: false'));
-          expect(content, contains('name: claude_pkg-code-review'));
-          expect(content, contains('description: Reviews code.'));
-          expect(content, contains('# Code Review'));
-          expect(
-            content,
-            contains('Review guidelines here.'),
-          );
-        },
-      );
+Review guidelines here.
+''');
+      });
     });
 
-    group('user-invocable guard edge cases', () {
-      test(
-        'preserves explicit user-invocable: true',
-        () async {
-          await d.dir('claude_pkg_true', [
-            d.dir('skills', [
-              d.dir('claude_pkg_true-review', [
-                d.file('SKILL.md', '''
+    group('and a scanned skill with user-invocable set to true', () {
+      late ScannedSkill skill;
+      const skillMd = '''
 ---
 name: claude_pkg_true-review
 description: Reviews code.
@@ -131,83 +103,90 @@ user-invocable: true
 ---
 
 # Code Review
-'''),
-              ]),
+''';
+
+      setUp(() async {
+        await d.dir('claude_pkg_true', [
+          d.dir('skills', [
+            d.dir('claude_pkg_true-review', [
+              d.file('SKILL.md', skillMd),
             ]),
-          ]).create();
+          ]),
+        ]).create();
 
-          final skill = ScannedSkill(
-            packageName: 'claude_pkg_true',
-            skillName: 'claude_pkg_true-review',
-            skillPath: d.path('claude_pkg_true/skills/claude_pkg_true-review'),
-          );
+        skill = ScannedSkill(
+          packageName: 'claude_pkg_true',
+          skillName: 'claude_pkg_true-review',
+          skillPath: d.path('claude_pkg_true/skills/claude_pkg_true-review'),
+        );
+      });
 
-          await adapter.installSkill(skill);
+      test('when installing then SKILL.md is copied with no changes', () async {
+        await adapter.installSkill(skill);
 
-          final content = await File(
-            p.join(
-              d.path('project'),
-              '.claude',
-              'skills',
-              'claude_pkg_true-review',
-              'SKILL.md',
-            ),
-          ).readAsString();
+        final content = await File(
+          p.join(
+            d.path('project'),
+            '.claude',
+            'skills',
+            'claude_pkg_true-review',
+            'SKILL.md',
+          ),
+        ).readAsString();
 
-          expect(content, contains('user-invocable: true'));
-          expect(content, isNot(contains('user-invocable: false')));
-        },
-      );
+        expect(content, equals(skillMd));
+      });
+    });
 
-      test(
-        'no duplication when user-invocable: false already present',
-        () async {
-          await d.dir('claude_pkg_dup', [
-            d.dir('skills', [
-              d.dir('claude_pkg_dup-lint', [
-                d.file('SKILL.md', '''
+    group('and a scanned skill with user-invocable set to false', () {
+      late ScannedSkill skill;
+      const skillMd = '''
 ---
-name: claude_pkg_dup-lint
-description: Lints code.
+name: claude_pkg_true-review
+description: Reviews code.
 user-invocable: false
 ---
 
-# Lint
-'''),
-              ]),
+# Code Review
+''';
+
+      setUp(() async {
+        await d.dir('claude_pkg_true', [
+          d.dir('skills', [
+            d.dir('claude_pkg_true-review', [
+              d.file('SKILL.md', skillMd),
             ]),
-          ]).create();
+          ]),
+        ]).create();
 
-          final skill = ScannedSkill(
-            packageName: 'claude_pkg_dup',
-            skillName: 'claude_pkg_dup-lint',
-            skillPath: d.path('claude_pkg_dup/skills/claude_pkg_dup-lint'),
-          );
+        skill = ScannedSkill(
+          packageName: 'claude_pkg_true',
+          skillName: 'claude_pkg_true-review',
+          skillPath: d.path('claude_pkg_true/skills/claude_pkg_true-review'),
+        );
+      });
 
-          await adapter.installSkill(skill);
+      test('when installing then SKILL.md is copied with no changes', () async {
+        await adapter.installSkill(skill);
 
-          final content = await File(
-            p.join(
-              d.path('project'),
-              '.claude',
-              'skills',
-              'claude_pkg_dup-lint',
-              'SKILL.md',
-            ),
-          ).readAsString();
+        final content = await File(
+          p.join(
+            d.path('project'),
+            '.claude',
+            'skills',
+            'claude_pkg_true-review',
+            'SKILL.md',
+          ),
+        ).readAsString();
 
-          final matches = 'user-invocable: false'.allMatches(content).length;
-          expect(matches, equals(1));
-        },
-      );
+        expect(content, equals(skillMd));
+      });
+    });
 
-      test(
-        'preserves nested frontmatter fields byte-for-byte',
-        () async {
-          await d.dir('claude_pkg_nested', [
-            d.dir('skills', [
-              d.dir('claude_pkg_nested-deploy', [
-                d.file('SKILL.md', '''
+    group('and a scanned skill with no user-invocable and nested frontmatter',
+        () {
+      late ScannedSkill skill;
+      const skillMd = '''
 ---
 name: claude_pkg_nested-deploy
 description: Deploys stuff.
@@ -219,19 +198,28 @@ metadata:
 ---
 
 # Deploy
-'''),
-              ]),
+''';
+
+      setUp(() async {
+        await d.dir('claude_pkg_nested', [
+          d.dir('skills', [
+            d.dir('claude_pkg_nested-deploy', [
+              d.file('SKILL.md', skillMd),
             ]),
-          ]).create();
+          ]),
+        ]).create();
 
-          final skill = ScannedSkill(
-            packageName: 'claude_pkg_nested',
-            skillName: 'claude_pkg_nested-deploy',
-            skillPath: d.path(
-              'claude_pkg_nested/skills/claude_pkg_nested-deploy',
-            ),
-          );
+        skill = ScannedSkill(
+          packageName: 'claude_pkg_nested',
+          skillName: 'claude_pkg_nested-deploy',
+          skillPath:
+              d.path('claude_pkg_nested/skills/claude_pkg_nested-deploy'),
+        );
+      });
 
+      test(
+        'when installing then SKILL.md is copied with user-invocable: false and preserves nested frontmatter fields byte-for-byte',
+        () async {
           await adapter.installSkill(skill);
 
           final content = await File(
@@ -244,38 +232,51 @@ metadata:
             ),
           ).readAsString();
 
-          expect(content, contains('user-invocable: false'));
-          expect(content, contains('metadata:'));
-          expect(content, contains('  version: 2'));
-          expect(content, contains('  tags:'));
-          expect(content, contains('    - deploy'));
-          expect(content, contains('    - ci'));
+          expect(content, '''
+---
+name: claude_pkg_nested-deploy
+description: Deploys stuff.
+metadata:
+  version: 2
+  tags:
+    - deploy
+    - ci
+user-invocable: false
+---
+
+# Deploy
+''');
         },
       );
+    });
 
-      test(
-        'handles SKILL.md with no body',
-        () async {
-          await d.dir('claude_pkg_nobody', [
-            d.dir('skills', [
-              d.dir('claude_pkg_nobody-empty', [
-                d.file('SKILL.md', '''
+    group('and a scanned skill with no user-invocable and no body', () {
+      late ScannedSkill skill;
+      const skillMd = '''
 ---
 name: claude_pkg_nobody-empty
 description: Empty body skill.
----'''),
-              ]),
+---''';
+
+      setUp(() async {
+        await d.dir('claude_pkg_nobody', [
+          d.dir('skills', [
+            d.dir('claude_pkg_nobody-empty', [
+              d.file('SKILL.md', skillMd),
             ]),
-          ]).create();
+          ]),
+        ]).create();
 
-          final skill = ScannedSkill(
-            packageName: 'claude_pkg_nobody',
-            skillName: 'claude_pkg_nobody-empty',
-            skillPath: d.path(
-              'claude_pkg_nobody/skills/claude_pkg_nobody-empty',
-            ),
-          );
+        skill = ScannedSkill(
+          packageName: 'claude_pkg_nobody',
+          skillName: 'claude_pkg_nobody-empty',
+          skillPath: d.path('claude_pkg_nobody/skills/claude_pkg_nobody-empty'),
+        );
+      });
 
+      test(
+        'when installing then SKILL.md is copied with user-invocable: false and no body',
+        () async {
           await adapter.installSkill(skill);
 
           final content = await File(
@@ -288,11 +289,12 @@ description: Empty body skill.
             ),
           ).readAsString();
 
-          expect(content, contains('user-invocable: false'));
-          expect(content, contains('---'));
-          // Verify valid format: opening and closing ---
-          final dashes = '---'.allMatches(content).length;
-          expect(dashes, greaterThanOrEqualTo(2));
+          expect(content, '''
+---
+name: claude_pkg_nobody-empty
+description: Empty body skill.
+user-invocable: false
+---''');
         },
       );
     });

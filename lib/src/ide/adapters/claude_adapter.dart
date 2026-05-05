@@ -25,8 +25,7 @@ class ClaudeAdapter extends AgentSkillsAdapter {
       if (!content.contains('user-invocable:')) {
         final closingIndex = content.indexOf('---', 3);
         if (closingIndex != -1) {
-          content =
-              '${content.substring(0, closingIndex)}'
+          content = '${content.substring(0, closingIndex)}'
               'user-invocable: false\n'
               '${content.substring(closingIndex)}';
           await skillMd.writeAsString(content);
