@@ -55,24 +55,31 @@ class GenericAdapter extends AgentSkillsAdapter {
         return true;
       }
 
-      stdout.writeln('Found an old `.agent/skills` directory with managed skills. '
-          'What would you like to do?');
-      final result = await showSingleSelectDialog([
-        'Move ONLY managed skills to .agents/skills',
-        'Move ALL skills to .agents/skills',
-        'Leave old skills in place (may result in duplicate skills)',
-        'Abort'
-      ], sharedStdIn);
+      // Default is to only move known skills that we installed.
+      bool moveAll = false;
 
-      if (result == 2) {
-        // Leave old skills in place
-        return true;
-      } else if (result == null || result > 2) {
-        // Abort
-        return false;
+      // In interactive mode, we give a few more options for the migration.
+      if (stdout.hasTerminal && stdin.hasTerminal) {
+        stdout.writeln(
+            'Found an old `.agent/skills` directory with managed skills. '
+            'What would you like to do?');
+        final result = await showSingleSelectDialog([
+          'Move ONLY managed skills to .agents/skills',
+          'Move ALL skills to .agents/skills',
+          'Leave .agent/skills in place (may result in duplicate skills)',
+          'Abort'
+        ], sharedStdIn);
+
+        if (result == 2) {
+          // Leave old skills in place
+          return true;
+        } else if (result == null || result > 2) {
+          // Abort
+          return false;
+        } else if (result == 1) {
+          moveAll = true;
+        }
       }
-
-      final moveAll = result == 1;
 
       if (!await newSkillsDir.exists()) {
         await newSkillsDir.create(recursive: true);
