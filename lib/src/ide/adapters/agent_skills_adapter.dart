@@ -23,7 +23,8 @@ class AgentSkillsAdapter implements IdeAdapter {
 
   /// Performs any migrations needed for this IDE.
   ///
-  /// Returns false if the operation was aborted by the user, true otherwise.
+  /// Returns false if the operation was aborted by the user or failed,
+  /// true if it succeeded.
   Future<bool> performMigrations(SkillManifest manifest) async => true;
 
   @override

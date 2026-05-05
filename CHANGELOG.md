@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- refactor: Migrate from `.agent/skills` to `.agents/skills` for the generic IDE
+  adapter. When a `.agent/` dir is detected you will be prompted for what action
+  to take.
+
 ## 0.3.0
 
 - feat: Adds support for OpenCode.
