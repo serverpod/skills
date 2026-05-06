@@ -52,12 +52,11 @@ packages:
   cli_util:
     dependency: "direct main"
     description:
-      path: "pkgs/cli_util"
-      ref: HEAD
-      resolved-ref: c0dc794b516ed1f7e54359bbb0b8edff4d113d84
-      url: "https://github.com/dart-lang/tools"
-    source: git
-    version: "0.5.1-wip"
+      name: cli_util
+      sha256: "5909d2c6b66817222779e1eedc19e0e28b76d1df7bd9856a4792ccb9881df358"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.1"
   collection:
     dependency: transitive
     description:
