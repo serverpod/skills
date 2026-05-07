@@ -32,9 +32,8 @@ class RulesAdapter implements IdeAdapter {
   });
 
   @override
-  Future<bool> ensureSkillsDirectory() async {
+  Future<void> ensureSkillsDirectory() async {
     await Directory(skillsDirectory).create(recursive: true);
-    return true;
   }
 
   @override
