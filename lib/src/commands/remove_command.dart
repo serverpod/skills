@@ -5,6 +5,7 @@ import '../ide/ide.dart';
 import '../models/skill_manifest.dart';
 import 'options.dart';
 import 'skills_command.dart';
+import 'package:skills/src/core/dialog_support.dart';
 
 /// Removes managed skills.
 class RemoveCommand extends SkillsCommand {
@@ -14,7 +15,9 @@ class RemoveCommand extends SkillsCommand {
   @override
   final String description = 'Remove managed skills.';
 
-  RemoveCommand() {
+  final DialogSupport _dialogSupport;
+
+  RemoveCommand({required DialogSupport dialogSupport}) : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 
@@ -47,7 +50,7 @@ class RemoveCommand extends SkillsCommand {
           .toList();
     }
 
-    const installer = SkillInstaller();
+    final installer = SkillInstaller(_dialogSupport);
     var totalRemoved = 0;
 
     for (final ide in targetIdes) {

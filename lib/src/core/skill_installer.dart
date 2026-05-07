@@ -3,6 +3,7 @@ import '../ide/adapters/agent_skills_adapter.dart';
 import '../ide/ide_adapter_factory.dart';
 import '../models/skill_manifest.dart';
 import 'skill_scanner.dart';
+import 'dialog_support.dart';
 
 /// Result of installing skills for an IDE.
 class SkillInstallResult {
@@ -56,7 +57,9 @@ class RemovedSkillInfo {
 
 /// Service for installing and removing skills across IDEs.
 class SkillInstaller {
-  const SkillInstaller();
+  final DialogSupport? _dialogSupport;
+
+  SkillInstaller(this._dialogSupport);
 
   /// Installs [skills] for the given [ide] at [rootPath], updating [manifest].
   /// Removes existing skills for each package before reinstalling.
@@ -66,7 +69,7 @@ class SkillInstaller {
     required List<ScannedSkill> skills,
     required SkillManifest manifest,
   }) async {
-    final adapter = createIdeAdapter(ide, rootPath);
+    final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     if (adapter is AgentSkillsAdapter) {
       if (!await adapter.performMigrations(manifest)) {
         return null;
@@ -130,7 +133,7 @@ class SkillInstaller {
     required SkillManifest manifest,
     String? packageName,
   }) async {
-    final adapter = createIdeAdapter(ide, rootPath);
+    final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     final removed = <RemovedSkillInfo>[];
 
     if (packageName != null) {

@@ -1,26 +1,24 @@
 import 'dart:io';
 
-import 'package:io/io.dart';
 import 'package:skills/src/core/skill_scanner.dart';
-import 'package:skills/src/core/stdin.dart';
 import 'package:skills/src/ide/adapters/generic_adapter.dart';
+import '../fake_dialog_support.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-const _enter = [10];
-const _downArrow = [27, 91, 66];
-
 void main() {
   group('Given a GenericAdapter', () {
     late GenericAdapter adapter;
+    late FakeDialogSupport fakeDialogSupport;
 
     setUp(() async {
       await d.dir('project', [
         d.dir('.agents', [d.dir('skills')]),
       ]).create();
 
-      adapter = GenericAdapter(d.path('project'));
+      fakeDialogSupport = FakeDialogSupport();
+      adapter = GenericAdapter(d.path('project'), fakeDialogSupport);
     });
 
     group('and a scanned skill', () {
@@ -101,6 +99,7 @@ Steps to analyze.
   group('migrateSkillsDir', () {
     late GenericAdapter adapter;
     late SkillManifest manifest;
+    late FakeDialogSupport fakeDialogSupport;
 
     setUp(() async {
       await d.dir('project_migration', [
@@ -113,7 +112,8 @@ Steps to analyze.
         ]),
       ]).create();
 
-      adapter = GenericAdapter(d.path('project_migration'));
+      fakeDialogSupport = FakeDialogSupport();
+      adapter = GenericAdapter(d.path('project_migration'), fakeDialogSupport);
 
       manifest = const SkillManifest().withPackage(
         'generic',
@@ -131,12 +131,10 @@ Steps to analyze.
 
     test('migrates .agent to .agents', () async {
       await IOOverrides.runZoned(() async {
-        await withSharedStdin(SharedStdIn(Stream.fromIterable([_enter])),
-            () async {
-          final migrated = await adapter.migrateSkillsDir(manifest);
-          expect(migrated, isTrue);
-          await adapter.ensureSkillsDirectory();
-        });
+        fakeDialogSupport.singleSelectResult = 0;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+        await adapter.ensureSkillsDirectory();
       }, stdout: () => _DummyStdout());
 
       expect(
@@ -159,12 +157,10 @@ Steps to analyze.
           .writeAsString('content');
 
       await IOOverrides.runZoned(() async {
-        await withSharedStdin(SharedStdIn(Stream.fromIterable([_enter])),
-            () async {
-          final migrated = await adapter.migrateSkillsDir(manifest);
-          expect(migrated, isTrue);
-          await adapter.ensureSkillsDirectory();
-        });
+        fakeDialogSupport.singleSelectResult = 0;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+        await adapter.ensureSkillsDirectory();
       }, stdout: () => _DummyStdout());
 
       expect(
@@ -185,12 +181,9 @@ Steps to analyze.
 
     test('returns false if the user aborts', () async {
       await IOOverrides.runZoned(() async {
-        await withSharedStdin(
-            SharedStdIn(Stream.fromIterable(
-                [_downArrow, _downArrow, _downArrow, _enter])), () async {
-          final migrated = await adapter.migrateSkillsDir(manifest);
-          expect(migrated, isFalse);
-        });
+        fakeDialogSupport.singleSelectResult = 3;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isFalse);
       }, stdout: () => _DummyStdout());
 
       expect(

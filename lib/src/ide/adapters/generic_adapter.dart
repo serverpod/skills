@@ -1,9 +1,8 @@
 import 'dart:io';
 
-import 'package:cli_util/cli_components.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:skills/src/core/stdin.dart';
+import 'package:skills/src/core/dialog_support.dart';
 
 import '../../models/skill_manifest.dart';
 import '../ide.dart';
@@ -14,10 +13,10 @@ import 'agent_skills_adapter.dart';
 /// Installs skills to `.agents/skills/<pkg>-<skill>/SKILL.md`.
 class GenericAdapter extends AgentSkillsAdapter {
   final String _projectPath;
+  final DialogSupport? _dialogSupport;
 
-  GenericAdapter(String projectPath)
-      : _projectPath = projectPath,
-        super(Ide.generic.skillsPath(projectPath));
+  GenericAdapter(this._projectPath, this._dialogSupport)
+      : super(Ide.generic.skillsPath(_projectPath));
 
   @override
   Future<bool> performMigrations(SkillManifest manifest) async {
@@ -59,16 +58,16 @@ class GenericAdapter extends AgentSkillsAdapter {
       bool moveAll = false;
 
       // In interactive mode, we give a few more options for the migration.
-      if (stdout.hasTerminal && stdin.hasTerminal) {
+      if (_dialogSupport case var dialogSupport?) {
         stdout.writeln(
             'Found an old `.agent/skills` directory with managed skills. '
             'What would you like to do?');
-        final result = await showSingleSelectDialog([
+        final result = await dialogSupport.showSingleSelectDialog([
           'Move ONLY managed skills to .agents/skills',
           'Move ALL skills to .agents/skills',
           'Leave .agent/skills in place (may result in duplicate skills)',
           'Abort'
-        ], sharedStdIn);
+        ]);
 
         if (result == 2) {
           // Leave old skills in place

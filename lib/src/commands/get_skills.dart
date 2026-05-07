@@ -13,11 +13,13 @@ import 'package:skills/src/core/skill_merger.dart';
 import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/core/workspace_resolver.dart';
 import 'package:skills/src/ide/ide.dart';
+import 'package:skills/src/core/dialog_support.dart';
 
 /// Installs skills from package dependencies for [ides].
 Future<bool> getSkills({
   required List<Ide> ides,
   required WorkspaceLayout workspace,
+  DialogSupport? dialogSupport,
   GitRunner gitRunner = const GitRunner(),
   String usage = '',
   String? packageName,
@@ -70,7 +72,7 @@ Future<bool> getSkills({
     return false;
   }
 
-  const installer = SkillInstaller();
+  final installer = SkillInstaller(dialogSupport);
   var manifest = await loadManifest(rootPath);
 
   for (final ide in ides) {

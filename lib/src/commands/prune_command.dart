@@ -9,6 +9,7 @@ import '../ide/ide.dart';
 import '../models/skill_manifest.dart';
 import 'options.dart';
 import 'skills_command.dart';
+import 'package:skills/src/core/dialog_support.dart';
 
 /// Removes installed skills whose package is no longer in the dependency tree.
 class PruneCommand extends SkillsCommand {
@@ -19,7 +20,9 @@ class PruneCommand extends SkillsCommand {
   final String description =
       'Remove skills whose package is no longer in the dependency tree.';
 
-  PruneCommand() {
+  final DialogSupport _dialogSupport;
+
+  PruneCommand({required DialogSupport dialogSupport}) : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 
@@ -56,7 +59,7 @@ class PruneCommand extends SkillsCommand {
           .toList();
     }
 
-    const installer = SkillInstaller();
+    final installer = SkillInstaller(_dialogSupport);
     var totalRemoved = 0;
     final prunedPackages = <String>{};
 

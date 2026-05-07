@@ -7,29 +7,28 @@ import 'package:skills/src/commands/get_command.dart';
 import 'package:skills/src/commands/list_command.dart';
 import 'package:skills/src/commands/prune_command.dart';
 import 'package:skills/src/commands/remove_command.dart';
-import 'package:skills/src/core/stdin.dart';
+import 'package:skills/src/core/cli_dialog_support.dart';
 
 Future<void> main(List<String> arguments) async {
-  final stdin =
+  final sharedStdin =
       SharedStdIn(io.Platform.isWindows ? Win32AnsiStdin() : io.stdin);
+  final dialogSupport = CliDialogSupport(sharedStdin);
   try {
-    await withSharedStdin(stdin, () async {
-      final runner = CommandRunner<void>(
-        'skills',
-        'Manage AI agent skills for Dart/Flutter packages.',
-      )
-        ..addCommand(GetCommand())
-        ..addCommand(ListCommand())
-        ..addCommand(PruneCommand())
-        ..addCommand(RemoveCommand());
+    final runner = CommandRunner<void>(
+      'skills',
+      'Manage AI agent skills for Dart/Flutter packages.',
+    )
+      ..addCommand(GetCommand(dialogSupport: dialogSupport))
+      ..addCommand(ListCommand())
+      ..addCommand(PruneCommand(dialogSupport: dialogSupport))
+      ..addCommand(RemoveCommand(dialogSupport: dialogSupport));
 
-      try {
-        await runner.run(arguments);
-      } on UsageException catch (e) {
-        print(e);
-      }
-    });
+    try {
+      await runner.run(arguments);
+    } on UsageException catch (e) {
+      print(e);
+    }
   } finally {
-    await stdin.terminate();
+    await sharedStdin.terminate();
   }
 }
