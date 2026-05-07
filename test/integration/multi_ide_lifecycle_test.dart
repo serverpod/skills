@@ -356,7 +356,8 @@ Instructions for debugging.
     test('when reinstalling to one IDE then the other is untouched', () async {
       // Reinstall to Cursor only (simulating `skills get --ide cursor`).
       // SkillInstaller removes existing before installing.
-      final result = await SkillInstaller(fakeDialogSupport).installSkillsForIde(
+      final result =
+          await SkillInstaller(fakeDialogSupport).installSkillsForIde(
         ide: Ide.cursor,
         rootPath: rootPath,
         skills: pkgASkills,
@@ -473,7 +474,8 @@ Instructions for debugging.
         final rootPath = d.path('generic_project');
 
         var manifest = const SkillManifest();
-        final result = await SkillInstaller(fakeDialogSupport).installSkillsForIde(
+        final result =
+            await SkillInstaller(fakeDialogSupport).installSkillsForIde(
           ide: Ide.generic,
           rootPath: rootPath,
           skills: pkgASkills,
