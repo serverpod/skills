@@ -15,9 +15,10 @@ class RemoveCommand extends SkillsCommand {
   @override
   final String description = 'Remove managed skills.';
 
-  final DialogSupport _dialogSupport;
+  final DialogSupport? _dialogSupport;
 
-  RemoveCommand({required DialogSupport dialogSupport}) : _dialogSupport = dialogSupport {
+  RemoveCommand({DialogSupport? dialogSupport})
+      : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 

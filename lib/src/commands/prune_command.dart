@@ -20,9 +20,10 @@ class PruneCommand extends SkillsCommand {
   final String description =
       'Remove skills whose package is no longer in the dependency tree.';
 
-  final DialogSupport _dialogSupport;
+  final DialogSupport? _dialogSupport;
 
-  PruneCommand({required DialogSupport dialogSupport}) : _dialogSupport = dialogSupport {
+  PruneCommand({DialogSupport? dialogSupport})
+      : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 

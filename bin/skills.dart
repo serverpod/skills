@@ -3,16 +3,21 @@ import 'dart:io' as io;
 import 'package:args/command_runner.dart';
 import 'package:cli_util/windows_compatibility.dart';
 import 'package:io/io.dart';
-import 'package:skills/src/commands/get_command.dart';
-import 'package:skills/src/commands/list_command.dart';
+import 'package:skills/skills.dart';
 import 'package:skills/src/commands/prune_command.dart';
-import 'package:skills/src/commands/remove_command.dart';
 import 'package:skills/src/core/cli_dialog_support.dart';
 
 Future<void> main(List<String> arguments) async {
-  final sharedStdin =
-      SharedStdIn(io.Platform.isWindows ? Win32AnsiStdin() : io.stdin);
-  final dialogSupport = CliDialogSupport(sharedStdin);
+  DialogSupport? dialogSupport;
+  // TODO: Remove this when https://github.com/dart-lang/tools/pull/2396
+  // is release.
+  // ignore: invalid_use_of_visible_for_testing_member
+  SharedStdIn? sharedStdIn;
+  if (io.stdin.hasTerminal && io.stdout.hasTerminal) {
+    sharedStdIn =
+        SharedStdIn(io.Platform.isWindows ? Win32AnsiStdin() : io.stdin);
+    dialogSupport = CliDialogSupport(sharedStdIn);
+  }
   try {
     final runner = CommandRunner<void>(
       'skills',
@@ -29,6 +34,6 @@ Future<void> main(List<String> arguments) async {
       print(e);
     }
   } finally {
-    await sharedStdin.terminate();
+    await sharedStdIn?.terminate();
   }
 }

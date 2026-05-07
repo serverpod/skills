@@ -15,10 +15,10 @@ class GetCommand extends SkillsCommand {
   @override
   final String description = 'Install skills from package dependencies.';
 
-  final DialogSupport _dialogSupport;
+  final DialogSupport? _dialogSupport;
   final GitRunner? _gitRunner;
 
-  GetCommand({required DialogSupport dialogSupport, GitRunner? gitRunner})
+  GetCommand({DialogSupport? dialogSupport, GitRunner? gitRunner})
       : _dialogSupport = dialogSupport,
         _gitRunner = gitRunner {
     addIdeOption(argParser);
