@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/workspace_resolver.dart';
@@ -13,22 +11,12 @@ import '../models/skill_manifest.dart';
 abstract class SkillsCommand extends Command<void> {
   late final logger = Logger('skills $name');
 
-  SkillsCommand({@visibleForTesting bool logMessagesToStdout = true}) {
+  SkillsCommand() {
     argParser.addOption(
       'directory',
       abbr: 'C',
       help: 'Run as if in this directory (default: current directory).',
     );
-    if (logMessagesToStdout) {
-      logger.onRecord.listen((log) {
-        final color = switch (log) {
-          _ when log.level >= Level.SEVERE => red,
-          _ when log.level >= Level.WARNING => yellow,
-          _ => null,
-        };
-        stdout.writeln(wrapWith(log.message, [if (color != null) color]));
-      });
-    }
   }
 
   /// Resolves the workspace layout.

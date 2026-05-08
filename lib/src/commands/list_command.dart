@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 import '../models/skill_manifest.dart';
 import 'skills_command.dart';
 
@@ -11,7 +9,7 @@ class ListCommand extends SkillsCommand {
   @override
   final String description = 'List installed managed skills.';
 
-  ListCommand({@visibleForTesting super.logMessagesToStdout});
+  ListCommand();
 
   @override
   Future<void> run() async {

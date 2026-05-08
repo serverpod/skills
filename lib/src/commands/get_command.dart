@@ -1,4 +1,3 @@
-import 'package:meta/meta.dart';
 import 'package:skills/src/commands/get_skills.dart';
 import 'package:skills/src/core/dialog_support.dart';
 
@@ -17,11 +16,10 @@ class GetCommand extends SkillsCommand {
   final DialogSupport? _dialogSupport;
   final GitRunner? _gitRunner;
 
-  GetCommand(
-      {DialogSupport? dialogSupport,
-      GitRunner? gitRunner,
-      @visibleForTesting super.logMessagesToStdout})
-      : _dialogSupport = dialogSupport,
+  GetCommand({
+    DialogSupport? dialogSupport,
+    GitRunner? gitRunner,
+  })  : _dialogSupport = dialogSupport,
         _gitRunner = gitRunner {
     addIdeOption(argParser);
   }

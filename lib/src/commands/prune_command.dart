@@ -1,5 +1,4 @@
 import 'package:args/command_runner.dart';
-import 'package:meta/meta.dart';
 
 import '../core/package_resolver.dart';
 import '../core/pub_runner.dart';
@@ -21,10 +20,9 @@ class PruneCommand extends SkillsCommand {
 
   final DialogSupport? _dialogSupport;
 
-  PruneCommand(
-      {DialogSupport? dialogSupport,
-      @visibleForTesting super.logMessagesToStdout})
-      : _dialogSupport = dialogSupport {
+  PruneCommand({
+    DialogSupport? dialogSupport,
+  }) : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 

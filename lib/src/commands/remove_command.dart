@@ -1,5 +1,3 @@
-import 'package:meta/meta.dart';
-
 import '../core/skill_installer.dart';
 import '../ide/ide.dart';
 import '../models/skill_manifest.dart';
@@ -17,10 +15,9 @@ class RemoveCommand extends SkillsCommand {
 
   final DialogSupport? _dialogSupport;
 
-  RemoveCommand(
-      {DialogSupport? dialogSupport,
-      @visibleForTesting super.logMessagesToStdout})
-      : _dialogSupport = dialogSupport {
+  RemoveCommand({
+    DialogSupport? dialogSupport,
+  }) : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 
