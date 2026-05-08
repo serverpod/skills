@@ -118,8 +118,7 @@ environment:
           reason: 'then manifest should not contain dep2-skill');
     });
 
-    test('when running `skills get --packages dep1` (non-interactive)',
-        () async {
+    test('when running `skills get dep1` (non-interactive)', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
@@ -133,7 +132,6 @@ environment:
         projectPath,
         '--ide',
         Ide.generic.cliName,
-        '--packages',
         'dep1'
       ]);
 
@@ -148,8 +146,7 @@ environment:
       expect(await dep2SkillDir.exists(), isFalse);
     });
 
-    test('when running `skills get --packages all` (non-interactive)',
-        () async {
+    test('when running `skills get all` (non-interactive)', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
@@ -163,7 +160,6 @@ environment:
         projectPath,
         '--ide',
         Ide.generic.cliName,
-        '--packages',
         'all'
       ]);
 
@@ -178,7 +174,7 @@ environment:
       expect(await dep2SkillDir.exists(), isTrue);
     });
 
-    test('when running `skills get` without --packages and NO dialog support',
+    test('when running `skills get` without package arguments and NO dialog support',
         () async {
       final getCommand = GetCommand(
         dialogSupport: null,

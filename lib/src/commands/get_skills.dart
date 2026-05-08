@@ -88,8 +88,7 @@ Future<bool> getSkills({
         for (final pkg in packagesWithSkills) {
           logger.info('  $pkg');
         }
-        logger.info(
-            'Rerun with trailing arguments for each package you want '
+        logger.info('Rerun with trailing arguments for each package you want '
             'to install skills for, or `all` to install all skills.');
         return false;
       }

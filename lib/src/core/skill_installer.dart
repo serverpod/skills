@@ -126,7 +126,7 @@ class SkillInstaller {
   }
 
   /// Removes skills for [ide] from [manifest].
-  /// 
+  ///
   /// If [packageNames] is set, only those packages are removed; otherwise all.
   /// If [packageNames] contains `all`, then all packages are also removed.
   Future<SkillRemoveResult> removeSkillsForIde({
