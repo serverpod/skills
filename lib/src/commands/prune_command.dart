@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:args/command_runner.dart';
+import 'package:meta/meta.dart';
 
 import '../core/package_resolver.dart';
 import '../core/pub_runner.dart';
@@ -22,7 +21,9 @@ class PruneCommand extends SkillsCommand {
 
   final DialogSupport? _dialogSupport;
 
-  PruneCommand({DialogSupport? dialogSupport})
+  PruneCommand(
+      {DialogSupport? dialogSupport,
+      @visibleForTesting super.logMessagesToStdout})
       : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
@@ -43,7 +44,7 @@ class PruneCommand extends SkillsCommand {
     final loaded = await SkillManifest.load(manifestFile(rootPath));
 
     if (loaded == null || loaded.isEmpty) {
-      stdout.writeln('No managed skills found.');
+      logger.info('No managed skills found.');
       return;
     }
 
@@ -79,7 +80,7 @@ class PruneCommand extends SkillsCommand {
         totalRemoved += result.removedCount;
         prunedPackages.add(packageName);
         for (final info in result.removed) {
-          stdout.writeln('  [${info.ideName}] Removed ${info.skillName}');
+          logger.info('  [${info.ideName}] Removed ${info.skillName}');
         }
       }
     }
@@ -91,9 +92,9 @@ class PruneCommand extends SkillsCommand {
     }
 
     if (totalRemoved == 0) {
-      stdout.writeln('No skills to prune.');
+      logger.info('No skills to prune.');
     } else {
-      stdout.writeln(
+      logger.info(
         'Pruned $totalRemoved skill(s) from ${prunedPackages.length} package(s).',
       );
     }

@@ -68,6 +68,7 @@ environment:
         final getCommand = GetCommand(
           dialogSupport: FakeDialogSupport(),
           gitRunner: GitRunner(isAvailableOverride: _gitUnavailable),
+          logMessagesToStdout: false,
         );
         final runner = CommandRunner<void>('skills', 'Test')
           ..addCommand(getCommand);

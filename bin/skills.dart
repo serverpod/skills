@@ -5,7 +5,6 @@ import 'package:cli_util/windows_compatibility.dart';
 import 'package:io/io.dart';
 import 'package:skills/skills.dart';
 import 'package:skills/src/commands/prune_command.dart';
-import 'package:skills/src/core/cli_dialog_support.dart';
 
 Future<void> main(List<String> arguments) async {
   DialogSupport? dialogSupport;
@@ -16,7 +15,7 @@ Future<void> main(List<String> arguments) async {
   if (io.stdin.hasTerminal && io.stdout.hasTerminal) {
     sharedStdIn =
         SharedStdIn(io.Platform.isWindows ? Win32AnsiStdin() : io.stdin);
-    dialogSupport = CliDialogSupport(sharedStdIn);
+    dialogSupport = CliUtilDialogSupport(sharedStdIn);
   }
   try {
     final runner = CommandRunner<void>(

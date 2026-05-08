@@ -93,7 +93,8 @@ environment:
         );
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
-        final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+        final pruneCommand = PruneCommand(
+            dialogSupport: FakeDialogSupport(), logMessagesToStdout: false);
         final runner = CommandRunner<void>('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
@@ -175,7 +176,8 @@ environment:
         );
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
-        final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+        final pruneCommand = PruneCommand(
+            dialogSupport: FakeDialogSupport(), logMessagesToStdout: false);
         final runner = CommandRunner<void>('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
@@ -224,7 +226,8 @@ environment:
 
       final projectPath = p.join(testRootPath, 'no_skills_project');
 
-      final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+      final pruneCommand = PruneCommand(
+          dialogSupport: FakeDialogSupport(), logMessagesToStdout: false);
       final runner = CommandRunner<void>('skills', 'Test')
         ..addCommand(pruneCommand);
       await runner.run(['prune', '--directory', projectPath]);
@@ -348,7 +351,8 @@ environment:
         );
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
-        final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+        final pruneCommand = PruneCommand(
+            dialogSupport: FakeDialogSupport(), logMessagesToStdout: false);
         final runner = CommandRunner<void>('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner

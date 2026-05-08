@@ -130,12 +130,10 @@ Steps to analyze.
     });
 
     test('migrates .agent to .agents', () async {
-      await IOOverrides.runZoned(() async {
-        fakeDialogSupport.singleSelectResult = 0;
-        final migrated = await adapter.migrateSkillsDir(manifest);
-        expect(migrated, isTrue);
-        await adapter.ensureSkillsDirectory();
-      }, stdout: () => _DummyStdout());
+      fakeDialogSupport.singleSelectResult = 0;
+      final migrated = await adapter.migrateSkillsDir(manifest);
+      expect(migrated, isTrue);
+      await adapter.ensureSkillsDirectory();
 
       expect(
         await Directory(d.path('project_migration/.agents/skills/old-skill'))
@@ -156,12 +154,10 @@ Steps to analyze.
       await File(d.path('project_migration/.agents/skills/new-skill/SKILL.md'))
           .writeAsString('content');
 
-      await IOOverrides.runZoned(() async {
-        fakeDialogSupport.singleSelectResult = 0;
-        final migrated = await adapter.migrateSkillsDir(manifest);
-        expect(migrated, isTrue);
-        await adapter.ensureSkillsDirectory();
-      }, stdout: () => _DummyStdout());
+      fakeDialogSupport.singleSelectResult = 0;
+      final migrated = await adapter.migrateSkillsDir(manifest);
+      expect(migrated, isTrue);
+      await adapter.ensureSkillsDirectory();
 
       expect(
         await Directory(d.path('project_migration/.agents/skills/old-skill'))
@@ -180,11 +176,9 @@ Steps to analyze.
     });
 
     test('returns false if the user aborts', () async {
-      await IOOverrides.runZoned(() async {
-        fakeDialogSupport.singleSelectResult = 3;
-        final migrated = await adapter.migrateSkillsDir(manifest);
-        expect(migrated, isFalse);
-      }, stdout: () => _DummyStdout());
+      fakeDialogSupport.singleSelectResult = 3;
+      final migrated = await adapter.migrateSkillsDir(manifest);
+      expect(migrated, isFalse);
 
       expect(
         await Directory(d.path('project_migration/.agent/skills/old-skill'))
@@ -198,19 +192,4 @@ Steps to analyze.
       );
     });
   });
-}
-
-/// Just swallows stdout so that it doesn't pollute the output.
-class _DummyStdout implements Stdout {
-  @override
-  void writeln([Object? object = '']) {}
-
-  @override
-  void write(Object? object) {}
-
-  @override
-  bool get hasTerminal => true;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => null;
 }

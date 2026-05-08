@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:meta/meta.dart';
 import 'package:skills/src/commands/get_skills.dart';
 import 'package:skills/src/core/dialog_support.dart';
 
@@ -18,7 +17,10 @@ class GetCommand extends SkillsCommand {
   final DialogSupport? _dialogSupport;
   final GitRunner? _gitRunner;
 
-  GetCommand({DialogSupport? dialogSupport, GitRunner? gitRunner})
+  GetCommand(
+      {DialogSupport? dialogSupport,
+      GitRunner? gitRunner,
+      @visibleForTesting super.logMessagesToStdout})
       : _dialogSupport = dialogSupport,
         _gitRunner = gitRunner {
     addIdeOption(argParser);
@@ -32,7 +34,7 @@ class GetCommand extends SkillsCommand {
     final rootPath = workspace.rootPath;
 
     if (workspace.isWorkspace) {
-      stdout.writeln(
+      logger.info(
         'Detected workspace with ${workspace.packages.length} packages.',
       );
     }
@@ -41,6 +43,7 @@ class GetCommand extends SkillsCommand {
 
     await getSkills(
       ides: ides,
+      logger: logger,
       workspace: workspace,
       dialogSupport: _dialogSupport,
       gitRunner: _effectiveGitRunner,
