@@ -35,7 +35,7 @@ class RemoveCommand extends SkillsCommand {
 
     var manifest = loaded;
 
-    final packageName = packageNameArg;
+    final packageName = packageNamesArg;
 
     // Determine which IDEs to remove from: --ide narrows to one,
     // otherwise all IDEs in the manifest.
@@ -58,7 +58,7 @@ class RemoveCommand extends SkillsCommand {
         ide: ide,
         rootPath: rootPath,
         manifest: manifest,
-        packageName: packageName,
+        packageNames: packageNamesArg?.toSet(),
       );
       manifest = result.manifest;
       totalRemoved += result.removedCount;

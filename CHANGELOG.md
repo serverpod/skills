@@ -2,6 +2,7 @@
 
 ## 0.4.0-dev
 
+- feat: Added a dialog to select which packages to install skills from during `skills get`.
 - refactor: Migrate from `.agent/skills` to `.agents/skills` for the generic IDE
   adapter. When a `.agent/` dir is detected you will be prompted for what action
   to take.

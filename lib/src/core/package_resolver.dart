@@ -65,10 +65,11 @@ class PackageResolver {
   /// out workspace member packages (those are the user's own code, not
   /// external dependencies that might ship skills).
   ///
-  /// If [packageName] is provided, only that package is returned.
+  /// If [packageNames] is provided, only those packages are returned.
+  /// If [packageNames] contains 'all', all packages are returned.
   static Future<List<ResolvedPackage>> resolveWorkspace(
     WorkspaceLayout workspace, {
-    String? packageName,
+    Set<String>? packageNames,
   }) async {
     final memberNames = workspace.packages.map((p) => p.name).toSet();
 
@@ -90,7 +91,12 @@ class PackageResolver {
       for (final package in config.packages) {
         if (memberNames.contains(package.name)) continue;
         if (seen.contains(package.name)) continue;
-        if (packageName != null && package.name != packageName) continue;
+
+        if (packageNames != null &&
+            !packageNames.contains('all') &&
+            !packageNames.contains(package.name)) {
+          continue;
+        }
 
         final rootUri = package.root;
         if (rootUri.scheme != 'file') continue;

@@ -21,7 +21,7 @@ Future<bool> getSkills({
   DialogSupport? dialogSupport,
   GitRunner gitRunner = const GitRunner(),
   String usage = '',
-  String? packageName,
+  Set<String>? packageNames,
 }) async {
   final ready = await PubRunner.ensureWorkspaceConfigs(workspace);
   if (!ready) {
@@ -30,11 +30,11 @@ Future<bool> getSkills({
 
   final packages = await PackageResolver.resolveWorkspace(
     workspace,
-    packageName: packageName,
+    packageNames: packageNames,
   );
 
-  if (packageName != null && packages.isEmpty) {
-    logger.severe('Package "$packageName" not found in dependencies.');
+  if (packageNames != null && packages.isEmpty) {
+    logger.severe('None of the requested packages were found in dependencies.');
     return false;
   }
 
@@ -55,14 +55,49 @@ Future<bool> getSkills({
   }
 
   final resolvedPackageNames = packages.map((p) => p.name).toSet();
-  final skills = mergeSkills(
+  var skills = mergeSkills(
     dartSkills: dartSkills,
     registrySkills: registrySkills,
     resolvedPackageNames: resolvedPackageNames,
   );
 
   if (skills.isEmpty) {
-    logger.info('No skills found in ${packageName ?? "any"} packages.');
+    logger.info('No skills found in ${packageNames ?? "any"} packages.');
+    return false;
+  }
+
+  if (packageNames == null) {
+    final packagesWithSkills =
+        skills.map((skill) => skill.packageName).toSet().toList()..sort();
+    if (packagesWithSkills.isNotEmpty) {
+      if (dialogSupport != null) {
+        final initialSelected =
+            Iterable<int>.generate(packagesWithSkills.length).toSet();
+        final selectedIndices = await dialogSupport.showMultiSelectDialog(
+          packagesWithSkills,
+          title: 'Select packages to install skills from:',
+          initialSelected: initialSelected,
+        );
+        if (selectedIndices != null) {
+          final selectedPackages =
+              selectedIndices.map((i) => packagesWithSkills[i]).toSet();
+          skills.removeWhere((s) => !selectedPackages.contains(s.packageName));
+        }
+      } else {
+        logger.info('Available packages with skills:');
+        for (final pkg in packagesWithSkills) {
+          logger.info('  $pkg');
+        }
+        logger.info(
+            'Rerun with trailing arguments for each package you want '
+            'to install skills for, or `all` to install all skills.');
+        return false;
+      }
+    }
+  }
+
+  if (skills.isEmpty) {
+    logger.info('No skills selected to install.');
     return false;
   }
 

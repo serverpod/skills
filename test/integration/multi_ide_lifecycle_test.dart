@@ -203,7 +203,7 @@ Instructions for debugging.
             ide: ide,
             rootPath: rootPath,
             manifest: manifest,
-            packageName: 'pkg_a',
+            packageNames: {'pkg_a'},
           );
           manifest = result.manifest;
         }
