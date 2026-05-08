@@ -123,8 +123,9 @@ environment:
     });
 
     test(
-        'when running `skills remove` without arguments then removes all skills for that IDE',
+        'when running `skills remove` without arguments and selecting all then removes all skills for that IDE',
         () async {
+      fakeDialogSupport.multiSelectResult = {0, 1};
       final removeCommand = RemoveCommand(dialogSupport: fakeDialogSupport);
       final runner = CommandRunner<void>('skills', 'Test')
         ..addCommand(removeCommand);
@@ -142,6 +143,31 @@ environment:
 
       final manifestDir = Directory(p.join(projectPath, '.dart_skills'));
       expect(await manifestDir.exists(), isFalse);
+    });
+
+    test(
+        'when running `skills remove` without arguments and NO dialog support then does nothing and prints packages',
+        () async {
+      final removeCommand = RemoveCommand(dialogSupport: null);
+      final runner = CommandRunner<void>('skills', 'Test')
+        ..addCommand(removeCommand);
+
+      await runner
+          .run(['remove', '--directory', projectPath, '--ide', 'cursor']);
+
+      final dep1SkillDir =
+          Directory(p.join(projectPath, '.cursor', 'skills', 'dep1-skill'));
+      final dep2SkillDir =
+          Directory(p.join(projectPath, '.cursor', 'skills', 'dep2-skill'));
+
+      expect(await dep1SkillDir.exists(), isTrue,
+          reason: 'skills should still exist');
+      expect(await dep2SkillDir.exists(), isTrue,
+          reason: 'skills should still exist');
+
+      final manifestDir = Directory(p.join(projectPath, '.dart_skills'));
+      expect(await manifestDir.exists(), isTrue,
+          reason: 'manifest should still exist');
     });
   });
 }

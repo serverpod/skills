@@ -174,7 +174,8 @@ environment:
       expect(await dep2SkillDir.exists(), isTrue);
     });
 
-    test('when running `skills get` without package arguments and NO dialog support',
+    test(
+        'when running `skills get` without package arguments and NO dialog support',
         () async {
       final getCommand = GetCommand(
         dialogSupport: null,
