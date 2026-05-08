@@ -2,10 +2,11 @@ import 'dart:io';
 
 import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/adapters/generic_adapter.dart';
-import '../fake_dialog_support.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../fake_dialog_support.dart';
 
 void main() {
   group('Given a GenericAdapter', () {
@@ -96,10 +97,11 @@ Steps to analyze.
     });
   });
 
-  group('migrateSkillsDir', () {
+  group(
+      'Given an existing ".agent" directory with skills and a generic adapter',
+      () {
     late GenericAdapter adapter;
     late SkillManifest manifest;
-    late FakeDialogSupport fakeDialogSupport;
 
     setUp(() async {
       await d.dir('project_migration', [
@@ -108,12 +110,12 @@ Steps to analyze.
             d.dir('old-skill', [
               d.file('SKILL.md', 'content'),
             ]),
+            d.dir('unregistered-skill', [
+              d.file('SKILL.md', 'content'),
+            ]),
           ]),
         ]),
       ]).create();
-
-      fakeDialogSupport = FakeDialogSupport();
-      adapter = GenericAdapter(d.path('project_migration'), fakeDialogSupport);
 
       manifest = const SkillManifest().withPackage(
         'generic',
@@ -129,67 +131,186 @@ Steps to analyze.
       );
     });
 
-    test('migrates .agent to .agents', () async {
-      fakeDialogSupport.singleSelectResult = 0;
-      final migrated = await adapter.migrateSkillsDir(manifest);
-      expect(migrated, isTrue);
-      await adapter.ensureSkillsDirectory();
+    group('with dialog support', () {
+      late FakeDialogSupport fakeDialogSupport;
 
-      expect(
-        await Directory(d.path('project_migration/.agents/skills/old-skill'))
-            .exists(),
-        isTrue,
-      );
-      expect(
-        await Directory(d.path('project_migration/.agent')).exists(),
-        isFalse,
-      );
+      setUp(() async {
+        fakeDialogSupport = FakeDialogSupport();
+        adapter =
+            GenericAdapter(d.path('project_migration'), fakeDialogSupport);
+      });
+
+      test('when the user chooses to migrate known skills', () async {
+        fakeDialogSupport.singleSelectResult = 0;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+
+        expect(
+          await Directory(d.path('project_migration/.agents/skills/old-skill'))
+              .exists(),
+          isTrue,
+          reason: 'then skills are migrated to the `.agents` directory',
+        );
+        expect(
+          await Directory(d.path('project_migration/.agent/skills/old-skill'))
+              .exists(),
+          isFalse,
+          reason: 'then the old skill directory is removed',
+        );
+        expect(
+          await Directory(
+                  d.path('project_migration/.agent/skills/unregistered-skill'))
+              .exists(),
+          isTrue,
+          reason: 'then the unregistered skill directory is not removed',
+        );
+      });
+
+      test('when the user chooses to migrate all skills', () async {
+        fakeDialogSupport.singleSelectResult = 1;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+
+        expect(
+          await Directory(d.path('project_migration/.agents/skills/old-skill'))
+              .exists(),
+          isTrue,
+          reason:
+              'then the known skills are migrated to the `.agents` directory',
+        );
+        expect(
+          await Directory(
+                  d.path('project_migration/.agents/skills/unregistered-skill'))
+              .exists(),
+          isTrue,
+          reason:
+              'then the unknown skills are migrated to the `.agents` directory',
+        );
+        expect(
+          await Directory(d.path('project_migration/.agent')).exists(),
+          isFalse,
+          reason: 'then the entire .agent skill directory is removed',
+        );
+      });
+
+      test('when the user chooses to leave old skills in place', () async {
+        fakeDialogSupport.singleSelectResult = 2;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+
+        expect(
+          await Directory(d.path('project_migration/.agents/skills/old-skill'))
+              .exists(),
+          isFalse,
+          reason:
+              'then the known skills are not migrated to the `.agents` directory',
+        );
+        expect(
+          await Directory(
+                  d.path('project_migration/.agents/skills/unregistered-skill'))
+              .exists(),
+          isFalse,
+          reason:
+              'then the unknown skills are not migrated to the `.agents` directory',
+        );
+        expect(
+          await Directory(d.path('project_migration/.agent/skills/old-skill'))
+              .exists(),
+          isTrue,
+          reason: 'then the old known skill is left in the .agent directory',
+        );
+        expect(
+          await Directory(
+                  d.path('project_migration/.agent/skills/unregistered-skill'))
+              .exists(),
+          isTrue,
+          reason: 'then the old unknown skill is left in the .agent directory',
+        );
+      });
+
+      test('when existing .agents skills exist', () async {
+        // Add something to .agents before migration
+        final newSkillDir =
+            Directory(d.path('project_migration/.agents/skills/new-skill'));
+        await newSkillDir.create(recursive: true);
+        await File(
+                d.path('project_migration/.agents/skills/new-skill/SKILL.md'))
+            .writeAsString('content');
+
+        fakeDialogSupport.singleSelectResult = 0;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+        await adapter.ensureSkillsDirectory();
+
+        expect(
+            await Directory(
+                    d.path('project_migration/.agents/skills/old-skill'))
+                .exists(),
+            isTrue,
+            reason: 'then old .agents skills are still present');
+        expect(
+            await Directory(
+                    d.path('project_migration/.agents/skills/new-skill'))
+                .exists(),
+            isTrue,
+            reason: 'then existing .agent skills are moved into .agents');
+        expect(
+          await Directory(d.path('project_migration/.agent/skills/old-skill'))
+              .exists(),
+          isFalse,
+          reason: 'then the old skill directory is removed',
+        );
+      });
+
+      test('when migrating skills and user aborts the dialog', () async {
+        fakeDialogSupport.singleSelectResult = 3;
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isFalse);
+
+        expect(
+            await Directory(d.path('project_migration/.agent/skills/old-skill'))
+                .exists(),
+            isTrue,
+            reason: 'then old .agent skills are preserved');
+        expect(
+            await Directory(
+                    d.path('project_migration/.agents/skills/old-skill'))
+                .exists(),
+            isFalse,
+            reason: 'then skills are not moved to .agents');
+      });
     });
 
-    test('merges with existing .agents skills', () async {
-      // Add something to .agents before migration
-      final newSkillDir =
-          Directory(d.path('project_migration/.agents/skills/new-skill'));
-      await newSkillDir.create(recursive: true);
-      await File(d.path('project_migration/.agents/skills/new-skill/SKILL.md'))
-          .writeAsString('content');
+    group('without dialog support', () {
+      setUp(() async {
+        adapter = GenericAdapter(d.path('project_migration'), null);
+      });
 
-      fakeDialogSupport.singleSelectResult = 0;
-      final migrated = await adapter.migrateSkillsDir(manifest);
-      expect(migrated, isTrue);
-      await adapter.ensureSkillsDirectory();
+      test('when migrating skills', () async {
+        final migrated = await adapter.migrateSkillsDir(manifest);
+        expect(migrated, isTrue);
+        await adapter.ensureSkillsDirectory();
 
-      expect(
-        await Directory(d.path('project_migration/.agents/skills/old-skill'))
-            .exists(),
-        isTrue,
-      );
-      expect(
-        await Directory(d.path('project_migration/.agents/skills/new-skill'))
-            .exists(),
-        isTrue,
-      );
-      expect(
-        await Directory(d.path('project_migration/.agent')).exists(),
-        isFalse,
-      );
-    });
-
-    test('returns false if the user aborts', () async {
-      fakeDialogSupport.singleSelectResult = 3;
-      final migrated = await adapter.migrateSkillsDir(manifest);
-      expect(migrated, isFalse);
-
-      expect(
-        await Directory(d.path('project_migration/.agent/skills/old-skill'))
-            .exists(),
-        isTrue,
-      );
-      expect(
-        await Directory(d.path('project_migration/.agents/skills/old-skill'))
-            .exists(),
-        isFalse,
-      );
+        expect(
+          await Directory(d.path('project_migration/.agents/skills/old-skill'))
+              .exists(),
+          isTrue,
+          reason: 'then known skills are migrated to the `.agents` directory',
+        );
+        expect(
+          await Directory(d.path('project_migration/.agent/skills/old-skill'))
+              .exists(),
+          isFalse,
+          reason: 'then the old known skill directory is removed',
+        );
+        expect(
+          await Directory(
+                  d.path('project_migration/.agent/skills/unregistered-skill'))
+              .exists(),
+          isTrue,
+          reason: 'then the old unknown skill directory is not removed',
+        );
+      });
     });
   });
 }
