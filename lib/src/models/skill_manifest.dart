@@ -10,8 +10,7 @@ class SkillManifest {
   static const String baseName = 'skills_config.json';
 
   /// Returns the platform-correct path to the manifest file under [rootPath].
-  static String pathIn(String rootPath) =>
-      p.join(rootPath, dirName, baseName);
+  static String pathIn(String rootPath) => p.join(rootPath, dirName, baseName);
 
   /// Deletes the [dirName] directory under [rootPath] if it exists.
   static Future<void> cleanupDir(String rootPath) async {
