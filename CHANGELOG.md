@@ -2,7 +2,9 @@
 
 ## 0.4.0-dev
 
-- feat: Added a dialog to select which packages to install skills from during `skills get`.
+- feat: Added a dialog to select which packages to install skills from during
+  `skills get` and `skills remove`.
+- feat: Support passing multiple package names as trailing arguments.
 - refactor: Migrate from `.agent/skills` to `.agents/skills` for the generic IDE
   adapter. When a `.agent/` dir is detected you will be prompted for what action
   to take.
