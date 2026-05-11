@@ -70,8 +70,7 @@ void main() {
 
     test('when old .dart_skills directory exists then it is migrated',
         () async {
-      await d.dir('.dart_skills', [
-        d.file('skills_config.json', '''
+      final manifestContent = '''
 {
   "version": 1,
   "installations": {
@@ -84,7 +83,9 @@ void main() {
     }
   }
 }
-'''),
+''';
+      await d.dir('.dart_skills', [
+        d.file(SkillManifest.baseName, manifestContent),
       ]).create();
 
       final manifest = await SkillManifest.loadFromRoot(d.sandbox);
@@ -94,7 +95,7 @@ void main() {
 
       await d.nothing('.dart_skills').validate();
       await d.dir('.dart_tool', [
-        d.dir('skills', [d.file(SkillManifest.baseName)])
+        d.dir('skills', [d.file(SkillManifest.baseName, manifestContent)])
       ]).validate();
     });
 
