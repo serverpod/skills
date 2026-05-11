@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/get_command.dart';
 import 'package:skills/src/core/git_runner.dart';
@@ -18,6 +19,10 @@ void main() {
     late String projectPath;
     late FakeDialogSupport fakeDialogSupport;
     late AgentSkillsAdapter skillsAdapter;
+
+    setUpAll(() {
+      Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+    });
 
     setUp(() async {
       final dep1Dir = d.dir('dep1', [

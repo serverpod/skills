@@ -1,9 +1,14 @@
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/config.dart';
 import 'package:skills/src/core/registry_repos.dart';
 import 'package:test/test.dart';
 
 void main() {
+  setUpAll(() {
+    Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+  });
+
   group('RegistryRepo', () {
     test('pathSegment joins owner and name', () {
       const repo = RegistryRepo(
