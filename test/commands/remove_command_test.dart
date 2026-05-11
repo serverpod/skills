@@ -126,7 +126,7 @@ void main() {
         expect(updated.isEmpty, isTrue);
 
         final dartSkillsDir = Directory(
-          p.join(projectPath, SkillManifest.dirName),
+          p.join(projectPath, '.dart_tool', SkillManifest.dirName),
         );
         expect(await dartSkillsDir.exists(), isTrue);
 
@@ -143,8 +143,7 @@ void main() {
         d.dir('.cursor', [d.dir('skills')]),
       ]).create();
 
-      final manifestFile = File(SkillManifest.pathIn(d.path('empty_project')));
-      final manifest = await SkillManifest.load(manifestFile);
+      final manifest = await SkillManifest.load(d.path('empty_project'));
 
       expect(manifest, isNull);
     });

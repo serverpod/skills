@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -38,8 +39,39 @@ void main() {
 
   group('Given a manifest file on disk', () {
     test('when loading then parses correctly', () async {
-      await d.dir(SkillManifest.dirName, [
-        d.file(SkillManifest.baseName, '''
+      await d.dir('.dart_tool', [
+        d.dir(SkillManifest.dirName, [
+          d.file(SkillManifest.baseName, '''
+{
+  "version": 1,
+  "installations": {
+    "cursor": {
+      "pkg_a": {
+        "skills": [
+          { "name": "pkg_a-skill-1", "installedAt": "2026-02-25T00:00:00.000Z" }
+        ]
+      }
+    }
+  }
+}
+'''),
+        ]),
+      ]).create();
+
+      final manifest = await SkillManifest.load(d.sandbox);
+
+      expect(manifest, isNotNull);
+      expect(manifest!.allIdes.toList(), equals(['cursor']));
+      expect(
+        manifest.packagesForIde('cursor')['pkg_a']!.skills.first.name,
+        equals('pkg_a-skill-1'),
+      );
+    });
+
+    test('when old .dart_skills directory exists then it is migrated',
+        () async {
+      await d.dir('.dart_skills', [
+        d.file('skills_config.json', '''
 {
   "version": 1,
   "installations": {
@@ -55,20 +87,19 @@ void main() {
 '''),
       ]).create();
 
-      final file = File(SkillManifest.pathIn(d.sandbox));
-      final manifest = await SkillManifest.load(file);
+      final manifest = await SkillManifest.load(d.sandbox);
 
       expect(manifest, isNotNull);
       expect(manifest!.allIdes.toList(), equals(['cursor']));
+
       expect(
-        manifest.packagesForIde('cursor')['pkg_a']!.skills.first.name,
-        equals('pkg_a-skill-1'),
-      );
+          Directory(p.join(d.sandbox, '.dart_skills')).existsSync(), isFalse);
+      expect(Directory(p.join(d.sandbox, '.dart_tool', 'skills')).existsSync(),
+          isTrue);
     });
 
     test('when file does not exist then returns null', () async {
-      final file = File(d.path('nonexistent.json'));
-      final manifest = await SkillManifest.load(file);
+      final manifest = await SkillManifest.load(d.path('nonexistent_project'));
 
       expect(manifest, isNull);
     });
@@ -91,10 +122,10 @@ void main() {
         },
       );
 
-      final file = File(d.path('saved.json'));
+      final file = File(SkillManifest.pathIn(d.sandbox));
       await manifest.save(file);
 
-      final loaded = await SkillManifest.load(file);
+      final loaded = await SkillManifest.load(d.sandbox);
       expect(loaded, isNotNull);
       expect(
         loaded!.packagesForIde('cursor')['pkg']!.skills.first.name,

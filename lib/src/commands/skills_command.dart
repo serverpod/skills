@@ -44,5 +44,5 @@ File manifestFile(String rootPath) {
 
 /// Loads the manifest from [rootPath], or returns an empty manifest if none exists.
 Future<SkillManifest> loadManifest(String rootPath) async {
-  return SkillManifest.loadOrEmpty(manifestFile(rootPath));
+  return SkillManifest.loadOrEmpty(rootPath);
 }

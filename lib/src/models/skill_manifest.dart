@@ -6,15 +6,16 @@ import 'package:path/path.dart' as p;
 /// Tracks which skills are installed, per IDE and per package.
 class SkillManifest {
   static const int currentVersion = 1;
-  static const String dirName = '.dart_skills';
+  static const String dirName = 'skills';
   static const String baseName = 'skills_config.json';
 
   /// Returns the platform-correct path to the manifest file under [rootPath].
-  static String pathIn(String rootPath) => p.join(rootPath, dirName, baseName);
+  static String pathIn(String rootPath) =>
+      p.join(rootPath, '.dart_tool', dirName, baseName);
 
   /// Deletes the [dirName] directory under [rootPath] if it exists.
   static Future<void> cleanupDir(String rootPath) async {
-    final dir = Directory(p.join(rootPath, dirName));
+    final dir = Directory(p.join(rootPath, '.dart_tool', dirName));
     if (await dir.exists()) await dir.delete(recursive: true);
   }
 
@@ -23,8 +24,23 @@ class SkillManifest {
 
   const SkillManifest({this.installations = const {}});
 
-  /// Loads the manifest from [file], or returns null if it doesn't exist.
-  static Future<SkillManifest?> load(File file) async {
+  /// Migrates existing config from `.dart_skills` to `.dart_tool/skills` if needed.
+  static Future<void> migrateIfNeeded(String rootPath) async {
+    final oldDir = Directory(p.join(rootPath, '.dart_skills'));
+    final newDir = Directory(p.join(rootPath, '.dart_tool', dirName));
+
+    if (await oldDir.exists()) {
+      if (!await newDir.exists()) {
+        await newDir.parent.create(recursive: true);
+        await oldDir.rename(newDir.path);
+      }
+    }
+  }
+
+  /// Loads the manifest from [rootPath], or returns null if it doesn't exist.
+  static Future<SkillManifest?> load(String rootPath) async {
+    await migrateIfNeeded(rootPath);
+    final file = File(pathIn(rootPath));
     if (!await file.exists()) return null;
     final content = await file.readAsString();
     if (content.trim().isEmpty) return null;
@@ -32,9 +48,9 @@ class SkillManifest {
     return SkillManifest.fromJson(json);
   }
 
-  /// Loads the manifest from [file], or returns an empty manifest if none exists.
-  static Future<SkillManifest> loadOrEmpty(File file) async {
-    final loaded = await load(file);
+  /// Loads the manifest from [rootPath], or returns an empty manifest if none exists.
+  static Future<SkillManifest> loadOrEmpty(String rootPath) async {
+    final loaded = await load(rootPath);
     return loaded ?? const SkillManifest();
   }
 

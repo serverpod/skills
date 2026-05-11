@@ -108,9 +108,7 @@ environment:
           isFalse,
         );
 
-        final loaded = await SkillManifest.load(
-          File(SkillManifest.pathIn(projectPath)),
-        );
+        final loaded = await SkillManifest.load(projectPath);
         expect(loaded, isNotNull);
         expect(loaded!.packagesForIde('cursor').keys, contains('pkg_a'));
         expect(loaded.packagesForIde('cursor').keys, isNot(contains('pkg_b')));
@@ -186,7 +184,7 @@ environment:
           isFalse,
         );
         final dartSkillsDir = Directory(
-          p.join(projectPath, SkillManifest.dirName),
+          p.join(projectPath, '.dart_tool', SkillManifest.dirName),
         );
         expect(await dartSkillsDir.exists(), isFalse);
       },
@@ -363,9 +361,7 @@ environment:
           isTrue,
         );
 
-        final loaded = await SkillManifest.load(
-          File(SkillManifest.pathIn(projectPath)),
-        );
+        final loaded = await SkillManifest.load(projectPath);
         expect(loaded, isNotNull);
         expect(loaded!.packagesForIde('cursor').keys, contains('pkg_a'));
         expect(

@@ -28,9 +28,9 @@ void main() {
   });
 
   group('registryReposPath / registryRepoPath', () {
-    test('registryReposPath ends with .dart_skills/repos', () {
+    test('registryReposPath includes .dart_tool/skills/repos', () {
       final path = registryReposPath('/project');
-      expect(path, contains('.dart_skills'));
+      expect(path, contains(p.join('.dart_tool', 'skills')));
       expect(path, contains('repos'));
     });
 
@@ -41,7 +41,7 @@ void main() {
         skillLayout: RegistrySkillLayout.flat,
       );
       final path = registryRepoPath('/project', repo);
-      expect(path, contains('.dart_skills'));
+      expect(path, contains(p.join('.dart_tool', 'skills')));
       expect(path, contains('flutter'));
       expect(path, contains('skills'));
     });
