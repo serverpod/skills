@@ -6,16 +6,16 @@ import 'package:path/path.dart' as p;
 /// Tracks which skills are installed, per IDE and per package.
 class SkillManifest {
   static const int currentVersion = 1;
-  static const String dirName = 'skills';
+  static final String dirName = p.join('.dart_tool', 'skills');
   static const String baseName = 'skills_config.json';
 
   /// Returns the platform-correct path to the manifest file under [rootPath].
   static String pathIn(String rootPath) =>
-      p.join(rootPath, '.dart_tool', dirName, baseName);
+      p.join(rootPath, dirName, baseName);
 
   /// Deletes the [dirName] directory under [rootPath] if it exists.
   static Future<void> cleanupDir(String rootPath) async {
-    final dir = Directory(p.join(rootPath, '.dart_tool', dirName));
+    final dir = Directory(p.join(rootPath, dirName));
     if (await dir.exists()) await dir.delete(recursive: true);
   }
 
@@ -24,10 +24,10 @@ class SkillManifest {
 
   const SkillManifest({this.installations = const {}});
 
-  /// Migrates existing config from `.dart_skills` to `.dart_tool/skills` if needed.
+  /// Migrates existing state from `.dart_skills` to `.dart_tool/skills`.
   static Future<void> migrateIfNeeded(String rootPath) async {
     final oldDir = Directory(p.join(rootPath, '.dart_skills'));
-    final newDir = Directory(p.join(rootPath, '.dart_tool', dirName));
+    final newDir = Directory(p.join(rootPath, dirName));
 
     if (await oldDir.exists()) {
       if (!await newDir.exists()) {
@@ -53,6 +53,7 @@ class SkillManifest {
   }
 
   /// Loads the manifest for [rootPath], performing migration if needed.
+  ///
   /// Returns null if the manifest does not exist.
   static Future<SkillManifest?> loadFromRoot(String rootPath) async {
     await migrateIfNeeded(rootPath);
@@ -60,6 +61,7 @@ class SkillManifest {
   }
 
   /// Loads the manifest for [rootPath], performing migration if needed.
+  ///
   /// Returns an empty manifest if none exists.
   static Future<SkillManifest> loadOrEmptyFromRoot(String rootPath) async {
     final loaded = await loadFromRoot(rootPath);

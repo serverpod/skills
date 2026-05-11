@@ -125,9 +125,8 @@ void main() {
             .withoutPackage('cursor', 'pkg_b');
         expect(updated.isEmpty, isTrue);
 
-        final dartSkillsDir = Directory(
-          p.join(projectPath, '.dart_tool', SkillManifest.dirName),
-        );
+        final dartSkillsDir =
+            Directory(p.join(projectPath, SkillManifest.dirName));
         expect(await dartSkillsDir.exists(), isTrue);
 
         await SkillManifest.cleanupDir(projectPath);

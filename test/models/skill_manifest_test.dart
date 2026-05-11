@@ -40,7 +40,7 @@ void main() {
   group('Given a manifest file on disk', () {
     test('when loading then parses correctly', () async {
       await d.dir('.dart_tool', [
-        d.dir(SkillManifest.dirName, [
+        d.dir('skills', [
           d.file(SkillManifest.baseName, '''
 {
   "version": 1,
@@ -94,7 +94,7 @@ void main() {
 
       expect(
           Directory(p.join(d.sandbox, '.dart_skills')).existsSync(), isFalse);
-      expect(Directory(p.join(d.sandbox, '.dart_tool', 'skills')).existsSync(),
+      expect(Directory(p.join(d.sandbox, SkillManifest.dirName)).existsSync(),
           isTrue);
     });
 
