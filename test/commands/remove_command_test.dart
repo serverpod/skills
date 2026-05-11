@@ -1,10 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/remove_command.dart';
-import 'package:skills/src/models/skill_manifest.dart';
 import '../fake_dialog_support.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -83,22 +80,23 @@ environment:
       await runner.run(
           ['remove', '--directory', projectPath, '--ide', 'cursor', 'dep1']);
 
-      final dep1SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep1-skill'));
-      final dep2SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep2-skill'));
-
-      expect(await dep1SkillDir.exists(), isFalse,
-          reason: 'dep1 skill should be removed');
-      expect(await dep2SkillDir.exists(), isTrue,
-          reason: 'dep2 skill should still exist');
-
-      final manifestFile = File(SkillManifest.pathIn(projectPath));
-      final manifest = await SkillManifest.loadOrEmpty(manifestFile);
-      final skillNames =
-          manifest.allSkillsForIde('cursor').map((e) => e.name).toSet();
-      expect(skillNames, isNot(contains('dep1-skill')));
-      expect(skillNames, contains('dep2-skill'));
+      await d.dir('project', [
+        d.dir('.cursor', [
+          d.dir('skills', [
+            d.nothing('dep1-skill'),
+            d.dir('dep2-skill'),
+          ]),
+        ]),
+        d.dir('.dart_skills', [
+          d.file(
+            'skills_config.json',
+            allOf(
+              isNot(contains('dep1-skill')),
+              contains('dep2-skill'),
+            ),
+          ),
+        ]),
+      ]).validate();
     });
 
     test('when running `skills remove all` then removes all skills', () async {
@@ -109,17 +107,15 @@ environment:
       await runner.run(
           ['remove', '--directory', projectPath, '--ide', 'cursor', 'all']);
 
-      final dep1SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep1-skill'));
-      final dep2SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep2-skill'));
-
-      expect(await dep1SkillDir.exists(), isFalse);
-      expect(await dep2SkillDir.exists(), isFalse);
-
-      final manifestDir = Directory(p.join(projectPath, '.dart_skills'));
-      expect(await manifestDir.exists(), isFalse,
-          reason: 'Manifest dir should be deleted when empty');
+      await d.dir('project', [
+        d.dir('.cursor', [
+          d.dir('skills', [
+            d.nothing('dep1-skill'),
+            d.nothing('dep2-skill'),
+          ]),
+        ]),
+        d.nothing('.dart_skills'),
+      ]).validate();
     });
 
     test(
@@ -133,21 +129,20 @@ environment:
       await runner
           .run(['remove', '--directory', projectPath, '--ide', 'cursor']);
 
-      final dep1SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep1-skill'));
-      final dep2SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep2-skill'));
-
-      expect(await dep1SkillDir.exists(), isFalse);
-      expect(await dep2SkillDir.exists(), isFalse);
-
-      final manifestDir = Directory(p.join(projectPath, '.dart_skills'));
-      expect(await manifestDir.exists(), isFalse);
+      await d.dir('project', [
+        d.dir('.cursor', [
+          d.dir('skills', [
+            d.nothing('dep1-skill'),
+            d.nothing('dep2-skill'),
+          ]),
+        ]),
+        d.nothing('.dart_skills'),
+      ]).validate();
     });
 
     test(
-        'when running `skills remove` without arguments and NO dialog support then does nothing and prints packages',
-        () async {
+        'when running `skills remove` without arguments and NO dialog support '
+        'then does nothing and prints packages', () async {
       final removeCommand = RemoveCommand(dialogSupport: null);
       final runner = CommandRunner<void>('skills', 'Test')
         ..addCommand(removeCommand);
@@ -155,19 +150,17 @@ environment:
       await runner
           .run(['remove', '--directory', projectPath, '--ide', 'cursor']);
 
-      final dep1SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep1-skill'));
-      final dep2SkillDir =
-          Directory(p.join(projectPath, '.cursor', 'skills', 'dep2-skill'));
-
-      expect(await dep1SkillDir.exists(), isTrue,
-          reason: 'skills should still exist');
-      expect(await dep2SkillDir.exists(), isTrue,
-          reason: 'skills should still exist');
-
-      final manifestDir = Directory(p.join(projectPath, '.dart_skills'));
-      expect(await manifestDir.exists(), isTrue,
-          reason: 'manifest should still exist');
+      await d.dir('project', [
+        d.dir('.cursor', [
+          d.dir('skills', [
+            d.dir('dep1-skill'),
+            d.dir('dep2-skill'),
+          ]),
+        ]),
+        d.dir('.dart_skills', [
+          d.file('skills_config.json', contains('dep1-skill')),
+        ]),
+      ]).validate();
     });
   });
 }

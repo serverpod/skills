@@ -76,7 +76,9 @@ environment:
       skillsAdapter = GenericAdapter(projectPath, fakeDialogSupport);
     });
 
-    test('when running `skills get` and the user only selects dep1', () async {
+    test(
+        'when running `skills get` and the user only selects dep1 then only '
+        'dep1 should be installed', () async {
       fakeDialogSupport.multiSelectResult = {0};
       final getCommand = GetCommand(
         dialogSupport: fakeDialogSupport,
@@ -99,10 +101,8 @@ environment:
         p.join(skillsAdapter.skillsDirectory, 'dep2-skill'),
       );
 
-      expect(await dep1SkillDir.exists(), isTrue,
-          reason: 'then dep1 skill should be installed');
-      expect(await dep2SkillDir.exists(), isFalse,
-          reason: 'then dep2 skill should NOT be installed');
+      expect(await dep1SkillDir.exists(), isTrue);
+      expect(await dep2SkillDir.exists(), isFalse);
 
       final manifestFile = File(SkillManifest.pathIn(projectPath));
       expect(await manifestFile.exists(), isTrue);
@@ -112,13 +112,13 @@ environment:
           .allSkillsForIde(Ide.generic.cliName)
           .map((e) => e.name)
           .toSet();
-      expect(skillNames, contains('dep1-skill'),
-          reason: 'then manifest should contain dep1-skill');
-      expect(skillNames, isNot(contains('dep2-skill')),
-          reason: 'then manifest should not contain dep2-skill');
+      expect(skillNames, contains('dep1-skill'));
+      expect(skillNames, isNot(contains('dep2-skill')));
     });
 
-    test('when running `skills get dep1` (non-interactive)', () async {
+    test(
+        'when running `skills get dep1` (non-interactive) then only dep1 '
+        'should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
@@ -146,7 +146,9 @@ environment:
       expect(await dep2SkillDir.exists(), isFalse);
     });
 
-    test('when running `skills get all` (non-interactive)', () async {
+    test(
+        'when running `skills get all` (non-interactive) then all skills '
+        'should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
@@ -175,8 +177,8 @@ environment:
     });
 
     test(
-        'when running `skills get` without package arguments and NO dialog support',
-        () async {
+        'when running `skills get` without package arguments and NO dialog '
+        'support then no skills should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
