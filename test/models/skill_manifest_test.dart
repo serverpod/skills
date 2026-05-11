@@ -58,7 +58,7 @@ void main() {
         ]),
       ]).create();
 
-      final manifest = await SkillManifest.load(d.sandbox);
+      final manifest = await SkillManifest.loadFromRoot(d.sandbox);
 
       expect(manifest, isNotNull);
       expect(manifest!.allIdes.toList(), equals(['cursor']));
@@ -87,7 +87,7 @@ void main() {
 '''),
       ]).create();
 
-      final manifest = await SkillManifest.load(d.sandbox);
+      final manifest = await SkillManifest.loadFromRoot(d.sandbox);
 
       expect(manifest, isNotNull);
       expect(manifest!.allIdes.toList(), equals(['cursor']));
@@ -99,7 +99,8 @@ void main() {
     });
 
     test('when file does not exist then returns null', () async {
-      final manifest = await SkillManifest.load(d.path('nonexistent_project'));
+      final manifest =
+          await SkillManifest.loadFromRoot(d.path('nonexistent_project'));
 
       expect(manifest, isNull);
     });
@@ -125,7 +126,7 @@ void main() {
       final file = File(SkillManifest.pathIn(d.sandbox));
       await manifest.save(file);
 
-      final loaded = await SkillManifest.load(d.sandbox);
+      final loaded = await SkillManifest.loadFromRoot(d.sandbox);
       expect(loaded, isNotNull);
       expect(
         loaded!.packagesForIde('cursor')['pkg']!.skills.first.name,

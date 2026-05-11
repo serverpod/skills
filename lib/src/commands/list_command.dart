@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../models/skill_manifest.dart';
 import 'skills_command.dart';
 
 /// Lists all installed managed skills.
@@ -17,7 +18,7 @@ class ListCommand extends SkillsCommand {
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;
 
-    final manifest = await loadManifest(rootPath);
+    final manifest = await SkillManifest.loadOrEmptyFromRoot(rootPath);
 
     if (manifest.isEmpty) {
       logger.info('No managed skills installed.');

@@ -39,7 +39,7 @@ class PruneCommand extends SkillsCommand {
     final packages = await PackageResolver.resolveWorkspace(workspace);
     final referencedNames = packages.map((p) => p.name).toSet();
 
-    final loaded = await loadManifest(rootPath);
+    final loaded = await SkillManifest.loadOrEmptyFromRoot(rootPath);
 
     if (loaded.isEmpty) {
       logger.info('No managed skills found.');

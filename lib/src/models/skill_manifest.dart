@@ -37,10 +37,8 @@ class SkillManifest {
     }
   }
 
-  /// Loads the manifest from [rootPath], or returns null if it doesn't exist.
-  static Future<SkillManifest?> load(String rootPath) async {
-    await migrateIfNeeded(rootPath);
-    final file = File(pathIn(rootPath));
+  /// Loads the manifest from [file], or returns null if it doesn't exist.
+  static Future<SkillManifest?> load(File file) async {
     if (!await file.exists()) return null;
     final content = await file.readAsString();
     if (content.trim().isEmpty) return null;
@@ -48,9 +46,23 @@ class SkillManifest {
     return SkillManifest.fromJson(json);
   }
 
-  /// Loads the manifest from [rootPath], or returns an empty manifest if none exists.
-  static Future<SkillManifest> loadOrEmpty(String rootPath) async {
-    final loaded = await load(rootPath);
+  /// Loads the manifest from [file], or returns an empty manifest if none exists.
+  static Future<SkillManifest> loadOrEmpty(File file) async {
+    final loaded = await load(file);
+    return loaded ?? const SkillManifest();
+  }
+
+  /// Loads the manifest for [rootPath], performing migration if needed.
+  /// Returns null if the manifest does not exist.
+  static Future<SkillManifest?> loadFromRoot(String rootPath) async {
+    await migrateIfNeeded(rootPath);
+    return load(File(pathIn(rootPath)));
+  }
+
+  /// Loads the manifest for [rootPath], performing migration if needed.
+  /// Returns an empty manifest if none exists.
+  static Future<SkillManifest> loadOrEmptyFromRoot(String rootPath) async {
+    final loaded = await loadFromRoot(rootPath);
     return loaded ?? const SkillManifest();
   }
 

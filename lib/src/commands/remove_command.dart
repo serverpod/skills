@@ -26,7 +26,7 @@ class RemoveCommand extends SkillsCommand {
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;
 
-    final loaded = await loadManifest(rootPath);
+    final loaded = await SkillManifest.loadOrEmptyFromRoot(rootPath);
 
     if (loaded.isEmpty) {
       logger.info('No managed skills found.');

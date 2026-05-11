@@ -143,7 +143,8 @@ void main() {
         d.dir('.cursor', [d.dir('skills')]),
       ]).create();
 
-      final manifest = await SkillManifest.load(d.path('empty_project'));
+      final manifest =
+          await SkillManifest.loadFromRoot(d.path('empty_project'));
 
       expect(manifest, isNull);
     });
