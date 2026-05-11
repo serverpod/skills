@@ -92,10 +92,10 @@ void main() {
       expect(manifest, isNotNull);
       expect(manifest!.allIdes.toList(), equals(['cursor']));
 
-      expect(
-          Directory(p.join(d.sandbox, '.dart_skills')).existsSync(), isFalse);
-      expect(Directory(p.join(d.sandbox, SkillManifest.dirName)).existsSync(),
-          isTrue);
+      await d.nothing('.dart_skills').validate();
+      await d.dir('.dart_tool', [
+        d.dir('skills', [d.file(SkillManifest.baseName)])
+      ]).validate();
     });
 
     test('when file does not exist then returns null', () async {
