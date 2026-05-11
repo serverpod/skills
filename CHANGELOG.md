@@ -9,6 +9,7 @@
   includes a `CliUtilDialogSupport` implementation for use in simple CLIs.
 - feat: **Breaking Change** - Removed `stdout` and `stdin` parameters to
   `getSkills` and replaced them with a required `Logger logger`.
+- chore: Move cache dir to `.dart_tool/skills` from `.dart_skills`.
 
 ## 0.3.0
 
