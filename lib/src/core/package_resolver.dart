@@ -84,10 +84,7 @@ class PackageResolver {
       final configFile = File(configPath);
       if (!configFile.existsSync()) continue;
 
-      final configDir = Directory(p.dirname(p.dirname(configPath)));
-      final config = await findPackageConfig(configDir);
-      if (config == null) continue;
-
+      final config = await loadPackageConfig(configFile);
       for (final package in config.packages) {
         if (memberNames.contains(package.name)) continue;
         if (seen.contains(package.name)) continue;

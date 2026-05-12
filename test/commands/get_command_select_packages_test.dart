@@ -60,12 +60,12 @@ environment:
                 {'name': 'test_app', 'rootUri': '../', 'packageUri': 'lib/'},
                 {
                   'name': 'dep1',
-                  'rootUri': dep1Dir.io.path,
+                  'rootUri': dep1Dir.io.uri.toString(),
                   'packageUri': 'lib/'
                 },
                 {
                   'name': 'dep2',
-                  'rootUri': dep2Dir.io.path,
+                  'rootUri': dep2Dir.io.uri.toString(),
                   'packageUri': 'lib/'
                 },
               ],
