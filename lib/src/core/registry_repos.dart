@@ -13,13 +13,10 @@ enum RegistrySkillLayout {
   groupedByPackage,
 }
 
-/// A GitHub registry repository with owner, name, and skill directory layout.
+/// A GitHub registry repository with owner, name, and custom clone URL.
 class RegistryRepo {
   final String owner;
   final String name;
-
-  /// How skills are laid out under this repo's `skills/` directory.
-  final RegistrySkillLayout skillLayout;
 
   /// If set, used instead of the default GitHub URL (for testing with local repos).
   final String? customCloneUrl;
@@ -27,9 +24,24 @@ class RegistryRepo {
   const RegistryRepo({
     required this.owner,
     required this.name,
-    required this.skillLayout,
     this.customCloneUrl,
   });
+
+  factory RegistryRepo.fromJson(Map<String, dynamic> json) {
+    return RegistryRepo(
+      owner: json['owner'] as String,
+      name: json['name'] as String,
+      customCloneUrl: json['customCloneUrl'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'owner': owner,
+      'name': name,
+      if (customCloneUrl != null) 'customCloneUrl': customCloneUrl,
+    };
+  }
 
   /// The path segment for this repo under [reposDir], e.g. "flutter/skills".
   String get pathSegment => p.join(owner, name);

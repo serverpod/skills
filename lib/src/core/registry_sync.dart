@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'git_runner.dart';
 import 'registry_repos.dart';
-import '../config.dart';
 
 /// Syncs GitHub registry repos to the local `.dart_skills/repos` directory.
 ///
@@ -12,14 +11,13 @@ import '../config.dart';
 class RegistrySync {
   final GitRunner gitRunner;
 
-  /// Repos to sync; defaults to [kRegistryRepos].
+  /// Repos to sync.
   final List<RegistryRepo> repos;
 
-  const RegistrySync({GitRunner? gitRunner, List<RegistryRepo>? repos})
-      : gitRunner = gitRunner ?? const GitRunner(),
-        repos = repos ?? kRegistryRepos;
+  const RegistrySync({GitRunner? gitRunner, this.repos = const []})
+      : gitRunner = gitRunner ?? const GitRunner();
 
-  /// Ensures all [kRegistryRepos] are present and up to date under
+  /// Ensures all [repos] are present and up to date under
   /// [rootPath]/.dart_skills/repos.
   ///
   /// Call only when [GitRunner.isAvailable] is true.

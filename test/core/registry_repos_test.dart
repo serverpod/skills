@@ -1,5 +1,5 @@
 import 'package:path/path.dart' as p;
-import 'package:skills/src/config.dart';
+
 import 'package:skills/src/core/registry_repos.dart';
 import 'package:test/test.dart';
 
@@ -9,7 +9,6 @@ void main() {
       const repo = RegistryRepo(
         owner: 'flutter',
         name: 'skills',
-        skillLayout: RegistrySkillLayout.flat,
       );
       expect(repo.pathSegment, equals(p.join('flutter', 'skills')));
     });
@@ -18,7 +17,6 @@ void main() {
       const repo = RegistryRepo(
         owner: 'serverpod',
         name: 'skills-registry',
-        skillLayout: RegistrySkillLayout.groupedByPackage,
       );
       expect(
         repo.cloneUrl,
@@ -38,39 +36,11 @@ void main() {
       const repo = RegistryRepo(
         owner: 'flutter',
         name: 'skills',
-        skillLayout: RegistrySkillLayout.flat,
       );
       final path = registryRepoPath('/project', repo);
       expect(path, contains('.dart_skills'));
       expect(path, contains('flutter'));
       expect(path, contains('skills'));
     });
-  });
-
-  group('kRegistryRepos', () {
-    test(
-      'contains flutter/skills with flat and serverpod/skills-registry with groupedByPackage',
-      () {
-        expect(kRegistryRepos.length, greaterThanOrEqualTo(2));
-        expect(
-          kRegistryRepos.any(
-            (r) =>
-                r.owner == 'flutter' &&
-                r.name == 'skills' &&
-                r.skillLayout == RegistrySkillLayout.flat,
-          ),
-          isTrue,
-        );
-        expect(
-          kRegistryRepos.any(
-            (r) =>
-                r.owner == 'serverpod' &&
-                r.name == 'skills-registry' &&
-                r.skillLayout == RegistrySkillLayout.groupedByPackage,
-          ),
-          isTrue,
-        );
-      },
-    );
   });
 }

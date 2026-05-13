@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/get_command.dart';
+import 'package:skills/src/commands/skills_command_runner.dart';
 import 'package:skills/src/core/git_runner.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import '../fake_dialog_support.dart';
@@ -69,7 +69,7 @@ environment:
           dialogSupport: FakeDialogSupport(),
           gitRunner: GitRunner(isAvailableOverride: _gitUnavailable),
         );
-        final runner = CommandRunner<void>('skills', 'Test')
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(getCommand);
 
         await runner

@@ -42,7 +42,6 @@ void main() {
             const RegistryRepo(
               owner: 'owner',
               name: 'repo',
-              skillLayout: RegistrySkillLayout.flat,
             ),
           ],
         );
@@ -99,7 +98,6 @@ void main() {
             const RegistryRepo(
               owner: 'owner',
               name: 'repo',
-              skillLayout: RegistrySkillLayout.groupedByPackage,
             ),
           ],
         );
@@ -144,7 +142,6 @@ void main() {
           const RegistryRepo(
             owner: 'a',
             name: 'b',
-            skillLayout: RegistrySkillLayout.flat,
           ),
         ],
       );
@@ -173,7 +170,6 @@ void main() {
           const RegistryRepo(
             owner: 'a',
             name: 'b',
-            skillLayout: RegistrySkillLayout.flat,
           ),
         ],
       );
@@ -209,12 +205,10 @@ void main() {
           const RegistryRepo(
             owner: 'owner1',
             name: 'repo1',
-            skillLayout: RegistrySkillLayout.flat,
           ),
           const RegistryRepo(
             owner: 'owner2',
             name: 'repo2',
-            skillLayout: RegistrySkillLayout.flat,
           ),
         ],
       );

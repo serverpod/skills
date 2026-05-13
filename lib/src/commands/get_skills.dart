@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:skills/src/commands/skills_command.dart';
@@ -5,6 +7,7 @@ import 'package:skills/src/core/git_runner.dart';
 import 'package:skills/src/core/package_resolver.dart';
 import 'package:skills/src/core/pub_runner.dart';
 import 'package:skills/src/core/registry_scanner.dart';
+import 'package:skills/src/core/registry_repos.dart';
 import 'package:skills/src/core/registry_sync.dart';
 import 'package:skills/src/core/skill_installer.dart';
 import 'package:skills/src/core/skill_merger.dart';
@@ -12,6 +15,7 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/core/workspace_resolver.dart';
 import 'package:skills/src/ide/ide.dart';
 import 'package:skills/src/core/dialog_support.dart';
+import 'package:skills/src/models/global_config.dart';
 
 /// Installs skills from package dependencies for [ides].
 Future<bool> getSkills({
@@ -41,13 +45,21 @@ Future<bool> getSkills({
   final scanner = SkillScanner(logger);
   final dartSkills = await scanner.scan(packages);
   final rootPath = workspace.rootPath;
+  var manifest = await loadManifest(rootPath);
 
   var registrySkills = <ScannedSkill>[];
   if (await gitRunner.isAvailable) {
-    const registrySync = RegistrySync();
+    final globalConfigPath = GlobalConfig.globalPath;
+    final globalConfig = await GlobalConfig.loadOrEmpty(File(globalConfigPath));
+    final allRegistries = <RegistryRepo>[
+      ...globalConfig.registries,
+      ...manifest.registries
+    ];
+
+    final registrySync = RegistrySync(repos: allRegistries);
     await registrySync.sync(rootPath, onProgress: logger.info);
-    const registryScanner = RegistryScanner();
-    registrySkills = await registryScanner.scan(rootPath);
+    final registryScanner = RegistryScanner();
+    registrySkills = await registryScanner.scan(rootPath, repos: allRegistries);
   } else {
     logger.warning(
       'Warning: git not found. Skipping GitHub registry skills.',
@@ -67,7 +79,6 @@ Future<bool> getSkills({
   }
 
   final installer = SkillInstaller(dialogSupport);
-  var manifest = await loadManifest(rootPath);
 
   for (final ide in ides) {
     final result = await installer.installSkillsForIde(

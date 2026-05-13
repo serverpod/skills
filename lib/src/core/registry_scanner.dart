@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import 'registry_repos.dart';
 import 'skill_scanner.dart';
-import '../config.dart';
 
 /// Scans `.dart_skills/repos/<owner>/<repo>/skills/` for skill directories.
 ///
@@ -14,29 +14,38 @@ import '../config.dart';
 /// - [RegistrySkillLayout.groupedByPackage]: `skills/<package>/<skill-dir>/`;
 ///   package = middle segment, skill name = leaf dir name.
 class RegistryScanner {
+  static final _logger = Logger('RegistryScanner');
+
   const RegistryScanner();
 
   /// Scans all [repos] under [rootPath] and returns [ScannedSkill]s.
   ///
-  /// Uses [kRegistryRepos] when [repos] is null.
+  /// Scans all [repos] under [rootPath] and returns [ScannedSkill]s.
   Future<List<ScannedSkill>> scan(
     String rootPath, {
-    List<RegistryRepo>? repos,
+    List<RegistryRepo> repos = const [],
   }) async {
-    final effectiveRepos = repos ?? kRegistryRepos;
     final skills = <ScannedSkill>[];
     final reposPath = registryReposPath(rootPath);
     final reposDir = Directory(reposPath);
     if (!await reposDir.exists()) return skills;
 
-    for (final repo in effectiveRepos) {
+    for (final repo in repos) {
       final repoDir = Directory(p.join(reposPath, repo.pathSegment));
       if (!await repoDir.exists()) continue;
 
       final skillsDir = Directory(p.join(repoDir.path, 'skills'));
       if (!await skillsDir.exists()) continue;
 
-      switch (repo.skillLayout) {
+      final layout = await _inferLayout(skillsDir);
+      if (layout == null) {
+        _logger.warning(
+            'Error: Repository ${repo.owner}/${repo.name} does not follow a '
+            'recognized skill layout.');
+        continue;
+      }
+
+      switch (layout) {
         case RegistrySkillLayout.flat:
           skills.addAll(await _scanFlat(skillsDir));
           break;
@@ -46,6 +55,28 @@ class RegistryScanner {
       }
     }
     return skills;
+  }
+
+  /// Infers the skill layout by inspecting the contents of [skillsDir].
+  Future<RegistrySkillLayout?> _inferLayout(Directory skillsDir) async {
+    await for (final entity in skillsDir.list()) {
+      if (entity is Directory) {
+        final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
+        if (await skillMdFile.exists()) {
+          return RegistrySkillLayout.flat;
+        }
+
+        await for (final subEntity in entity.list()) {
+          if (subEntity is Directory) {
+            final subSkillMdFile = File(p.join(subEntity.path, 'SKILL.md'));
+            if (await subSkillMdFile.exists()) {
+              return RegistrySkillLayout.groupedByPackage;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
   /// Flat layout: skills directly under [skillsDir]; dir name = `<package>-<suffix>`.

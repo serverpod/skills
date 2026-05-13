@@ -7,6 +7,8 @@ import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 import 'package:skills/skills.dart';
 import 'package:skills/src/commands/prune_command.dart';
+import 'package:skills/src/commands/registry_command.dart';
+import 'package:skills/src/commands/skills_command_runner.dart';
 
 Future<void> main(List<String> arguments) async {
   Logger.root.onRecord.listen((log) {
@@ -29,14 +31,16 @@ Future<void> main(List<String> arguments) async {
     dialogSupport = CliUtilDialogSupport(sharedStdIn);
   }
   try {
-    final runner = CommandRunner<void>(
+    final runner = SkillsCommandRunner(
       'skills',
       'Manage AI agent skills for Dart/Flutter packages.',
+      dialogSupport: dialogSupport,
     )
       ..addCommand(GetCommand(dialogSupport: dialogSupport))
       ..addCommand(ListCommand())
       ..addCommand(PruneCommand(dialogSupport: dialogSupport))
-      ..addCommand(RemoveCommand(dialogSupport: dialogSupport));
+      ..addCommand(RemoveCommand(dialogSupport: dialogSupport))
+      ..addCommand(RegistryCommand(dialogSupport: dialogSupport));
 
     try {
       await runner.run(arguments);

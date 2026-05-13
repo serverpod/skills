@@ -74,7 +74,6 @@ void main() {
             RegistryRepo(
               owner: 'test_owner',
               name: 'test_repo',
-              skillLayout: RegistrySkillLayout.flat,
               customCloneUrl: fileUrl,
             ),
           ],
@@ -89,7 +88,6 @@ void main() {
             const RegistryRepo(
               owner: 'test_owner',
               name: 'test_repo',
-              skillLayout: RegistrySkillLayout.flat,
             ),
           ),
         );
