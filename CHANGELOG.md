@@ -10,6 +10,9 @@
 - feat: **Breaking Change** - Removed `stdout` and `stdin` parameters to
   `getSkills` and replaced them with a required `Logger logger`.
 - feat: Allow the user to select an IDE if none is detected.
+- feat: Add `registry` command with `add`, `list`, and `remove` commands. This
+  replaces the old hardcoded flutter/skills and serverpod/skills-registry
+  registries, and new installs will not get those auto installed.
 
 ## 0.3.0
 
