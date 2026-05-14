@@ -162,13 +162,16 @@ class RegistryRemoveCommand extends SkillsCommand {
     final globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
 
     if (rest.isEmpty) {
-      await _interactiveRemove(globalConfig, manifest, globalConfigFile, workspace.rootPath);
+      await _interactiveRemove(
+          globalConfig, manifest, globalConfigFile, workspace.rootPath);
     } else {
-      await _removeByArgs(rest, isGlobal, globalConfig, manifest, globalConfigFile, workspace.rootPath);
+      await _removeByArgs(rest, isGlobal, globalConfig, manifest,
+          globalConfigFile, workspace.rootPath);
     }
   }
 
-  Future<void> _interactiveRemove(GlobalConfig globalConfig, SkillManifest manifest, File globalConfigFile, String rootPath) async {
+  Future<void> _interactiveRemove(GlobalConfig globalConfig,
+      SkillManifest manifest, File globalConfigFile, String rootPath) async {
     if (dialogSupport case var dialogSupport?) {
       final options = <String>[];
       final repoMapping = <int, RegistryRepo>{};
@@ -218,11 +221,19 @@ class RegistryRemoveCommand extends SkillsCommand {
         }
       }
     } else {
-      throw UsageException('Must specify at least one registry to remove when running non-interactively.', usage);
+      throw UsageException(
+          'Must specify at least one registry to remove when running non-interactively.',
+          usage);
     }
   }
 
-  Future<void> _removeByArgs(List<String> rest, bool? isGlobal, GlobalConfig globalConfig, SkillManifest manifest, File globalConfigFile, String rootPath) async {
+  Future<void> _removeByArgs(
+      List<String> rest,
+      bool? isGlobal,
+      GlobalConfig globalConfig,
+      SkillManifest manifest,
+      File globalConfigFile,
+      String rootPath) async {
     final repos = <RegistryRepo>[];
     for (final arg in rest) {
       repos.add(parseRegistryArg(arg, usage));
@@ -258,8 +269,7 @@ class RegistryRemoveCommand extends SkillsCommand {
         if (inGlobal && inLocal) {
           if (dialogSupport case var dialogSupport?) {
             final options = ['Global', 'Local', 'Both'];
-            final index = await dialogSupport.showSingleSelectDialog(
-                options,
+            final index = await dialogSupport.showSingleSelectDialog(options,
                 title: 'Remove ${repo.cloneUrl} from global, local, or both?');
             if (index != null) {
               if (index == 0 || index == 2) {

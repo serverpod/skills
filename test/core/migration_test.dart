@@ -149,8 +149,7 @@ void main() {
       const manifest = SkillManifest(version: 1);
 
       var globalConfig = const GlobalConfig();
-      globalConfig = globalConfig
-          .withRegistry(
+      globalConfig = globalConfig.withRegistry(
           const RegistryRepo(cloneUrl: 'https://github.com/owner1/repo1.git'));
       await globalConfig.save(File(globalConfigPath));
 

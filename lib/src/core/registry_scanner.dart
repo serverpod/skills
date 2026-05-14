@@ -39,8 +39,7 @@ class RegistryScanner {
 
       final layout = await _inferLayout(skillsDir);
       if (layout == null) {
-        _logger.warning(
-            'Error: Repository ${repo.cloneUrl} does not follow a '
+        _logger.warning('Error: Repository ${repo.cloneUrl} does not follow a '
             'recognized skill layout.');
         continue;
       }

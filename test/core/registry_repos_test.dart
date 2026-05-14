@@ -7,7 +7,8 @@ void main() {
       const repo = RegistryRepo(
         cloneUrl: 'https://github.com/flutter/skills.git',
       );
-      expect(repo.pathSegment, equals(Uri.encodeComponent('https://github.com/flutter/skills.git')));
+      expect(repo.pathSegment,
+          equals(Uri.encodeComponent('https://github.com/flutter/skills.git')));
     });
 
     test('cloneUrl is the provided URL', () {

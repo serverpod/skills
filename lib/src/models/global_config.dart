@@ -72,9 +72,7 @@ class GlobalConfig {
   /// Returns a copy with [repo] removed.
   GlobalConfig withoutRegistry(RegistryRepo repo) {
     return GlobalConfig(
-      registries: registries
-          .where((r) => r.cloneUrl != repo.cloneUrl)
-          .toList(),
+      registries: registries.where((r) => r.cloneUrl != repo.cloneUrl).toList(),
     );
   }
 }

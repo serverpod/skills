@@ -116,12 +116,14 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
           }
 
           // Rename old directory to new URL-encoded format
-          final newPath = p.join(reposDirPath, Uri.encodeComponent(repo.cloneUrl));
+          final newPath =
+              p.join(reposDirPath, Uri.encodeComponent(repo.cloneUrl));
           final newDir = Directory(newPath);
           if (await repoDir.exists() && !await newDir.exists()) {
             await repoDir.rename(newPath);
-            _logger.info('Renamed local clone for ${repo.cloneUrl} to new format.');
-            
+            _logger.info(
+                'Renamed local clone for ${repo.cloneUrl} to new format.');
+
             // Clean up owner dir if empty
             final ownerDir = repoDir.parent;
             if (await ownerDir.exists() && (await ownerDir.list().isEmpty)) {
@@ -142,16 +144,15 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
           }
         }
       } else {
-        throw Exception(
-            'Migration cancelled by user for ${repo.cloneUrl}');
+        throw Exception('Migration cancelled by user for ${repo.cloneUrl}');
       }
     }
     await globalConfig.save(globalConfigFile);
   } else {
     for (final repo in reposToMigrate) {
       updatedManifest = updatedManifest.withRegistry(repo);
-      _logger.info(
-          'Automatically kept ${repo.cloneUrl} local (non-interactive).');
+      _logger
+          .info('Automatically kept ${repo.cloneUrl} local (non-interactive).');
     }
   }
 

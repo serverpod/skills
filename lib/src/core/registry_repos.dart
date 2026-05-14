@@ -41,8 +41,6 @@ class RegistryRepo {
 
   /// The path segment for this repo under [reposDir].
   String get pathSegment => Uri.encodeComponent(cloneUrl);
-
-
 }
 
 /// Returns the absolute path to the repos root under [rootPath]:

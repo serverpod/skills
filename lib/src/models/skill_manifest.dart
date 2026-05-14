@@ -162,9 +162,7 @@ class SkillManifest {
   SkillManifest withoutRegistry(RegistryRepo repo) {
     return SkillManifest(
       installations: installations,
-      registries: registries
-          .where((r) => r.cloneUrl != repo.cloneUrl)
-          .toList(),
+      registries: registries.where((r) => r.cloneUrl != repo.cloneUrl).toList(),
     );
   }
 
