@@ -62,8 +62,7 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
             final name = p.basename(subEntity.path);
 
             existingRepos.add(RegistryRepo(
-              owner: owner,
-              name: name,
+              cloneUrl: 'https://github.com/$owner/$name.git',
             ));
           }
         }
@@ -75,11 +74,9 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
 
   final reposToMigrate = <RegistryRepo>[];
   for (final repo in existingRepos) {
-    if (globalConfig.registries
-        .any((r) => r.owner == repo.owner && r.name == repo.name)) {
+    if (globalConfig.registries.any((r) => r.cloneUrl == repo.cloneUrl)) {
       _logger.info(
-          'Skipping migration for ${repo.owner}/${repo.name} as it is already '
-          'in global config.');
+          'Skipping migration for ${repo.cloneUrl} as it is already in global config.');
       continue;
     }
     reposToMigrate.add(repo);
@@ -101,22 +98,41 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
       final index = await dialogSupport.showSingleSelectDialog(
         options,
         title:
-            'Found installed skill repository ${repo.owner}/${repo.name} during migration, would you like to:',
+            'Found installed skill repository ${repo.cloneUrl} during migration, would you like to:',
       );
 
       if (index != null) {
-        if (index == 0) {
-          globalConfig = globalConfig.withRegistry(repo);
-        } else if (index == 1) {
-          updatedManifest = updatedManifest.withRegistry(repo);
+        final uri = Uri.tryParse(repo.cloneUrl);
+        final owner = uri!.pathSegments[uri.pathSegments.length - 2];
+        final name = uri.pathSegments.last.replaceAll('.git', '');
+        final repoPath = p.join(reposDirPath, owner, name);
+        final repoDir = Directory(repoPath);
+
+        if (index == 0 || index == 1) {
+          if (index == 0) {
+            globalConfig = globalConfig.withRegistry(repo);
+          } else {
+            updatedManifest = updatedManifest.withRegistry(repo);
+          }
+
+          // Rename old directory to new URL-encoded format
+          final newPath = p.join(reposDirPath, Uri.encodeComponent(repo.cloneUrl));
+          final newDir = Directory(newPath);
+          if (await repoDir.exists() && !await newDir.exists()) {
+            await repoDir.rename(newPath);
+            _logger.info('Renamed local clone for ${repo.cloneUrl} to new format.');
+            
+            // Clean up owner dir if empty
+            final ownerDir = repoDir.parent;
+            if (await ownerDir.exists() && (await ownerDir.list().isEmpty)) {
+              await ownerDir.delete();
+            }
+          }
         } else if (index == 2) {
           // Remove this registry from disk
-          final repoPath = p.join(reposDirPath, repo.owner, repo.name);
-          final repoDir = Directory(repoPath);
           if (await repoDir.exists()) {
             await repoDir.delete(recursive: true);
-            _logger.info(
-                'Deleted local clone for ${repo.owner}/${repo.name} from disk.');
+            _logger.info('Deleted local clone for ${repo.cloneUrl} from disk.');
 
             // Clean up owner dir if empty
             final ownerDir = repoDir.parent;
@@ -127,7 +143,7 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
         }
       } else {
         throw Exception(
-            'Migration cancelled by user for ${repo.owner}/${repo.name}');
+            'Migration cancelled by user for ${repo.cloneUrl}');
       }
     }
     await globalConfig.save(globalConfigFile);
@@ -135,7 +151,7 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
     for (final repo in reposToMigrate) {
       updatedManifest = updatedManifest.withRegistry(repo);
       _logger.info(
-          'Automatically kept ${repo.owner}/${repo.name} local (non-interactive).');
+          'Automatically kept ${repo.cloneUrl} local (non-interactive).');
     }
   }
 

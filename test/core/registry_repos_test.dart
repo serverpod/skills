@@ -1,26 +1,22 @@
-import 'package:path/path.dart' as p;
-
 import 'package:skills/src/core/registry_repos.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('RegistryRepo', () {
-    test('pathSegment joins owner and name', () {
+    test('pathSegment encodes cloneUrl', () {
       const repo = RegistryRepo(
-        owner: 'flutter',
-        name: 'skills',
+        cloneUrl: 'https://github.com/flutter/skills.git',
       );
-      expect(repo.pathSegment, equals(p.join('flutter', 'skills')));
+      expect(repo.pathSegment, equals(Uri.encodeComponent('https://github.com/flutter/skills.git')));
     });
 
-    test('cloneUrl is https github URL', () {
+    test('cloneUrl is the provided URL', () {
       const repo = RegistryRepo(
-        owner: 'serverpod',
-        name: 'skills-registry',
+        cloneUrl: 'https://example.com/repo.git',
       );
       expect(
         repo.cloneUrl,
-        equals('https://github.com/serverpod/skills-registry.git'),
+        equals('https://example.com/repo.git'),
       );
     });
   });
@@ -32,13 +28,13 @@ void main() {
       expect(path, contains('repos'));
     });
 
-    test('registryRepoPath includes owner and repo', () {
+    test('registryRepoPath includes host, owner and repo', () {
       const repo = RegistryRepo(
-        owner: 'flutter',
-        name: 'skills',
+        cloneUrl: 'https://github.com/flutter/skills.git',
       );
       final path = registryRepoPath('/project', repo);
       expect(path, contains('.dart_skills'));
+      expect(path, contains('github.com'));
       expect(path, contains('flutter'));
       expect(path, contains('skills'));
     });

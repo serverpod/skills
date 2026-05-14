@@ -51,8 +51,7 @@ void main() {
       final globalConfig =
           await GlobalConfig.loadOrEmpty(File(globalConfigPath));
       expect(globalConfig.registries, hasLength(1));
-      expect(globalConfig.registries.first.owner, equals('flutter'));
-      expect(globalConfig.registries.first.name, equals('skills'));
+      expect(globalConfig.registries.first.cloneUrl, equals('https://github.com/flutter/skills.git'));
     });
 
     test('add command adds to local config when prompted', () async {
@@ -64,8 +63,7 @@ void main() {
       final manifest = await SkillManifest.loadOrEmpty(
           File(SkillManifest.pathIn(projectPath)));
       expect(manifest.registries, hasLength(1));
-      expect(manifest.registries.first.owner, equals('serverpod'));
-      expect(manifest.registries.first.name, equals('skills-registry'));
+      expect(manifest.registries.first.cloneUrl, equals('https://github.com/serverpod/skills-registry.git'));
     });
 
     test('add command respects --global flag', () async {
@@ -105,19 +103,18 @@ void main() {
       final globalConfig =
           await GlobalConfig.loadOrEmpty(File(globalConfigPath));
       expect(globalConfig.registries, hasLength(1));
-      expect(globalConfig.registries.first.owner, equals('dart-lang'));
-      expect(globalConfig.registries.first.name, equals('skills'));
+      expect(globalConfig.registries.first.cloneUrl, equals('https://github.com/dart-lang/skills.git'));
     });
 
     test('list command lists both global and local registries', () async {
       var globalConfig = const GlobalConfig();
       globalConfig = globalConfig
-          .withRegistry(const RegistryRepo(owner: 'g_owner', name: 'g_repo'));
+          .withRegistry(const RegistryRepo(cloneUrl: 'https://github.com/g_owner/g_repo.git'));
       await globalConfig.save(File(globalConfigPath));
 
       var manifest = const SkillManifest();
       manifest = manifest
-          .withRegistry(const RegistryRepo(owner: 'l_owner', name: 'l_repo'));
+          .withRegistry(const RegistryRepo(cloneUrl: 'https://github.com/l_owner/l_repo.git'));
       await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
       final logs = <String>[];
@@ -129,13 +126,13 @@ void main() {
 
       await subscription.cancel();
 
-      expect(logs, contains(contains('g_owner/g_repo')));
-      expect(logs, contains(contains('l_owner/l_repo')));
+      expect(logs, contains(contains('https://github.com/g_owner/g_repo.git')));
+      expect(logs, contains(contains('https://github.com/l_owner/l_repo.git')));
     });
 
     test('remove command removes from local when only there', () async {
       var manifest = const SkillManifest();
-      const repo = RegistryRepo(owner: 'l_owner', name: 'l_repo');
+      const repo = RegistryRepo(cloneUrl: 'https://github.com/l_owner/l_repo.git');
       manifest = manifest.withRegistry(repo);
       await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
@@ -149,7 +146,7 @@ void main() {
 
     test('remove command removes from global when only there', () async {
       var globalConfig = const GlobalConfig();
-      const repo = RegistryRepo(owner: 'g_owner', name: 'g_repo');
+      const repo = RegistryRepo(cloneUrl: 'https://github.com/g_owner/g_repo.git');
       globalConfig = globalConfig.withRegistry(repo);
       await globalConfig.save(File(globalConfigPath));
 
@@ -162,7 +159,7 @@ void main() {
     });
 
     test('remove command prompts when in both and removes selected', () async {
-      const repo = RegistryRepo(owner: 'both_owner', name: 'both_repo');
+      const repo = RegistryRepo(cloneUrl: 'https://github.com/both_owner/both_repo.git');
 
       var globalConfig = const GlobalConfig();
       globalConfig = globalConfig.withRegistry(repo);
@@ -188,8 +185,8 @@ void main() {
 
     test('remove command with no args shows multi-select and removes selected',
         () async {
-      const repo1 = RegistryRepo(owner: 'owner1', name: 'repo1');
-      const repo2 = RegistryRepo(owner: 'owner2', name: 'repo2');
+      const repo1 = RegistryRepo(cloneUrl: 'https://github.com/owner1/repo1.git');
+      const repo2 = RegistryRepo(cloneUrl: 'https://github.com/owner2/repo2.git');
 
       var globalConfig = const GlobalConfig();
       globalConfig = globalConfig.withRegistry(repo1);

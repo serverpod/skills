@@ -50,7 +50,7 @@ class RegistrySync {
     RegistryRepo repo,
     void Function(String)? onProgress,
   ) async {
-    onProgress?.call('Cloning ${repo.owner}/${repo.name}...');
+    onProgress?.call('Cloning ${repo.cloneUrl}...');
     final result = await Process.run(
       'git',
       ['clone', '--depth', '1', repo.cloneUrl, repoPath],
@@ -59,7 +59,7 @@ class RegistrySync {
     );
     if (result.exitCode != 0) {
       stderr.writeln(
-        'Warning: Failed to clone ${repo.owner}/${repo.name}: ${result.stderr}',
+        'Warning: Failed to clone ${repo.cloneUrl}: ${result.stderr}',
       );
     }
   }
@@ -69,7 +69,7 @@ class RegistrySync {
     RegistryRepo repo,
     void Function(String)? onProgress,
   ) async {
-    onProgress?.call('Updating ${repo.owner}/${repo.name}...');
+    onProgress?.call('Updating ${repo.cloneUrl}...');
     var result = await Process.run(
       'git',
       ['fetch', 'origin'],
@@ -78,7 +78,7 @@ class RegistrySync {
     );
     if (result.exitCode != 0) {
       stderr.writeln(
-        'Warning: Failed to fetch ${repo.owner}/${repo.name}: ${result.stderr}',
+        'Warning: Failed to fetch ${repo.cloneUrl}: ${result.stderr}',
       );
       return;
     }
@@ -90,7 +90,7 @@ class RegistrySync {
     );
     if (result.exitCode != 0) {
       stderr.writeln(
-        'Warning: Failed to reset ${repo.owner}/${repo.name}: ${result.stderr}',
+        'Warning: Failed to reset ${repo.cloneUrl}: ${result.stderr}',
       );
     }
   }

@@ -73,7 +73,7 @@ class GlobalConfig {
   GlobalConfig withoutRegistry(RegistryRepo repo) {
     return GlobalConfig(
       registries: registries
-          .where((r) => r.owner != repo.owner || r.name != repo.name)
+          .where((r) => r.cloneUrl != repo.cloneUrl)
           .toList(),
     );
   }

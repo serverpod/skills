@@ -163,7 +163,7 @@ class SkillManifest {
     return SkillManifest(
       installations: installations,
       registries: registries
-          .where((r) => r.owner != repo.owner || r.name != repo.name)
+          .where((r) => r.cloneUrl != repo.cloneUrl)
           .toList(),
     );
   }

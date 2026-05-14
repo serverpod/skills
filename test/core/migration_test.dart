@@ -43,8 +43,9 @@ void main() {
     });
 
     group('Given a version 1 manifest and existing local repos', () {
-      test('when user selects to keep globally then moves to global config',
-          () async {
+      test(
+          'when user selects to keep globally then moves to global config '
+          'and renames directory', () async {
         const manifest = SkillManifest(version: 1);
         fakeDialogSupport.singleSelectResult =
             0; // Select 'keep this installed globally'
@@ -56,8 +57,19 @@ void main() {
         final globalConfig =
             await GlobalConfig.loadOrEmpty(File(globalConfigPath));
         expect(globalConfig.registries, hasLength(1));
-        expect(globalConfig.registries.first.owner, equals('owner1'));
-        expect(globalConfig.registries.first.name, equals('repo1'));
+        expect(globalConfig.registries.first.cloneUrl,
+            equals('https://github.com/owner1/repo1.git'));
+
+        final oldRepoDir = Directory(
+            p.join(projectPath, '.dart_skills', 'repos', 'owner1', 'repo1'));
+        expect(await oldRepoDir.exists(), isFalse);
+
+        final newRepoDir = Directory(p.join(
+            projectPath,
+            '.dart_skills',
+            'repos',
+            Uri.encodeComponent('https://github.com/owner1/repo1.git')));
+        expect(await newRepoDir.exists(), isTrue);
       });
 
       test('when user selects to keep locally then moves to local config',
@@ -74,8 +86,8 @@ void main() {
             await GlobalConfig.loadOrEmpty(File(globalConfigPath));
         expect(globalConfig.registries, isEmpty);
         expect(updatedManifest.registries, hasLength(1));
-        expect(updatedManifest.registries.first.owner, equals('owner1'));
-        expect(updatedManifest.registries.first.name, equals('repo1'));
+        expect(updatedManifest.registries.first.cloneUrl,
+            equals('https://github.com/owner1/repo1.git'));
       });
 
       test(
@@ -112,8 +124,8 @@ void main() {
         expect(globalConfig.registries, isEmpty);
 
         expect(updatedManifest.registries, hasLength(1));
-        expect(updatedManifest.registries.first.owner, equals('owner1'));
-        expect(updatedManifest.registries.first.name, equals('repo1'));
+        expect(updatedManifest.registries.first.cloneUrl,
+            equals('https://github.com/owner1/repo1.git'));
       });
     });
 
@@ -138,7 +150,8 @@ void main() {
 
       var globalConfig = const GlobalConfig();
       globalConfig = globalConfig
-          .withRegistry(const RegistryRepo(owner: 'owner1', name: 'repo1'));
+          .withRegistry(
+          const RegistryRepo(cloneUrl: 'https://github.com/owner1/repo1.git'));
       await globalConfig.save(File(globalConfigPath));
 
       fakeDialogSupport.singleSelectResult = null; // Should not prompt

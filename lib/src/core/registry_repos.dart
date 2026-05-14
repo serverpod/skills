@@ -13,42 +13,36 @@ enum RegistrySkillLayout {
   groupedByPackage,
 }
 
-/// A GitHub registry repository with owner, name, and custom clone URL.
+/// A registry repository with a clone URL.
 class RegistryRepo {
-  final String owner;
-  final String name;
-
-  /// If set, used instead of the default GitHub URL (for testing with local repos).
-  final String? customCloneUrl;
+  final String cloneUrl;
 
   const RegistryRepo({
-    required this.owner,
-    required this.name,
-    this.customCloneUrl,
+    required this.cloneUrl,
   });
 
   factory RegistryRepo.fromJson(Map<String, dynamic> json) {
-    return RegistryRepo(
-      owner: json['owner'] as String,
-      name: json['name'] as String,
-      customCloneUrl: json['customCloneUrl'] as String?,
-    );
+    if (json.containsKey('cloneUrl')) {
+      return RegistryRepo(cloneUrl: json['cloneUrl'] as String);
+    } else {
+      final owner = json['owner'] as String;
+      final name = json['name'] as String;
+      final customCloneUrl = json['customCloneUrl'] as String?;
+      final url = customCloneUrl ?? 'https://github.com/$owner/$name.git';
+      return RegistryRepo(cloneUrl: url);
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'owner': owner,
-      'name': name,
-      if (customCloneUrl != null) 'customCloneUrl': customCloneUrl,
+      'cloneUrl': cloneUrl,
     };
   }
 
-  /// The path segment for this repo under [reposDir], e.g. "flutter/skills".
-  String get pathSegment => p.join(owner, name);
+  /// The path segment for this repo under [reposDir].
+  String get pathSegment => Uri.encodeComponent(cloneUrl);
 
-  /// Full clone URL.
-  String get cloneUrl =>
-      customCloneUrl ?? 'https://github.com/$owner/$name.git';
+
 }
 
 /// Returns the absolute path to the repos root under [rootPath]:
