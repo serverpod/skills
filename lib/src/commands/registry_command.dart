@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:collection/collection.dart';
-import 'package:path/path.dart' as p;
 
 import '../core/dialog_support.dart';
 import '../core/registry_repos.dart';
