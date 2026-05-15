@@ -17,26 +17,41 @@ enum RegistrySkillLayout {
 class RegistryRepo {
   final String cloneUrl;
 
+  /// Absolute paths where this repo is installed.
+  final List<String> installs;
+
   const RegistryRepo({
     required this.cloneUrl,
+    this.installs = const [],
   });
 
+  RegistryRepo copyWith({
+    String? cloneUrl,
+    List<String>? installs,
+  }) {
+    return RegistryRepo(
+      cloneUrl: cloneUrl ?? this.cloneUrl,
+      installs: installs ?? this.installs,
+    );
+  }
+
   factory RegistryRepo.fromJson(Map<String, dynamic> json) {
-    if (json.containsKey('cloneUrl')) {
-      return RegistryRepo(cloneUrl: json['cloneUrl'] as String);
-    } else {
-      final owner = json['owner'] as String;
-      final name = json['name'] as String;
-      final customCloneUrl = json['customCloneUrl'] as String?;
-      final url = customCloneUrl ?? 'https://github.com/$owner/$name.git';
-      return RegistryRepo(cloneUrl: url);
-    }
+    final installs = (json['installs'] as List<dynamic>?)?.cast<String>() ?? [];
+    final cloneUrl = json['cloneUrl'] as String;
+    return RegistryRepo(cloneUrl: cloneUrl, installs: installs);
   }
 
   Map<String, dynamic> toJson() {
     return {
       'cloneUrl': cloneUrl,
+      'installs': installs,
     };
+  }
+
+  /// Returns a copy with a new install location added.
+  RegistryRepo withInstall(String location) {
+    if (installs.contains(location)) return this;
+    return RegistryRepo(cloneUrl: cloneUrl, installs: [...installs, location]);
   }
 
   /// The path segment for this repo under [reposDir].

@@ -7,7 +7,6 @@ import 'package:skills/src/core/git_runner.dart';
 import 'package:skills/src/core/package_resolver.dart';
 import 'package:skills/src/core/pub_runner.dart';
 import 'package:skills/src/core/registry_scanner.dart';
-import 'package:skills/src/core/registry_repos.dart';
 import 'package:skills/src/core/registry_sync.dart';
 import 'package:skills/src/core/skill_installer.dart';
 import 'package:skills/src/core/skill_merger.dart';
@@ -47,19 +46,27 @@ Future<bool> getSkills({
   final rootPath = workspace.rootPath;
   var manifest = await loadManifest(rootPath);
 
-  var registrySkills = <ScannedSkill>[];
-  if (await gitRunner.isAvailable) {
-    final globalConfigPath = GlobalConfig.globalPath;
-    final globalConfig = await GlobalConfig.loadOrEmpty(File(globalConfigPath));
-    final allRegistries = <RegistryRepo>[
-      ...globalConfig.registries,
-      ...manifest.registries
-    ];
+  final globalConfigPath = GlobalConfig.globalPath;
+  final globalConfigFile = File(globalConfigPath);
+  var globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
 
-    final registrySync = RegistrySync(repos: allRegistries);
+  final registrySkills = <ScannedSkill>[];
+  if (await gitRunner.isAvailable) {
+    final registrySync = RegistrySync(
+        repos: [...globalConfig.registries, ...manifest.registries]);
     await registrySync.sync(rootPath, onProgress: logger.info);
+
     final registryScanner = RegistryScanner();
-    registrySkills = await registryScanner.scan(rootPath, repos: allRegistries);
+    registrySkills.addAll(await registryScanner.scan(
+      rootPath,
+      isGlobal: true,
+      repos: globalConfig.registries,
+    ));
+    registrySkills.addAll(await registryScanner.scan(
+      rootPath,
+      isGlobal: false,
+      repos: manifest.registries,
+    ));
   } else {
     logger.warning(
       'Warning: git not found. Skipping GitHub registry skills.',
@@ -86,17 +93,20 @@ Future<bool> getSkills({
       rootPath: rootPath,
       skills: skills,
       manifest: manifest,
+      globalConfig: globalConfig,
     );
     if (result == null) {
       logger.warning('Installation aborted for IDE ${ide.cliName}');
       continue;
     }
     manifest = result.manifest;
+    globalConfig = result.globalConfig;
     for (final info in result.installed) {
       logger.info('  [${info.ideName}] Installed ${info.skillName}');
     }
   }
 
+  await globalConfig.save(globalConfigFile);
   await manifest.save(manifestFile(rootPath));
 
   final ideNames = ides.map((e) => e.cliName).join(', ');

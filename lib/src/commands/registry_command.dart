@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/dialog_support.dart';
@@ -230,7 +231,7 @@ class RegistryRemoveCommand extends SkillsCommand {
 
   Future<({List<RegistryRepo> global, List<RegistryRepo> local})> _removeByArgs(
       List<String> rest,
-      bool? isGlobal,
+      bool? forceGlobal,
       GlobalConfig globalConfig,
       SkillManifest manifest) async {
     final fromGlobal = <RegistryRepo>[];
@@ -242,38 +243,38 @@ class RegistryRemoveCommand extends SkillsCommand {
     }
 
     for (final repo in repos) {
-      final inGlobal =
-          globalConfig.registries.any((r) => r.cloneUrl == repo.cloneUrl);
-      final inLocal =
-          manifest.registries.any((r) => r.cloneUrl == repo.cloneUrl);
+      final globalRegistry = globalConfig.registries
+          .firstWhereOrNull((r) => r.cloneUrl == repo.cloneUrl);
+      final localRegistry = manifest.registries
+          .firstWhereOrNull((r) => r.cloneUrl == repo.cloneUrl);
 
-      if (isGlobal != null) {
-        if (isGlobal) {
-          if (inGlobal) {
-            fromGlobal.add(repo);
-          } else {
-            logger
-                .info('Registry ${repo.cloneUrl} not found in global config.');
-          }
+      if (forceGlobal == true) {
+        if (globalRegistry case final registry?) {
+          fromGlobal.add(registry);
         } else {
-          if (inLocal) {
-            fromLocal.add(repo);
-          } else {
-            logger.info('Registry ${repo.cloneUrl} not found in local config.');
-          }
+          logger.info('Registry ${repo.cloneUrl} not found in global config.');
+        }
+      } else if (forceGlobal == false) {
+        if (localRegistry case final registry?) {
+          fromLocal.add(registry);
+        } else {
+          logger.info('Registry ${repo.cloneUrl} not found in local config.');
         }
       } else {
-        if (inGlobal && inLocal) {
+        // --global not specified, and appears in both global and local
+        if (globalRegistry != null && localRegistry != null) {
           if (dialogSupport case var dialogSupport?) {
             final options = ['Global', 'Local', 'Both'];
             final index = await dialogSupport.showSingleSelectDialog(options,
                 title: 'Remove ${repo.cloneUrl} from global, local, or both?');
             if (index != null) {
               if (index == 0 || index == 2) {
-                fromGlobal.add(repo);
+                fromGlobal.add(globalConfig.registries
+                    .firstWhere((r) => r.cloneUrl == repo.cloneUrl));
               }
               if (index == 1 || index == 2) {
-                fromLocal.add(repo);
+                fromLocal.add(manifest.registries
+                    .firstWhere((r) => r.cloneUrl == repo.cloneUrl));
               }
             }
           } else {
@@ -281,10 +282,10 @@ class RegistryRemoveCommand extends SkillsCommand {
                 'Registry ${repo.cloneUrl} is in both global and local configs. Use --global to specify which to remove.',
                 usage);
           }
-        } else if (inGlobal) {
-          fromGlobal.add(repo);
-        } else if (inLocal) {
-          fromLocal.add(repo);
+        } else if (globalRegistry != null) {
+          fromGlobal.add(globalRegistry);
+        } else if (localRegistry != null) {
+          fromLocal.add(localRegistry);
         } else {
           logger.info('Registry ${repo.cloneUrl} not found in any config.');
         }
@@ -309,28 +310,33 @@ class RegistryRemoveCommand extends SkillsCommand {
     for (final repo in fromGlobal) {
       updatedGlobalConfig = updatedGlobalConfig.withoutRegistry(repo);
       logger.info('Removed ${repo.cloneUrl} from global registries.');
+
+      for (final path in repo.installs) {
+        final dir = Directory(path);
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+          logger.info('Deleted orphaned skill at $path');
+        }
+      }
       removedRepos.add(repo);
     }
 
     for (final repo in fromLocal) {
       updatedManifest = updatedManifest.withoutRegistry(repo);
       logger.info('Removed ${repo.cloneUrl} from local registries.');
+
+      for (final path in repo.installs) {
+        final dir = Directory(path);
+        if (await dir.exists()) {
+          await dir.delete(recursive: true);
+          logger.info('Deleted orphaned skill at $path');
+        }
+      }
       removedRepos.add(repo);
     }
 
     await updatedGlobalConfig.save(globalConfigFile);
     await updatedManifest.save(manifestFile(rootPath));
-
-    // TODO: When uninstalling a global registry, it will leave orphaned skills
-    // around in other projects that used it.
-    for (final repo in removedRepos) {
-      final repoPath = p.join(registryReposPath(rootPath), repo.pathSegment);
-      final repoDir = Directory(repoPath);
-      if (await repoDir.exists()) {
-        await repoDir.delete(recursive: true);
-        logger.info('Deleted local clone for ${repo.cloneUrl} from disk.');
-      }
-    }
   }
 }
 

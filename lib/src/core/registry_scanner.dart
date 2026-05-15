@@ -23,6 +23,7 @@ class RegistryScanner {
   /// Scans all [repos] under [rootPath] and returns [ScannedSkill]s.
   Future<List<ScannedSkill>> scan(
     String rootPath, {
+    required bool isGlobal,
     List<RegistryRepo> repos = const [],
   }) async {
     final skills = <ScannedSkill>[];
@@ -46,10 +47,11 @@ class RegistryScanner {
 
       switch (layout) {
         case RegistrySkillLayout.flat:
-          skills.addAll(await _scanFlat(skillsDir));
+          skills.addAll(await _scanFlat(skillsDir, repo.cloneUrl, isGlobal));
           break;
         case RegistrySkillLayout.groupedByPackage:
-          skills.addAll(await _scanGroupedByPackage(skillsDir));
+          skills.addAll(
+              await _scanGroupedByPackage(skillsDir, repo.cloneUrl, isGlobal));
           break;
       }
     }
@@ -79,7 +81,8 @@ class RegistryScanner {
   }
 
   /// Flat layout: skills directly under [skillsDir]; dir name = `<package>-<suffix>`.
-  Future<List<ScannedSkill>> _scanFlat(Directory skillsDir) async {
+  Future<List<ScannedSkill>> _scanFlat(
+      Directory skillsDir, String registryUrl, bool isGlobal) async {
     final skills = <ScannedSkill>[];
     await for (final entity in skillsDir.list()) {
       if (entity is! Directory) continue;
@@ -97,6 +100,8 @@ class RegistryScanner {
           packageName: packageName,
           skillName: skillName,
           skillPath: entity.path,
+          registryUrl: registryUrl,
+          isGlobal: isGlobal,
         ),
       );
     }
@@ -105,7 +110,8 @@ class RegistryScanner {
 
   /// Grouped layout: skills under [skillsDir] with one level per package name,
   /// then one level per skill directory (e.g. skills/riverpod/riverpod-get-started).
-  Future<List<ScannedSkill>> _scanGroupedByPackage(Directory skillsDir) async {
+  Future<List<ScannedSkill>> _scanGroupedByPackage(
+      Directory skillsDir, String registryUrl, bool isGlobal) async {
     final skills = <ScannedSkill>[];
     await for (final packageEntity in skillsDir.list()) {
       if (packageEntity is! Directory) continue;
@@ -123,6 +129,8 @@ class RegistryScanner {
             packageName: packageName,
             skillName: skillName,
             skillPath: entity.path,
+            registryUrl: registryUrl,
+            isGlobal: isGlobal,
           ),
         );
       }

@@ -24,13 +24,16 @@ class GlobalConfig {
 
   final List<RegistryRepo> registries;
 
-  const GlobalConfig({this.registries = const []});
+  const GlobalConfig({
+    this.registries = const [],
+  });
 
   factory GlobalConfig.fromJson(Map<String, dynamic> json) {
     final registriesJson = json['registries'] as List<dynamic>? ?? [];
     final registries = registriesJson
         .map((r) => RegistryRepo.fromJson(r as Map<String, dynamic>))
         .toList();
+
     return GlobalConfig(registries: registries);
   }
 

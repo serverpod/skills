@@ -9,7 +9,7 @@ void main() {
     test('when repos directory does not exist then returns empty', () async {
       await d.dir('project', []).create();
       const scanner = RegistryScanner();
-      final skills = await scanner.scan(d.path('project'));
+      final skills = await scanner.scan(d.path('project'), isGlobal: false);
       expect(skills, isEmpty);
     });
 
@@ -39,6 +39,7 @@ void main() {
         const scanner = RegistryScanner();
         final skills = await scanner.scan(
           d.path('project'),
+          isGlobal: false,
           repos: [
             registryRepo,
           ],
@@ -93,6 +94,7 @@ void main() {
         const scanner = RegistryScanner();
         final skills = await scanner.scan(
           d.path('project'),
+          isGlobal: false,
           repos: [
             registryRepo,
           ],
@@ -134,6 +136,7 @@ void main() {
       const scanner = RegistryScanner();
       final skills = await scanner.scan(
         d.path('project'),
+        isGlobal: false,
         repos: [
           const RegistryRepo(
             cloneUrl: 'https://github.com/a/b.git',
@@ -161,6 +164,7 @@ void main() {
       const scanner = RegistryScanner();
       final skills = await scanner.scan(
         d.path('project'),
+        isGlobal: false,
         repos: [
           const RegistryRepo(
             cloneUrl: 'https://github.com/a/b.git',
@@ -199,6 +203,7 @@ void main() {
       const scanner = RegistryScanner();
       final skills = await scanner.scan(
         d.path('project'),
+        isGlobal: false,
         repos: registryRepos,
       );
       expect(skills, hasLength(2));

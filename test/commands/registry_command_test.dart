@@ -163,6 +163,45 @@ void main() {
       expect(updatedGlobalConfig.registries, isEmpty);
     });
 
+    test('remove command deletes back-linked skills on global removal',
+        () async {
+      final skillPath = p.join(projectPath, '.cursor', 'skills', 'skill_a');
+      final repo = RegistryRepo(
+        cloneUrl: 'https://github.com/g_owner/g_repo.git',
+        installs: [skillPath],
+      );
+
+      var globalConfig = const GlobalConfig();
+      globalConfig = globalConfig.withRegistry(repo);
+
+      // Re-create project with skills
+      await d.dir('project', [
+        d.file('pubspec.yaml', 'name: test_app'),
+        d.dir('.dart_skills', []),
+        d.dir('.cursor', [
+          d.dir('skills', [
+            d.dir('skill_a', [d.file('SKILL.md', '')]),
+          ]),
+        ]),
+      ]).create();
+
+      await globalConfig.save(File(globalConfigPath));
+
+      await runner.run([
+        '-C',
+        projectPath,
+        'registry',
+        'remove',
+        'https://github.com/g_owner/g_repo.git'
+      ]);
+
+      final updatedGlobalConfig =
+          await GlobalConfig.loadOrEmpty(File(globalConfigPath));
+      expect(updatedGlobalConfig.registries, isEmpty);
+
+      expect(Directory(skillPath).existsSync(), isFalse);
+    });
+
     test('remove command prompts when in both and removes selected', () async {
       const repo =
           RegistryRepo(cloneUrl: 'https://github.com/both_owner/both_repo.git');
