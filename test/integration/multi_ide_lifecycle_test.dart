@@ -553,7 +553,7 @@ Instructions for debugging.
         final file = File(SkillManifest.pathIn(rootPath));
         await manifest.save(file);
 
-        final loaded = await SkillManifest.load(file);
+        final loaded = await SkillManifest.loadFromRoot(rootPath);
         expect(loaded, isNotNull);
         expect(
           loaded!.allIdes.toSet(),

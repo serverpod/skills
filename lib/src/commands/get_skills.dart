@@ -16,6 +16,8 @@ import 'package:skills/src/ide/ide.dart';
 import 'package:skills/src/core/dialog_support.dart';
 import 'package:skills/src/models/global_config.dart';
 
+import '../models/skill_manifest.dart';
+
 /// Installs skills from package dependencies for [ides].
 Future<bool> getSkills({
   required List<Ide> ides,
@@ -44,7 +46,7 @@ Future<bool> getSkills({
   final scanner = SkillScanner(logger);
   final dartSkills = await scanner.scan(packages);
   final rootPath = workspace.rootPath;
-  var manifest = await loadManifest(rootPath);
+  var manifest = await SkillManifest.loadOrEmptyFromRoot(rootPath);
 
   final globalConfigPath = GlobalConfig.globalPath;
   final globalConfigFile = File(globalConfigPath);

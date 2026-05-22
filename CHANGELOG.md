@@ -9,6 +9,7 @@
   includes a `CliUtilDialogSupport` implementation for use in simple CLIs.
 - feat: **Breaking Change** - Removed `stdout` and `stdin` parameters to
   `getSkills` and replaced them with a required `Logger logger`.
+- chore: Move cache dir to `.dart_tool/skills` from `.dart_skills`.
 - feat: Allow the user to select an IDE if none is detected.
 - feat: Add `registry` command with `add`, `list`, and `remove` commands. This
   replaces the old hardcoded flutter/skills and serverpod/skills-registry
