@@ -71,7 +71,7 @@ environment:
         final projectPath = p.join(testRootPath, 'project');
 
         final getCommand = GetCommand(
-          dialogSupport: FakeDialogSupport(),
+          dialogSupport: FakeDialogSupport()..multiSelectResult = {0},
           gitRunner: GitRunner(isAvailableOverride: _gitUnavailable),
         );
         final runner = CommandRunner<void>('skills', 'Test')
