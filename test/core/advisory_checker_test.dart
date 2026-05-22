@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:logging/logging.dart';
 import 'package:skills/src/core/advisory_checker.dart';
@@ -18,13 +18,19 @@ void main() {
     await d.dir('pkg1', [
       d.file('pubspec.yaml', 'name: pkg1\nversion: 1.0.0\n'),
     ]).create();
+    await d.file('pubspec.lock', '''
+packages:
+  pkg1:
+    source: hosted
+    version: "1.0.0"
+''').create();
 
     final packages = [
       ResolvedPackage(name: 'pkg1', rootPath: d.path('pkg1')),
     ];
 
     final checker = AdvisoryChecker(
-      httpClient: MockClient((_) async => Response(
+      httpClient: MockClient((_) async => http.Response(
           jsonEncode({
             'results': [
               {
@@ -56,7 +62,7 @@ void main() {
     ];
 
     final checker = AdvisoryChecker(
-      httpClient: MockClient((_) async => Response(
+      httpClient: MockClient((_) async => http.Response(
           jsonEncode({
             'results': [
               {'vulns': []}
@@ -83,7 +89,7 @@ void main() {
 
     final checker = AdvisoryChecker(
       httpClient: MockClient((request) async {
-        return Response('', HttpStatus.forbidden);
+        return http.Response('', HttpStatus.forbidden);
       }),
     );
 
@@ -120,7 +126,7 @@ packages:
     final checker = AdvisoryChecker(
       httpClient: MockClient((request) async {
         expect(request.body, contains('"commit":"commit123"'));
-        return Response(
+        return http.Response(
             jsonEncode({
               'results': [
                 {'vulns': []}
@@ -138,7 +144,7 @@ packages:
       'called then it queries by the current registry commit hash', () async {
     final checker = AdvisoryChecker(httpClient: MockClient((request) async {
       expect(request.body, contains('"commit":"commit456"'));
-      return Response(
+      return http.Response(
           jsonEncode({
             'results': [
               {'vulns': []}

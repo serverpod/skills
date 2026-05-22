@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -10,9 +10,9 @@ import 'package_resolver.dart';
 
 /// Checks for security advisories for packages using the OSV.dev API.
 class AdvisoryChecker {
-  final Client? _httpClient;
+  final http.Client? _httpClient;
 
-  AdvisoryChecker({Client? httpClient}) : _httpClient = httpClient;
+  AdvisoryChecker({http.Client? httpClient}) : _httpClient = httpClient;
 
   /// Checks for vulnerabilities for the given [packages] and
   /// [registryRepoCommits].
@@ -30,55 +30,55 @@ class AdvisoryChecker {
   }) async {
     final results = <String, List<String>>{};
     final queries = <Map<String, dynamic>>[];
-    final packageNames = <String>[];
+    final queriedPackageNames = <String>[];
 
     /// Queries for all the registry repositories.
     if (registryRepoCommits != null) {
       for (final entry in registryRepoCommits.entries) {
-        packageNames.add(entry.key);
+        queriedPackageNames.add(entry.key);
         queries.add({'commit': entry.value});
       }
     }
 
     // Queries for all the git and hosted packages.
-    final lockFileCommits = await _readCommitsFromLockFile(rootPath);
+    final packagesInfo = await _readPubspecLockInfo(rootPath, logger);
     for (final package in packages) {
-      final commit = lockFileCommits[package.name];
-      if (commit != null) {
-        packageNames.add(package.name);
-        queries.add({'commit': commit});
-        continue;
+      final (:commit, :version) =
+          packagesInfo[package.name] ?? (commit: null, version: null);
+      final query = commit != null
+          ? {'commit': commit}
+          : version != null
+              ? {
+                  'package': {'name': package.name, 'ecosystem': 'Pub'},
+                  'version': version
+                }
+              : null;
+
+      if (query != null) {
+        queries.add(query);
+        queriedPackageNames.add(package.name);
       }
-
-      final version = await _readPackageVersion(package.rootPath);
-      if (version == null) continue;
-
-      packageNames.add(package.name);
-      queries.add({
-        'package': {'name': package.name, 'ecosystem': 'Pub'},
-        'version': version,
-      });
     }
 
     if (queries.isEmpty) return results;
 
     try {
-      final response = await (_httpClient?.post ?? post)(
+      final response = await (_httpClient?.post ?? http.post)(
           Uri.parse('https://api.osv.dev/v1/querybatch'),
           headers: {
             HttpHeaders.contentTypeHeader: ContentType.json.mimeType,
           },
           body: jsonEncode({'queries': queries}));
-      final data = jsonDecode(response.body) as Map<String, Object?>;
       if (response.statusCode != 200) {
         logger.warning('''
 Error checking for security advisories:
 StatusCode: ${response.statusCode} (${response.reasonPhrase})
 Content:
-$data
+${response.body}
 ''');
         return results;
       }
+      final data = jsonDecode(response.body) as Map<String, Object?>;
       final resultsList = data['results'] as List<Object?>?;
 
       if (resultsList == null) return results;
@@ -87,7 +87,7 @@ $data
         final result = resultsList[i] as Map<String, Object?>;
         final vulns = result['vulns'] as List<Object?>?;
         if (vulns != null && vulns.isNotEmpty) {
-          final packageName = packageNames[i];
+          final packageName = queriedPackageNames[i];
           final summaries = <String>[];
           for (final vuln in vulns) {
             final vulnMap = vuln as Map<String, Object?>;
@@ -105,23 +105,34 @@ $data
     return results;
   }
 
-  Future<Map<String, String>> _readCommitsFromLockFile(String rootPath) async {
-    final commits = <String, String>{};
+  /// Reads the pubspec.lock in [rootPath], extracting useful information.
+  ///
+  /// Returns a map from package name to a record of info.
+  Future<Map<String, ({String? commit, String? version})>> _readPubspecLockInfo(
+      String rootPath, Logger logger) async {
+    final result = <String, ({String? commit, String? version})>{};
     final lockFile = File(p.join(rootPath, 'pubspec.lock'));
-    if (!await lockFile.exists()) return commits;
+    if (!await lockFile.exists()) {
+      logger.warning(
+          'No pubspec.lock found, cannot check for security advisories '
+          'in $rootPath. See https://github.com/dart-lang/ai/issues/487.');
+      return result;
+    }
 
     try {
       final content = await lockFile.readAsString();
       final yaml = loadYaml(content);
-      if (yaml is! YamlMap) return commits;
+      if (yaml is! YamlMap) return result;
 
       final packages = yaml['packages'];
-      if (packages is! YamlMap) return commits;
+      if (packages is! YamlMap) return result;
 
       for (final entry in packages.entries) {
         final packageName = entry.key as String;
         final packageInfo = entry.value;
         if (packageInfo is! YamlMap) continue;
+        final version = packageInfo['version'] as String?;
+        String? commit;
 
         final source = packageInfo['source'] as String?;
         if (source == 'git') {
@@ -129,28 +140,16 @@ $data
           if (description is YamlMap) {
             final resolvedRef = description['resolved-ref'] as String?;
             if (resolvedRef != null) {
-              commits[packageName] = resolvedRef;
+              commit = resolvedRef;
             }
           }
         }
+        result[packageName] = (commit: commit, version: version);
       }
     } catch (e) {
       // Ignore errors parsing lockfile
     }
 
-    return commits;
-  }
-
-  Future<String?> _readPackageVersion(String packagePath) async {
-    final pubspecFile = File(p.join(packagePath, 'pubspec.yaml'));
-    if (!await pubspecFile.exists()) return null;
-    try {
-      final content = await pubspecFile.readAsString();
-      final yaml = loadYaml(content);
-      if (yaml is! YamlMap) return null;
-      return yaml['version'] as String?;
-    } catch (e) {
-      return null;
-    }
+    return result;
   }
 }
