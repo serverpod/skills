@@ -92,14 +92,16 @@ environment:
             d.dir('dep2-skill'),
           ]),
         ]),
-        d.dir('.dart_skills', [
-          d.file(
-            'skills_config.json',
-            allOf(
-              isNot(contains('dep1-skill')),
-              contains('dep2-skill'),
+        d.dir('.dart_tool', [
+          d.dir('skills', [
+            d.file(
+              'skills_config.json',
+              allOf(
+                isNot(contains('dep1-skill')),
+                contains('dep2-skill'),
+              ),
             ),
-          ),
+          ]),
         ]),
       ]).validate();
     });
@@ -119,7 +121,7 @@ environment:
             d.nothing('dep2-skill'),
           ]),
         ]),
-        d.nothing('.dart_skills'),
+        d.dir('.dart_tool', [d.nothing('skills')]),
       ]).validate();
     });
 
@@ -141,7 +143,7 @@ environment:
             d.nothing('dep2-skill'),
           ]),
         ]),
-        d.nothing('.dart_skills'),
+        d.dir('.dart_tool', [d.nothing('skills')]),
       ]).validate();
     });
 
@@ -162,8 +164,10 @@ environment:
             d.dir('dep2-skill'),
           ]),
         ]),
-        d.dir('.dart_skills', [
-          d.file('skills_config.json', contains('dep1-skill')),
+        d.dir('.dart_tool', [
+          d.dir('skills', [
+            d.file('skills_config.json', contains('dep1-skill')),
+          ]),
         ]),
       ]).validate();
     });
