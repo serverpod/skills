@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
 
 import 'workspace_resolver.dart';
 
