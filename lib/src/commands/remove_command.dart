@@ -116,7 +116,6 @@ class RemoveCommand extends SkillsCommand {
     if (totalRemoved > 0) {
       logger.info('Removed $totalRemoved skill(s) from '
           '${packagesToRemove.join(', ')}.');
-
     } else {
       logger.info('Removed $totalRemoved managed skill(s).');
     }
