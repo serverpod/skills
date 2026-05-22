@@ -37,8 +37,8 @@ void main() {
       final path = registryRepoPath('/project', repo);
       expect(
         path,
-        contains(
-            p.join(SkillManifest.dirName, 'github.com', 'flutter', 'skills')),
+        contains(p.join(SkillManifest.dirName, 'repos',
+            Uri.encodeComponent(repo.cloneUrl))),
       );
     });
   });

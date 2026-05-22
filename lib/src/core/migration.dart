@@ -13,6 +13,7 @@ final _logger = Logger('Migration');
 /// Runs all migrations.
 Future<void> runMigrations(
     String rootPath, DialogSupport? dialogSupport) async {
+  await SkillManifest.migrateIfNeeded(rootPath);
   final manifestFile = File(SkillManifest.pathIn(rootPath));
   final manifest = await SkillManifest.loadOrEmpty(manifestFile);
 

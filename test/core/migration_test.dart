@@ -16,12 +16,14 @@ void main() {
 
     setUp(() async {
       await d.dir('project', [
-        d.dir('.dart_skills', [
-          d.dir('repos', [
-            d.dir('owner1', [
-              d.dir('repo1', [
-                d.dir('skills', [
-                  d.dir('pkg-a', [d.file('SKILL.md', '')]),
+        d.dir('.dart_tool', [
+          d.dir('skills', [
+            d.dir('repos', [
+              d.dir('owner1', [
+                d.dir('repo1', [
+                  d.dir('skills', [
+                    d.dir('pkg-a', [d.file('SKILL.md', '')]),
+                  ]),
                 ]),
               ]),
             ]),
@@ -60,13 +62,13 @@ void main() {
         expect(globalConfig.registries.first.cloneUrl,
             equals('https://github.com/owner1/repo1.git'));
 
-        final oldRepoDir = Directory(
-            p.join(projectPath, '.dart_skills', 'repos', 'owner1', 'repo1'));
+        final oldRepoDir = Directory(p.join(
+            projectPath, SkillManifest.dirName, 'repos', 'owner1', 'repo1'));
         expect(await oldRepoDir.exists(), isFalse);
 
         final newRepoDir = Directory(p.join(
             projectPath,
-            '.dart_skills',
+            SkillManifest.dirName,
             'repos',
             Uri.encodeComponent('https://github.com/owner1/repo1.git')));
         expect(await newRepoDir.exists(), isTrue);
@@ -106,8 +108,8 @@ void main() {
         expect(globalConfig.registries, isEmpty);
         expect(updatedManifest.registries, isEmpty);
 
-        final repoDir = Directory(
-            p.join(projectPath, '.dart_skills', 'repos', 'owner1', 'repo1'));
+        final repoDir = Directory(p.join(
+            projectPath, SkillManifest.dirName, 'repos', 'owner1', 'repo1'));
         expect(await repoDir.exists(), isFalse);
       });
 
@@ -180,6 +182,77 @@ void main() {
       final globalConfig =
           await GlobalConfig.loadOrEmpty(File(globalConfigPath));
       expect(globalConfig.registries, hasLength(1));
+    });
+  });
+
+  group('runMigrations', () {
+    late String projectPath;
+    late String globalConfigPath;
+    late FakeDialogSupport fakeDialogSupport;
+
+    setUp(() async {
+      await d.dir('project', [
+        d.dir('.dart_skills', [
+          d.dir('repos', [
+            d.dir('owner1', [
+              d.dir('repo1', [
+                d.dir('skills', [
+                  d.dir('pkg-a', [d.file('SKILL.md', '')]),
+                ]),
+              ]),
+            ]),
+          ]),
+          d.file('skills_config.json', '{"version": 1}'),
+        ]),
+      ]).create();
+      projectPath = d.path('project');
+
+      await d.dir('global_config_dir', []).create();
+      globalConfigPath =
+          p.join(d.path('global_config_dir'), 'global_config.json');
+      GlobalConfig.globalPathOverride = globalConfigPath;
+
+      fakeDialogSupport = FakeDialogSupport();
+    });
+
+    tearDown(() {
+      GlobalConfig.globalPathOverride = null;
+    });
+
+    test(
+        'Given an old .dart_skills dir when running migrations '
+        'should first migrate both the manifest and registries', () async {
+      fakeDialogSupport.singleSelectResult = 0; // Keep globally
+
+      await runMigrations(projectPath, fakeDialogSupport);
+
+      // Check directory migrated
+      final oldDir = Directory(p.join(projectPath, '.dart_skills'));
+      expect(await oldDir.exists(), isFalse);
+
+      final newDir = Directory(p.join(projectPath, '.dart_tool', 'skills'));
+      expect(await newDir.exists(), isTrue);
+
+      // Check registry migrated to global config
+      final globalConfig =
+          await GlobalConfig.loadOrEmpty(File(globalConfigPath));
+      expect(globalConfig.registries, hasLength(1));
+      expect(globalConfig.registries.first.cloneUrl,
+          equals('https://github.com/owner1/repo1.git'));
+
+      // Check manifest updated to current version
+      final manifestFile = File(SkillManifest.pathIn(projectPath));
+      final manifest = await SkillManifest.load(manifestFile);
+      expect(manifest!.version, equals(SkillManifest.currentVersion));
+
+      // Check the repo has been moved to the new location
+      final oldRepoDir = Directory(p.join(
+          projectPath, SkillManifest.dirName, 'repos', 'owner1', 'repo1'));
+      expect(await oldRepoDir.exists(), isFalse);
+
+      final newRepoDir = Directory(p.join(projectPath, SkillManifest.dirName,
+          'repos', Uri.encodeComponent('https://github.com/owner1/repo1.git')));
+      expect(await newRepoDir.exists(), isTrue);
     });
   });
 }

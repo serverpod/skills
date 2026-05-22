@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 import 'registry_repos.dart';
 import 'skill_scanner.dart';
 
-/// Scans `.dart_skills/repos/<owner>/<repo>/skills/` for skill directories.
+/// Scans `.dart_tool/skills/repos/<owner>/<repo>/skills/` for skill directories.
 ///
 /// Uses each repo's [RegistrySkillLayout] to find skills:
 /// - [RegistrySkillLayout.flat]: direct subdirs of `skills/` with SKILL.md;

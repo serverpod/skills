@@ -35,7 +35,8 @@ class RegistryListCommand extends SkillsCommand {
   @override
   Future<void> run() async {
     final workspace = await resolveWorkspace();
-    final manifest = await loadManifest(workspace.rootPath);
+    final manifest =
+        await SkillManifest.loadOrEmptyFromRoot(workspace.rootPath);
 
     final globalConfigPath = GlobalConfig.globalPath;
     final globalConfig = await GlobalConfig.loadOrEmpty(File(globalConfigPath));
@@ -121,7 +122,8 @@ class RegistryAddCommand extends SkillsCommand {
       await globalConfig.save(globalConfigFile);
     } else {
       final workspace = await resolveWorkspace();
-      var manifest = await loadManifest(workspace.rootPath);
+      var manifest =
+          await SkillManifest.loadOrEmptyFromRoot(workspace.rootPath);
       for (final repo in repos) {
         if (!manifest.registries.any((r) => r.cloneUrl == repo.cloneUrl)) {
           manifest = manifest.withRegistry(repo);
@@ -157,7 +159,8 @@ class RegistryRemoveCommand extends SkillsCommand {
     final isGlobal = argResults?['global'] as bool?;
 
     final workspace = await resolveWorkspace();
-    final manifest = await loadManifest(workspace.rootPath);
+    final manifest =
+        await SkillManifest.loadOrEmptyFromRoot(workspace.rootPath);
     final globalConfigPath = GlobalConfig.globalPath;
     final globalConfigFile = File(globalConfigPath);
     final globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
