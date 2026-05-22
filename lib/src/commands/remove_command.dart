@@ -113,8 +113,10 @@ class RemoveCommand extends SkillsCommand {
       await manifest.save(manifestFile(rootPath));
     }
 
-    if (packagesToRemove.isNotEmpty) {
-      logger.info('Removed skills from ${packagesToRemove.join(', ')}.');
+    if (totalRemoved > 0) {
+      logger.info('Removed $totalRemoved skill(s) from '
+          '${packagesToRemove.join(', ')}.');
+
     } else {
       logger.info('Removed $totalRemoved managed skill(s).');
     }

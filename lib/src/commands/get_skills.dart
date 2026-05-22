@@ -16,6 +16,8 @@ import 'package:skills/src/core/dialog_support.dart';
 import '../models/skill_manifest.dart';
 
 /// Installs skills from package dependencies for [ides].
+///
+/// Returns `true` on success or `false` otherwise.
 Future<bool> getSkills({
   required List<Ide> ides,
   required Logger logger,
@@ -35,9 +37,20 @@ Future<bool> getSkills({
     packageNames: packageNames,
   );
 
-  if (packageNames != null && packages.isEmpty) {
-    logger.severe('None of the requested packages were found in dependencies.');
-    return false;
+  if (packageNames != null) {
+    if (packages.isEmpty) {
+      logger
+          .severe('None of the requested packages were found in dependencies.');
+      return false;
+    }
+
+    final foundNames = packages.map((p) => p.name).toSet();
+    final missing = packageNames.difference(foundNames)..remove('all');
+    if (missing.isNotEmpty) {
+      logger.warning(
+          'Warning: The following requested packages were not found in '
+          'dependencies: ${missing.join(', ')}');
+    }
   }
 
   final scanner = SkillScanner(logger);
@@ -84,6 +97,9 @@ Future<bool> getSkills({
           final selectedPackages =
               selectedIndices.map((i) => packagesWithSkills[i]).toSet();
           skills.removeWhere((s) => !selectedPackages.contains(s.packageName));
+        } else {
+          logger.info('Installation aborted by user.');
+          return false;
         }
       } else {
         logger.info('Available packages with skills:');
