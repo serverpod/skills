@@ -100,8 +100,7 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
       ];
       final index = await dialogSupport.showSingleSelectDialog(
         options,
-        title:
-            'Found installed skill repository ${repo.cloneUrl} during '
+        title: 'Found installed skill repository ${repo.cloneUrl} during '
             'migration, would you like to:',
       );
 
