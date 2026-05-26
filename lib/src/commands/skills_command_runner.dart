@@ -21,11 +21,13 @@ class SkillsCommandRunner extends CommandRunner<void> {
   Future<void> run(Iterable<String> args) async {
     final argResults = parse(args);
 
-    final dir = argResults['directory'] as String?;
+    final dir = argResults.option('directory');
     final rootPath =
         dir != null ? p.normalize(p.absolute(dir)) : Directory.current.path;
 
-    await runMigrations(rootPath, dialogSupport);
+    if (!argResults.flag('help')) {
+      await runMigrations(rootPath, dialogSupport);
+    }
 
     return runCommand(argResults);
   }

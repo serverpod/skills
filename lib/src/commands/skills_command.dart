@@ -11,8 +11,6 @@ import '../models/skill_manifest.dart';
 abstract class SkillsCommand extends Command<void> {
   late final logger = Logger('skills $name');
 
-  SkillsCommand();
-
   /// Resolves the workspace layout.
   ///
   /// Uses [--directory] if set, otherwise the current working directory.

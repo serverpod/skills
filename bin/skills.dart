@@ -9,6 +9,7 @@ import 'package:skills/skills.dart';
 import 'package:skills/src/commands/prune_command.dart';
 import 'package:skills/src/commands/registry_command.dart';
 import 'package:skills/src/commands/skills_command_runner.dart';
+import 'package:skills/src/core/exceptions.dart';
 
 Future<void> main(List<String> arguments) async {
   Logger.root.onRecord.listen((log) {
@@ -45,6 +46,8 @@ Future<void> main(List<String> arguments) async {
     try {
       await runner.run(arguments);
     } on UsageException catch (e) {
+      print(e);
+    } on UserAbortException catch (e) {
       print(e);
     }
   } finally {

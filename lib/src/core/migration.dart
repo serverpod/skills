@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:skills/src/core/exceptions.dart';
 
 import '../core/dialog_support.dart';
 import '../core/registry_repos.dart';
@@ -77,7 +78,8 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
   for (final repo in existingRepos) {
     if (globalConfig.registries.any((r) => r.cloneUrl == repo.cloneUrl)) {
       _logger.info(
-          'Skipping migration for ${repo.cloneUrl} as it is already in global config.');
+          'Skipping migration for ${repo.cloneUrl} as it is already in global '
+          'config.');
       continue;
     }
     reposToMigrate.add(repo);
@@ -99,7 +101,8 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
       final index = await dialogSupport.showSingleSelectDialog(
         options,
         title:
-            'Found installed skill repository ${repo.cloneUrl} during migration, would you like to:',
+            'Found installed skill repository ${repo.cloneUrl} during '
+            'migration, would you like to:',
       );
 
       if (index != null) {
@@ -145,7 +148,8 @@ Future<SkillManifest> maybeDoRegistryMigration(String rootPath,
           }
         }
       } else {
-        throw Exception('Migration cancelled by user for ${repo.cloneUrl}');
+        throw UserAbortException(
+            'Migration cancelled by user for ${repo.cloneUrl}');
       }
     }
     await globalConfig.save(globalConfigFile);

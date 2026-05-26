@@ -59,16 +59,17 @@ Future<bool> getSkills({
     await registrySync.sync(rootPath, onProgress: logger.info);
 
     final registryScanner = RegistryScanner();
-    registrySkills.addAll(await registryScanner.scan(
-      rootPath,
-      isGlobal: true,
-      repos: globalConfig.registries,
-    ));
-    registrySkills.addAll(await registryScanner.scan(
-      rootPath,
-      isGlobal: false,
-      repos: manifest.registries,
-    ));
+    registrySkills
+      ..addAll(await registryScanner.scan(
+        rootPath,
+        isGlobal: true,
+        repos: globalConfig.registries,
+      ))
+      ..addAll(await registryScanner.scan(
+        rootPath,
+        isGlobal: false,
+        repos: manifest.registries,
+      ));
   } else {
     logger.warning(
       'Warning: git not found. Skipping GitHub registry skills.',

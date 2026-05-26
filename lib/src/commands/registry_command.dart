@@ -278,6 +278,9 @@ class RegistryRemoveCommand extends SkillsCommand {
                 fromLocal.add(manifest.registries
                     .firstWhere((r) => r.cloneUrl == repo.cloneUrl));
               }
+            } else {
+              logger.warning(
+                  'Registry removal aborted by user for ${repo.cloneUrl}');
             }
           } else {
             throw UsageException(
