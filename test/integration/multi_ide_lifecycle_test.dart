@@ -5,6 +5,7 @@ import 'package:skills/src/core/skill_installer.dart';
 import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/ide.dart';
 import '../fake_dialog_support.dart';
+import 'package:skills/src/models/global_config.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -108,6 +109,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
       result = await installer.installSkillsForIde(
@@ -115,6 +117,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
     });
@@ -259,6 +262,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
       result = await installer.installSkillsForIde(
@@ -266,6 +270,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
     });
@@ -305,6 +310,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: pkgBSkills,
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
 
@@ -347,6 +353,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
       result = await installer.installSkillsForIde(
@@ -354,6 +361,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
     });
@@ -367,6 +375,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: pkgASkills,
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
 
@@ -405,6 +414,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
       result = await installer.installSkillsForIde(
@@ -412,6 +422,7 @@ Instructions for debugging.
         rootPath: rootPath,
         skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
+        globalConfig: const GlobalConfig(),
       );
       manifest = result!.manifest;
     });
@@ -485,6 +496,7 @@ Instructions for debugging.
           rootPath: rootPath,
           skills: pkgASkills,
           manifest: manifest,
+          globalConfig: const GlobalConfig(),
         );
         manifest = result!.manifest;
 

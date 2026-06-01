@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:skills/src/commands/skills_command_runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/prune_command.dart';
 import 'package:skills/src/models/skill_manifest.dart';
@@ -99,7 +99,7 @@ environment:
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
         final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
-        final runner = CommandRunner<void>('skills', 'Test')
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
             .run(['prune', '--directory', projectPath, '--ide', 'cursor']);
@@ -179,7 +179,7 @@ environment:
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
         final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
-        final runner = CommandRunner<void>('skills', 'Test')
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
             .run(['prune', '--directory', projectPath, '--ide', 'cursor']);
@@ -228,7 +228,7 @@ environment:
       final projectPath = p.join(testRootPath, 'no_skills_project');
 
       final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
-      final runner = CommandRunner<void>('skills', 'Test')
+      final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(pruneCommand);
       await runner.run(['prune', '--directory', projectPath]);
 
@@ -352,7 +352,7 @@ environment:
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
         final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
-        final runner = CommandRunner<void>('skills', 'Test')
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
             .run(['prune', '--directory', projectPath, '--ide', 'cursor']);

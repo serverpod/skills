@@ -76,10 +76,7 @@ void main() {
         final syncWithLocal = RegistrySync(
           repos: [
             RegistryRepo(
-              owner: 'test_owner',
-              name: 'test_repo',
-              skillLayout: RegistrySkillLayout.flat,
-              customCloneUrl: fileUrl,
+              cloneUrl: fileUrl,
             ),
           ],
         );
@@ -90,10 +87,8 @@ void main() {
         final repoDir = Directory(
           registryRepoPath(
             projectPath,
-            const RegistryRepo(
-              owner: 'test_owner',
-              name: 'test_repo',
-              skillLayout: RegistrySkillLayout.flat,
+            RegistryRepo(
+              cloneUrl: fileUrl,
             ),
           ),
         );
