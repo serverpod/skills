@@ -91,7 +91,7 @@ environment:
             },
           },
         );
-        await manifest.save(File(SkillManifest.pathIn(projectPath)));
+        await manifest.save(File(SkillManifest.manifestPathIn(projectPath)));
 
         final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
         final runner = CommandRunner<void>('skills', 'Test')
@@ -171,7 +171,7 @@ environment:
             },
           },
         );
-        await manifest.save(File(SkillManifest.pathIn(projectPath)));
+        await manifest.save(File(SkillManifest.manifestPathIn(projectPath)));
 
         final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
         final runner = CommandRunner<void>('skills', 'Test')
@@ -184,7 +184,7 @@ environment:
           isFalse,
         );
         final dartSkillsDir = Directory(
-          p.join(projectPath, SkillManifest.dirName),
+          p.join(projectPath, SkillManifest.cacheDirPath),
         );
         expect(await dartSkillsDir.exists(), isFalse);
       },
@@ -227,7 +227,8 @@ environment:
         ..addCommand(pruneCommand);
       await runner.run(['prune', '--directory', projectPath]);
 
-      expect(File(SkillManifest.pathIn(projectPath)).existsSync(), isFalse);
+      expect(File(SkillManifest.manifestPathIn(projectPath)).existsSync(),
+          isFalse);
     });
 
     test(
@@ -344,7 +345,7 @@ environment:
             },
           },
         );
-        await manifest.save(File(SkillManifest.pathIn(projectPath)));
+        await manifest.save(File(SkillManifest.manifestPathIn(projectPath)));
 
         final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
         final runner = CommandRunner<void>('skills', 'Test')

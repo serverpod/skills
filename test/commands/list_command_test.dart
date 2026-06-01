@@ -47,7 +47,8 @@ void main() {
       );
 
       await d.dir('project').create();
-      await manifest.save(File(SkillManifest.pathIn(d.path('project'))));
+      await manifest
+          .save(File(SkillManifest.manifestPathIn(d.path('project'))));
     });
 
     test('when listing then all IDEs and packages are present', () {

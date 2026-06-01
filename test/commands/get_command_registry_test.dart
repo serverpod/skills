@@ -79,7 +79,7 @@ environment:
           p.join(projectPath, '.cursor', 'skills', 'dep_with_skills-code-gen'),
         );
         expect(await skillDir.exists(), isTrue);
-        final manifestFile = File(SkillManifest.pathIn(projectPath));
+        final manifestFile = File(SkillManifest.manifestPathIn(projectPath));
         expect(await manifestFile.exists(), isTrue);
       },
     );

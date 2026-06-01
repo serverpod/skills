@@ -124,7 +124,7 @@ API design guidelines.
           ),
         );
 
-        final manifestFile = File(SkillManifest.pathIn(projectPath));
+        final manifestFile = File(SkillManifest.manifestPathIn(projectPath));
         await manifest.save(manifestFile);
 
         final loaded = await SkillManifest.loadFromRoot(projectPath);

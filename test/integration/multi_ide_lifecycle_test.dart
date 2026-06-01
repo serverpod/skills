@@ -538,7 +538,7 @@ Instructions for debugging.
           ),
         );
 
-        final file = File(SkillManifest.pathIn(rootPath));
+        final file = File(SkillManifest.manifestPathIn(rootPath));
         await manifest.save(file);
 
         final loaded = await SkillManifest.loadFromRoot(rootPath);

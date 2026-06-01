@@ -39,5 +39,5 @@ abstract class SkillsCommand extends Command<void> {
 
 /// Returns the manifest file for the given [rootPath].
 File manifestFile(String rootPath) {
-  return File(SkillManifest.pathIn(rootPath));
+  return File(SkillManifest.manifestPathIn(rootPath));
 }

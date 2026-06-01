@@ -6,16 +6,29 @@ import 'package:path/path.dart' as p;
 /// Tracks which skills are installed, per IDE and per package.
 class SkillManifest {
   static const int currentVersion = 1;
-  static final String dirName = p.join('.dart_tool', 'skills');
-  static const String baseName = 'skills_config.json';
+  static final String cacheDirPath = p.join('.dart_tool', 'skills');
+  static final String configDirPath = p.join('.config', 'dart_skills');
+  static const String configName = 'skills_config.json';
 
   /// Returns the platform-correct path to the manifest file under [rootPath].
-  static String pathIn(String rootPath) => p.join(rootPath, dirName, baseName);
+  static String manifestPathIn(String rootPath) =>
+      p.join(rootPath, configDirPath, configName);
 
-  /// Deletes the [dirName] directory under [rootPath] if it exists.
-  static Future<void> cleanupDir(String rootPath) async {
-    final dir = Directory(p.join(rootPath, dirName));
-    if (await dir.exists()) await dir.delete(recursive: true);
+  /// Deletes cache files under [rootPath] if they exist, as well as config
+  /// files and directories if they are empty.
+  static Future<void> cleanup(String rootPath) async {
+    final cacheDir = Directory(p.join(rootPath, cacheDirPath));
+    if (await cacheDir.exists()) await cacheDir.delete(recursive: true);
+
+    final manifest = await loadFromRoot(rootPath);
+    if (manifest != null && manifest.isEmpty) {
+      await File(p.join(rootPath, configDirPath, configName)).delete();
+    }
+
+    final configDir = Directory(p.join(rootPath, configDirPath));
+    if (await configDir.exists() && await configDir.list().isEmpty) {
+      await configDir.delete();
+    }
   }
 
   /// Outer key: IDE name, inner key: package name.
@@ -26,12 +39,23 @@ class SkillManifest {
   /// Migrates existing state from `.dart_skills` to `.dart_tool/skills`.
   static Future<void> migrateIfNeeded(String rootPath) async {
     final oldDir = Directory(p.join(rootPath, '.dart_skills'));
-    final newDir = Directory(p.join(rootPath, dirName));
+    final newCacheDir = Directory(p.join(rootPath, cacheDirPath));
+    final newConfigDir = Directory(p.join(rootPath, configDirPath));
+    final oldManifestFile =
+        File(p.join(newCacheDir.path, SkillManifest.configName));
 
     if (await oldDir.exists()) {
-      if (!await newDir.exists()) {
-        await newDir.parent.create(recursive: true);
-        await oldDir.rename(newDir.path);
+      if (!await newCacheDir.exists()) {
+        await newCacheDir.parent.create(recursive: true);
+        await oldDir.rename(newCacheDir.path);
+        if (await oldManifestFile.exists()) {
+          if (!await newConfigDir.exists()) {
+            await newConfigDir.create(recursive: true);
+          }
+          await oldManifestFile.rename(
+            SkillManifest.manifestPathIn(rootPath),
+          );
+        }
       }
     }
   }
@@ -56,7 +80,7 @@ class SkillManifest {
   /// Returns null if the manifest does not exist.
   static Future<SkillManifest?> loadFromRoot(String rootPath) async {
     await migrateIfNeeded(rootPath);
-    return load(File(pathIn(rootPath)));
+    return load(File(manifestPathIn(rootPath)));
   }
 
   /// Loads the manifest for [rootPath], performing migration if needed.
