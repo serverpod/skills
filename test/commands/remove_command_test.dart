@@ -67,7 +67,7 @@ void main() {
         },
       );
 
-      await manifest.save(File(SkillManifest.manifestPathIn(projectPath)));
+      await manifest.save(File(SkillManifest.pathIn(projectPath)));
     });
 
     test(
@@ -132,7 +132,7 @@ void main() {
         final cacheDir =
             Directory(p.join(projectPath, SkillManifest.cacheDirPath));
         await cacheDir.create(recursive: true);
-        await updated.save(File(SkillManifest.manifestPathIn(projectPath)));
+        await updated.save(File(SkillManifest.pathIn(projectPath)));
         await SkillManifest.cleanup(projectPath);
 
         expect(await dartSkillsDir.exists(), isFalse);
@@ -209,7 +209,7 @@ void main() {
         },
       );
 
-      await manifest.save(File(SkillManifest.manifestPathIn(projectPath)));
+      await manifest.save(File(SkillManifest.pathIn(projectPath)));
     });
 
     test(

@@ -120,7 +120,7 @@ void main() {
         },
       );
 
-      final file = File(SkillManifest.manifestPathIn(d.sandbox));
+      final file = File(SkillManifest.pathIn(d.sandbox));
       await manifest.save(file);
 
       final loaded = await SkillManifest.loadFromRoot(d.sandbox);
