@@ -82,10 +82,9 @@ class PruneCommand extends SkillsCommand {
       }
     }
 
+    await manifest.save(manifestFile(rootPath));
     if (manifest.isEmpty) {
-      await SkillManifest.cleanupDir(rootPath);
-    } else {
-      await manifest.save(manifestFile(rootPath));
+      await SkillManifest.cleanup(rootPath);
     }
 
     if (totalRemoved == 0) {

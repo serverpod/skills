@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/get_command.dart';
+import 'package:skills/src/commands/skills_command_runner.dart';
 import 'package:skills/src/core/git_runner.dart';
 import 'package:skills/src/ide/adapters/agent_skills_adapter.dart';
 import 'package:skills/src/ide/adapters/generic_adapter.dart';
@@ -90,7 +90,7 @@ environment:
         gitRunner:
             GitRunner(isAvailableOverride: () async => false), // skip registry
       );
-      final runner = CommandRunner<void>('skills', 'Test')
+      final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(getCommand);
 
       await runner.run(
@@ -128,7 +128,7 @@ environment:
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
       );
-      final runner = CommandRunner<void>('skills', 'Test')
+      final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(getCommand);
 
       await runner.run([
@@ -158,7 +158,7 @@ environment:
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
       );
-      final runner = CommandRunner<void>('skills', 'Test')
+      final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(getCommand);
 
       await runner.run([
@@ -188,7 +188,7 @@ environment:
         dialogSupport: null,
         gitRunner: GitRunner(isAvailableOverride: () async => false),
       );
-      final runner = CommandRunner<void>('skills', 'Test')
+      final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(getCommand);
 
       await runner.run([

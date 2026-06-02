@@ -43,9 +43,8 @@ void main() {
 
   group('Given a manifest file on disk', () {
     test('when loading then parses correctly', () async {
-      await d.dir('.dart_tool', [
-        d.dir('skills', [
-          d.file(SkillManifest.baseName, '''
+      await d.dir(SkillManifest.configDirPath, [
+        d.file(SkillManifest.configName, '''
 {
   "version": 1,
   "installations": {
@@ -59,7 +58,6 @@ void main() {
   }
 }
 '''),
-        ]),
       ]).create();
 
       final manifest = await SkillManifest.loadFromRoot(d.sandbox);
@@ -89,7 +87,7 @@ void main() {
 }
 ''';
       await d.dir('.dart_skills', [
-        d.file(SkillManifest.baseName, manifestContent),
+        d.file(SkillManifest.configName, manifestContent),
       ]).create();
 
       final manifest = await SkillManifest.loadFromRoot(d.sandbox);
@@ -98,9 +96,8 @@ void main() {
       expect(manifest!.allIdes.toList(), equals(['cursor']));
 
       await d.nothing('.dart_skills').validate();
-      await d.dir('.dart_tool', [
-        d.dir('skills', [d.file(SkillManifest.baseName, manifestContent)])
-      ]).validate();
+      await d.dir(SkillManifest.configDirPath,
+          [d.file(SkillManifest.configName, manifestContent)]).validate();
     });
 
     test('when file does not exist then returns null', () async {

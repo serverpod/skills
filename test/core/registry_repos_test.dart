@@ -32,7 +32,7 @@ void main() {
   group('registryReposPath / registryRepoPath', () {
     test('registryReposPath includes .dart_tool/skills/repos', () {
       final path = registryReposPath('/project');
-      expect(path, contains(p.join(SkillManifest.dirName, 'repos')));
+      expect(path, contains(p.join(SkillManifest.cacheDirPath, 'repos')));
     });
 
     test('registryRepoPath includes host, owner and repo', () {
@@ -42,7 +42,7 @@ void main() {
       final path = registryRepoPath('/project', repo);
       expect(
         path,
-        contains(p.join(SkillManifest.dirName, 'repos',
+        contains(p.join(SkillManifest.cacheDirPath, 'repos',
             Uri.encodeComponent(repo.cloneUrl))),
       );
     });
