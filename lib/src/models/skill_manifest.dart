@@ -161,13 +161,8 @@ class SkillManifest {
   ///
   /// If [packageNames] is given and non-empty, only skills from those packages
   /// will be returned.
-  Iterable<InstalledSkillEntry> allSkillsForIde(String ide,
-      {Set<String> packageNames = const {}}) sync* {
-    for (final MapEntry(key: packageName, value: entry)
-        in packagesForIde(ide).entries) {
-      if (packageNames.isNotEmpty && !packageNames.contains(packageName)) {
-        continue;
-      }
+  Iterable<InstalledSkillEntry> allSkillsForIde(String ide) sync* {
+    for (final entry in packagesForIde(ide).values) {
       yield* entry.skills;
     }
   }
@@ -208,13 +203,6 @@ class SkillManifest {
   SkillManifest withoutIde(String ide) {
     final updated = _deepCopy();
     updated.remove(ide);
-    return SkillManifest(installations: updated, registries: registries);
-  }
-
-  /// Returns a copy containing only [ides].
-  SkillManifest filterIdes(Set<String> ides) {
-    final updated = _deepCopy();
-    updated.removeWhere((ide, _) => !ides.contains(ide));
     return SkillManifest(installations: updated, registries: registries);
   }
 

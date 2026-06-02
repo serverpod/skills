@@ -44,7 +44,7 @@ Future<bool> getSkills({
 
   final packages = await PackageResolver.resolveWorkspace(
     workspace,
-    packageNames: packageNames.isEmpty ? null : packageNames,
+    packageNames: packageNames,
   );
 
   if (packageNames.isNotEmpty) {
@@ -151,21 +151,18 @@ Future<bool> getSkills({
     skills.removeWhere((s) => !skillNames.contains(s.skillName));
   } else if (!allFlag) {
     if (dialogSupport == null) {
-      if (packageNames.isEmpty) {
-        // Just print the available skills if no dialog support and no specified
-        // packages.
-        logger.info('Available skills:');
-        final sortedSkills = List<ScannedSkill>.from(skills)
-          ..sort((a, b) => a.skillName.compareTo(b.skillName));
-        for (final skill in sortedSkills) {
-          logger.info(
-              '  ${skill.skillName} (from ${_getSourceDisplayName(skill)})');
-        }
+      // Just print the available skills if no dialog support and no specified
+      // packages.
+      logger.info('Available skills:');
+      final sortedSkills = List<ScannedSkill>.from(skills)
+        ..sort((a, b) => a.skillName.compareTo(b.skillName));
+      for (final skill in sortedSkills) {
         logger.info(
-            'Rerun with `--package <name>`, `--skill <name>`, or `--all` to '
-            'install the chosen skills.');
-        return false;
+            '  ${skill.skillName} (from ${_getSourceDisplayName(skill)})');
       }
+      logger.info('Rerun with `--skill <name>`, or `--all` to '
+          'install the chosen skills.');
+      return false;
     } else {
       // We have dialog support, have the user select the packages to install
       // skills for and then the specific skills.
