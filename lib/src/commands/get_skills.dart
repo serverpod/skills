@@ -165,6 +165,49 @@ Future<bool> getSkills({
     }
   }
 
+  if (dialogSupport != null && skills.isNotEmpty) {
+    final skillsBySource = <String, List<ScannedSkill>>{};
+    for (final skill in skills) {
+      final sourceId = _getSourceId(skill);
+      skillsBySource.putIfAbsent(sourceId, () => []).add(skill);
+    }
+
+    final sortedSourceIds = skillsBySource.keys.toList()
+      ..sort((a, b) {
+        final skillA = skillsBySource[a]!.first;
+        final skillB = skillsBySource[b]!.first;
+        return _getSourceDisplayName(skillA)
+            .compareTo(_getSourceDisplayName(skillB));
+      });
+
+    for (final sourceId in sortedSourceIds) {
+      final sourceSkills = skillsBySource[sourceId]!;
+      if (sourceSkills.length > 1) {
+        sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
+        final skillNames = sourceSkills.map((s) => s.skillName).toList();
+        final initialSelected =
+            Iterable<int>.generate(sourceSkills.length).toSet();
+
+        final displayName = _getSourceDisplayName(sourceSkills.first);
+        final selectedIndices = await dialogSupport.showMultiSelectDialog(
+          skillNames,
+          title: 'Select skills to install from $displayName:',
+          initialSelected: initialSelected,
+        );
+
+        if (selectedIndices != null) {
+          final selectedSkills =
+              selectedIndices.map((i) => sourceSkills[i]).toSet();
+          skills.removeWhere((s) =>
+              _getSourceId(s) == sourceId && !selectedSkills.contains(s));
+        } else {
+          logger.info('Installation aborted by user.');
+          return false;
+        }
+      }
+    }
+  }
+
   if (skills.isEmpty) {
     logger.info('No skills selected to install.');
     return false;
@@ -215,4 +258,42 @@ Future<String?> _getGitCommit(String repoPath) async {
     // Ignore
   }
   return null;
+}
+
+String _getSourceId(ScannedSkill skill) {
+  return skill.registryUrl ?? 'pkg:${skill.packageName}';
+}
+
+String _prettyGitUrl(String url) {
+  try {
+    var path = url;
+    if (path.startsWith('git@')) {
+      final colonIndex = path.indexOf(':');
+      if (colonIndex != -1) {
+        path = path.substring(colonIndex + 1);
+      }
+    } else {
+      final uri = Uri.tryParse(path);
+      if (uri != null) {
+        path = uri.path;
+      }
+    }
+    while (path.startsWith('/')) {
+      path = path.substring(1);
+    }
+    if (path.endsWith('.git')) {
+      path = path.substring(0, path.length - 4);
+    }
+    return path;
+  } catch (e) {
+    return url;
+  }
+}
+
+String _getSourceDisplayName(ScannedSkill skill) {
+  if (skill.registryUrl != null) {
+    return 'registry ${_prettyGitUrl(skill.registryUrl!)}';
+  } else {
+    return 'package ${skill.packageName}';
+  }
 }

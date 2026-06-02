@@ -10,9 +10,17 @@ class FakeDialogSupport implements DialogSupport {
   int? singleSelectResult;
   Set<int>? multiSelectResult;
 
+  List<Set<int>?>? multiSelectResultsList;
+  int _multiSelectCallCount = 0;
+
   List<String>? lastSingleSelectOptions;
   List<String>? lastMultiSelectOptions;
   Set<int>? lastInitialSelected;
+  String? lastTitle;
+
+  final List<List<String>> allMultiSelectOptions = [];
+  final List<Set<int>> allInitialSelected = [];
+  final List<String?> allTitles = [];
 
   @override
   Future<int?> showSingleSelectDialog(List<String> options,
@@ -29,6 +37,18 @@ class FakeDialogSupport implements DialogSupport {
   }) async {
     lastMultiSelectOptions = options;
     lastInitialSelected = initialSelected;
+    lastTitle = title;
+    allMultiSelectOptions.add(options);
+    allInitialSelected.add(initialSelected);
+    allTitles.add(title);
+
+    final list = multiSelectResultsList;
+    if (list != null) {
+      if (_multiSelectCallCount < list.length) {
+        return list[_multiSelectCallCount++];
+      }
+      return null;
+    }
     return multiSelectResult;
   }
 }
