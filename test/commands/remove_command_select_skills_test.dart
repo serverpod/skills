@@ -99,7 +99,7 @@ environment:
       // We have 2 skills in dep1, so we prompt.
       // Index 0 is dep1-skill-1, index 1 is dep1-skill-2 (sorted).
       // We select only index 0 (dep1-skill-1) to remove.
-      fakeDialogSupport.multiSelectResult = {0};
+      fakeDialogSupport.multiSelectResults.add({0});
 
       await runner.run([
         'remove',
@@ -146,7 +146,7 @@ environment:
         'when running `skills remove` (interactive), user selects both packages, '
         'then selects dep1-skill-1 from dep1 and dep2-skill-2 from dep2, '
         'then only those two are removed', () async {
-      fakeDialogSupport.multiSelectResultsList = [
+      fakeDialogSupport.multiSelectResults = [
         // Select both packages dep1 and dep2 in package dialog
         {0, 1},
         // Select dep1-skill-1 and dep2-skill-2

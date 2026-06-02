@@ -87,7 +87,7 @@ environment:
     test(
         'when running `skills get dep1` (interactive) and user selects only '
         'dep1-skill1, then only dep1-skill1 should be installed', () async {
-      fakeDialogSupport.multiSelectResult = {0};
+      fakeDialogSupport.multiSelectResults.add({0});
 
       final getCommand = GetCommand(
         dialogSupport: fakeDialogSupport,
@@ -132,7 +132,7 @@ environment:
         'when running `skills get` (interactive), user selects both packages, '
         'then selects only dep1-skill1 from dep1, then dep1-skill1 and '
         'dep2-skill1 should be installed', () async {
-      fakeDialogSupport.multiSelectResultsList = [
+      fakeDialogSupport.multiSelectResults = [
         {0, 1}, // Select both packages
         {0}, // Select dep1-skill1 from dep1 skills
       ];
@@ -255,7 +255,7 @@ environment:
         'when running `skills get` (interactive), user selects both packages, '
         'then selects only dep1-skill1 from dep1 and dep2-skill2 from dep2, '
         'then only those should be installed', () async {
-      fakeDialogSupport.multiSelectResultsList = [
+      fakeDialogSupport.multiSelectResults = [
         {0, 1}, // Select both packages
         {0}, // Select dep1-skill1 from dep1 (options: dep1-skill1, dep1-skill2)
         {1}, // Select dep2-skill2 from dep2 (options: dep2-skill1, dep2-skill2)

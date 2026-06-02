@@ -84,7 +84,7 @@ environment:
     test(
         'when running `skills get` and the user only selects dep1 then only '
         'dep1 should be installed', () async {
-      fakeDialogSupport.multiSelectResult = {0};
+      fakeDialogSupport.multiSelectResults.add({0});
       final getCommand = GetCommand(
         dialogSupport: fakeDialogSupport,
         gitRunner:
@@ -96,7 +96,7 @@ environment:
       await runner.run(
           ['get', '--directory', projectPath, '--ide', Ide.generic.cliName]);
 
-      expect(fakeDialogSupport.lastInitialSelected, equals({0, 1}),
+      expect(fakeDialogSupport.allInitialSelected.last, equals({0, 1}),
           reason: 'then all packages should be selected by default');
 
       final dep1SkillDir = Directory(
@@ -138,7 +138,8 @@ environment:
         '--ide',
         Ide.generic.cliName,
         '--package',
-        'dep1'
+        'dep1',
+        '--all' // install all skills from dep1
       ]);
 
       final dep1SkillDir = Directory(

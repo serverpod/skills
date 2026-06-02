@@ -94,7 +94,7 @@ environment:
     test(
         'when running `skills remove --package dep1` then removes only dep1 skills',
         () async {
-      fakeDialogSupport.multiSelectResult = {0, 1};
+      fakeDialogSupport.multiSelectResults.add({0, 1});
       await runner.run([
         'remove',
         '--directory',
@@ -254,7 +254,9 @@ environment:
     test(
         'when running `skills remove` without arguments removes the'
         'selected skills for all IDEs', () async {
-      fakeDialogSupport.multiSelectResult = {0};
+      fakeDialogSupport.multiSelectResults
+        ..add({0}) // select first dep (dep1)
+        ..add({0}); // select first skill
 
       await runner.run(['remove', '--directory', projectPath]);
 
@@ -275,12 +277,17 @@ environment:
     });
 
     test(
-        'when running `skills remove --ide cursor` removes the selected skills'
-        'skills for just cursor', () async {
-      fakeDialogSupport.multiSelectResult = {0};
-
-      await runner
-          .run(['remove', '--directory', projectPath, '--ide', 'cursor']);
+        'when running `skills remove --ide cursor --skill <skill>` removes the '
+        'given skills for just cursor', () async {
+      await runner.run([
+        'remove',
+        '--directory',
+        projectPath,
+        '--ide',
+        'cursor',
+        '--skill',
+        'dep1-skill'
+      ]);
 
       await d.dir('multi_project', [
         d.dir('.cursor', [
