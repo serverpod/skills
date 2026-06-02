@@ -22,6 +22,9 @@ import '../models/skill_manifest.dart';
 
 /// Installs skills from package dependencies for [ides].
 ///
+/// If [packageNames] or [skillNames] are provided and non-empty then only
+/// skills from those packages or matching those names will be installed.
+///
 /// Returns `true` on success or `false` otherwise.
 Future<bool> getSkills({
   required List<Ide> ides,
@@ -30,7 +33,9 @@ Future<bool> getSkills({
   DialogSupport? dialogSupport,
   GitRunner gitRunner = const GitRunner(),
   String usage = '',
-  Set<String>? packageNames,
+  Set<String> packageNames = const {},
+  Set<String> skillNames = const {},
+  bool allFlag = false,
 }) async {
   final ready = await PubRunner.ensureWorkspaceConfigs(workspace);
   if (!ready) {
@@ -39,10 +44,10 @@ Future<bool> getSkills({
 
   final packages = await PackageResolver.resolveWorkspace(
     workspace,
-    packageNames: packageNames,
+    packageNames: packageNames.isEmpty ? null : packageNames,
   );
 
-  if (packageNames != null) {
+  if (packageNames.isNotEmpty) {
     if (packages.isEmpty) {
       logger
           .severe('None of the requested packages were found in dependencies.');
@@ -50,7 +55,7 @@ Future<bool> getSkills({
     }
 
     final foundNames = packages.map((p) => p.name).toSet();
-    final missing = packageNames.difference(foundNames)..remove('all');
+    final missing = packageNames.difference(foundNames);
     if (missing.isNotEmpty) {
       logger.warning(
           'Warning: The following requested packages were not found in '
@@ -129,80 +134,105 @@ Future<bool> getSkills({
   );
 
   if (skills.isEmpty) {
-    logger.info('No skills found in ${packageNames ?? "any"} packages.');
+    final filterDescription = packages.isNotEmpty
+        ? ' in the given packages ${packages.join(', ')}'
+        : '';
+    logger.info('No skills found$filterDescription.');
     return false;
   }
 
-  if (packageNames == null) {
-    final packagesWithSkills =
-        skills.map((skill) => skill.packageName).toSet().toList()..sort();
-    if (packagesWithSkills.isNotEmpty) {
-      if (dialogSupport != null) {
-        final initialSelected =
-            Iterable<int>.generate(packagesWithSkills.length).toSet();
-        final selectedIndices = await dialogSupport.showMultiSelectDialog(
-          packagesWithSkills,
-          title: 'Select packages to install skills from:',
-          initialSelected: initialSelected,
-        );
-        if (selectedIndices != null) {
-          final selectedPackages =
-              selectedIndices.map((i) => packagesWithSkills[i]).toSet();
-          skills.removeWhere((s) => !selectedPackages.contains(s.packageName));
-        } else {
-          logger.info('Installation aborted by user.');
-          return false;
+  if (skillNames.isNotEmpty) {
+    final foundSkillNames = skills.map((s) => s.skillName).toSet();
+    final missingSkills = skillNames.difference(foundSkillNames);
+    if (missingSkills.isNotEmpty) {
+      logger.warning('Warning: The following requested skills were not found: '
+          '${missingSkills.join(', ')}');
+    }
+    skills.removeWhere((s) => !skillNames.contains(s.skillName));
+  } else if (!allFlag) {
+    if (dialogSupport == null) {
+      if (packageNames.isEmpty) {
+        // Just print the available skills if no dialog support and no specified
+        // packages.
+        logger.info('Available skills:');
+        final sortedSkills = List<ScannedSkill>.from(skills)
+          ..sort((a, b) => a.skillName.compareTo(b.skillName));
+        for (final skill in sortedSkills) {
+          logger.info(
+              '  ${skill.skillName} (from ${_getSourceDisplayName(skill)})');
         }
-      } else {
-        logger.info('Available packages with skills:');
-        for (final pkg in packagesWithSkills) {
-          logger.info('  $pkg');
-        }
-        logger.info('Rerun with trailing arguments for each package you want '
-            'to install skills for, or `all` to install all skills.');
+        logger.info(
+            'Rerun with `--package <name>`, `--skill <name>`, or `--all` to '
+            'install the chosen skills.');
         return false;
       }
-    }
-  }
+    } else {
+      // We have dialog support, have the user select the packages to install
+      // skills for and then the specific skills.
+      if (packageNames.isEmpty) {
+        final packagesWithSkills =
+            skills.map((skill) => skill.packageName).toSet().toList()..sort();
+        if (packagesWithSkills.isNotEmpty) {
+          final initialSelected =
+              Iterable<int>.generate(packagesWithSkills.length).toSet();
+          final selectedIndices = await dialogSupport.showMultiSelectDialog(
+            packagesWithSkills,
+            title: 'Select packages to install skills from:',
+            initialSelected: initialSelected,
+          );
+          if (selectedIndices != null) {
+            final selectedPackages =
+                selectedIndices.map((i) => packagesWithSkills[i]).toSet();
+            skills
+                .removeWhere((s) => !selectedPackages.contains(s.packageName));
+          } else {
+            logger.info('Installation aborted by user.');
+            return false;
+          }
+        }
+      }
 
-  if (dialogSupport != null && skills.isNotEmpty) {
-    final skillsBySource = <String, List<ScannedSkill>>{};
-    for (final skill in skills) {
-      final sourceId = _getSourceId(skill);
-      skillsBySource.putIfAbsent(sourceId, () => []).add(skill);
-    }
+      if (skills.isNotEmpty) {
+        final skillsBySource = <String, List<ScannedSkill>>{};
+        for (final skill in skills) {
+          final sourceId = _getSourceId(skill);
+          skillsBySource.putIfAbsent(sourceId, () => []).add(skill);
+        }
 
-    final sortedSourceIds = skillsBySource.keys.toList()
-      ..sort((a, b) {
-        final skillA = skillsBySource[a]!.first;
-        final skillB = skillsBySource[b]!.first;
-        return _getSourceDisplayName(skillA)
-            .compareTo(_getSourceDisplayName(skillB));
-      });
+        final sortedSourceIds = skillsBySource.keys.toList()
+          ..sort((a, b) {
+            final skillA = skillsBySource[a]!.first;
+            final skillB = skillsBySource[b]!.first;
+            return _getSourceDisplayName(skillA)
+                .compareTo(_getSourceDisplayName(skillB));
+          });
 
-    for (final sourceId in sortedSourceIds) {
-      final sourceSkills = skillsBySource[sourceId]!;
-      if (sourceSkills.length > 1) {
-        sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
-        final skillNames = sourceSkills.map((s) => s.skillName).toList();
-        final initialSelected =
-            Iterable<int>.generate(sourceSkills.length).toSet();
+        for (final sourceId in sortedSourceIds) {
+          final sourceSkills = skillsBySource[sourceId]!;
+          if (sourceSkills.length > 1) {
+            sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
+            final skillNamesList =
+                sourceSkills.map((s) => s.skillName).toList();
+            final initialSelected =
+                Iterable<int>.generate(sourceSkills.length).toSet();
 
-        final displayName = _getSourceDisplayName(sourceSkills.first);
-        final selectedIndices = await dialogSupport.showMultiSelectDialog(
-          skillNames,
-          title: 'Select skills to install from $displayName:',
-          initialSelected: initialSelected,
-        );
+            final displayName = _getSourceDisplayName(sourceSkills.first);
+            final selectedIndices = await dialogSupport.showMultiSelectDialog(
+              skillNamesList,
+              title: 'Select skills to install from $displayName:',
+              initialSelected: initialSelected,
+            );
 
-        if (selectedIndices != null) {
-          final selectedSkills =
-              selectedIndices.map((i) => sourceSkills[i]).toSet();
-          skills.removeWhere((s) =>
-              _getSourceId(s) == sourceId && !selectedSkills.contains(s));
-        } else {
-          logger.info('Installation aborted by user.');
-          return false;
+            if (selectedIndices != null) {
+              final selectedSkills =
+                  selectedIndices.map((i) => sourceSkills[i]).toSet();
+              skills.removeWhere((s) =>
+                  _getSourceId(s) == sourceId && !selectedSkills.contains(s));
+            } else {
+              logger.info('Installation aborted by user.');
+              return false;
+            }
+          }
         }
       }
     }

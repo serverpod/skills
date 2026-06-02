@@ -102,6 +102,7 @@ environment:
         projectPath,
         '--ide',
         Ide.generic.cliName,
+        '--package',
         'dep1',
       ]);
 

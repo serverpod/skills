@@ -58,7 +58,6 @@ class PackageResolver {
   /// external dependencies that might ship skills).
   ///
   /// If [packageNames] is provided, only those packages are returned.
-  /// If [packageNames] contains 'all', all packages are returned.
   static Future<List<ResolvedPackage>> resolveWorkspace(
     WorkspaceLayout workspace, {
     Set<String>? packageNames,
@@ -81,9 +80,7 @@ class PackageResolver {
         if (memberNames.contains(package.name)) continue;
         if (seen.contains(package.name)) continue;
 
-        if (packageNames != null &&
-            !packageNames.contains('all') &&
-            !packageNames.contains(package.name)) {
+        if (packageNames != null && !packageNames.contains(package.name)) {
           continue;
         }
 

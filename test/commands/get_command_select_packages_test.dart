@@ -122,7 +122,7 @@ environment:
     });
 
     test(
-        'when running `skills get dep1` (non-interactive) then only dep1 '
+        'when running `skills get --package dep1` (non-interactive) then only dep1 '
         'should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
@@ -137,6 +137,7 @@ environment:
         projectPath,
         '--ide',
         Ide.generic.cliName,
+        '--package',
         'dep1'
       ]);
 
@@ -152,7 +153,7 @@ environment:
     });
 
     test(
-        'when running `skills get all` (non-interactive) then all skills '
+        'when running `skills get --all` (non-interactive) then all skills '
         'should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
@@ -167,7 +168,7 @@ environment:
         projectPath,
         '--ide',
         Ide.generic.cliName,
-        'all'
+        '--all'
       ]);
 
       final dep1SkillDir = Directory(
