@@ -291,35 +291,9 @@ String _getSourceId(ScannedSkill skill) {
   return skill.registryUrl ?? 'pkg:${skill.packageName}';
 }
 
-String _prettyGitUrl(String url) {
-  try {
-    var path = url;
-    if (path.startsWith('git@')) {
-      final colonIndex = path.indexOf(':');
-      if (colonIndex != -1) {
-        path = path.substring(colonIndex + 1);
-      }
-    } else {
-      final uri = Uri.tryParse(path);
-      if (uri != null) {
-        path = uri.path;
-      }
-    }
-    while (path.startsWith('/')) {
-      path = path.substring(1);
-    }
-    if (path.endsWith('.git')) {
-      path = path.substring(0, path.length - 4);
-    }
-    return path;
-  } catch (e) {
-    return url;
-  }
-}
-
 String _getSourceDisplayName(ScannedSkill skill) {
   if (skill.registryUrl != null) {
-    return 'registry ${_prettyGitUrl(skill.registryUrl!)}';
+    return 'registry ${skill.registryUrl!}';
   } else {
     return 'package ${skill.packageName}';
   }
