@@ -198,17 +198,15 @@ class SkillInstaller {
 
     final pkgs = manifest.packagesForIde(ide.cliName);
 
-    for (final entry in pkgs.entries) {
-      final pkgName = entry.key;
-      final pkgEntry = entry.value;
-
+    for (final MapEntry(key: pkgName, value: PackageSkillsEntry(skills: skills))
+        in pkgs.entries) {
       if (packageNames.isNotEmpty && !packageNames.contains(pkgName)) {
         continue;
       }
 
       if (skillNames.isEmpty) {
         manifest = manifest.withoutPackage(ide.cliName, pkgName);
-        for (final skill in pkgEntry.skills) {
+        for (final skill in skills) {
           await adapter.removeSkill(skill.name);
           removed.add(
             RemovedSkillInfo(ideName: ide.cliName, skillName: skill.name),
@@ -216,9 +214,9 @@ class SkillInstaller {
         }
       } else {
         final skillsToRemove =
-            pkgEntry.skills.where((s) => skillNames.contains(s.name)).toList();
+            skills.where((s) => skillNames.contains(s.name)).toList();
         final skillsToKeep =
-            pkgEntry.skills.where((s) => !skillNames.contains(s.name)).toList();
+            skills.where((s) => !skillNames.contains(s.name)).toList();
 
         if (skillsToRemove.isNotEmpty) {
           for (final skill in skillsToRemove) {
