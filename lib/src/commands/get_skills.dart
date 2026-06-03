@@ -151,8 +151,8 @@ Future<bool> getSkills({
     skills.removeWhere((s) => !skillNames.contains(s.skillName));
   } else if (!allFlag) {
     if (dialogSupport == null) {
-      // Just print the available skills if no dialog support and no specified
-      // packages.
+      // Just print the available skills if no dialog support and the user did not 
+      // specify --all or --skill.
       logger.info('Available skills:');
       final sortedSkills = List<ScannedSkill>.from(skills)
         ..sort((a, b) => a.skillName.compareTo(b.skillName));
