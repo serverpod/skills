@@ -134,8 +134,9 @@ Future<bool> getSkills({
   );
 
   if (skills.isEmpty) {
-    final filterDescription = packages.isNotEmpty
-        ? ' in the given packages ${packages.join(', ')}'
+    final plural = resolvedPackageNames.length > 1 ? 's' : '';
+    final filterDescription = resolvedPackageNames.isNotEmpty
+        ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
         : '';
     logger.info('No skills found$filterDescription.');
     return false;
@@ -151,7 +152,7 @@ Future<bool> getSkills({
     skills.removeWhere((s) => !skillNames.contains(s.skillName));
   } else if (!allFlag) {
     if (dialogSupport == null) {
-      // Just print the available skills if no dialog support and the user did not 
+      // Just print the available skills if no dialog support and the user did not
       // specify --all or --skill.
       logger.info('Available skills:');
       final sortedSkills = List<ScannedSkill>.from(skills)

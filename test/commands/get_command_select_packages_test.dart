@@ -45,6 +45,11 @@ void main() {
       ]);
       await dep2Dir.create();
 
+      final dep3Dir = d.dir('dep3', [
+        d.dir('lib', [d.file('dep3.dart', '')]),
+      ]);
+      await dep3Dir.create();
+
       final projectRootDir = d.dir('project', [
         d.file('pubspec.yaml', '''
 name: test_app
@@ -66,6 +71,11 @@ environment:
                 {
                   'name': 'dep2',
                   'rootUri': dep2Dir.io.uri.toString(),
+                  'packageUri': 'lib/'
+                },
+                {
+                  'name': 'dep3',
+                  'rootUri': dep3Dir.io.uri.toString(),
                   'packageUri': 'lib/'
                 },
               ],
@@ -210,6 +220,40 @@ environment:
 
       expect(await dep1SkillDir.exists(), isFalse);
       expect(await dep2SkillDir.exists(), isFalse);
+    });
+
+    test(
+        'when running `skills get --package dep3 --all` and dep3 has no skills '
+        'then it should log that no skills were found in dep3', () async {
+      final logMessages = <String>[];
+      final subscription = Logger('skills get').onRecord.listen((r) {
+        logMessages.add(r.message);
+      });
+
+      final getCommand = GetCommand(
+        dialogSupport: null,
+        gitRunner: GitRunner(isAvailableOverride: () async => false),
+      );
+      final runner = SkillsCommandRunner('skills', 'Test')
+        ..addCommand(getCommand);
+
+      await runner.run([
+        'get',
+        '--directory',
+        projectPath,
+        '--ide',
+        Ide.generic.cliName,
+        '--package',
+        'dep3',
+        '--all'
+      ]);
+
+      await subscription.cancel();
+
+      expect(
+        logMessages,
+        contains('No skills found in the given package dep3.'),
+      );
     });
   });
 }
