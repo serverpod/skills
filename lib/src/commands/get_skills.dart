@@ -69,9 +69,15 @@ Future<bool> getSkills({
   final registryRepoCommits = <String, String>{};
 
   if (await gitRunner.isAvailable) {
-    final registrySync = RegistrySync(
-        repos: [...globalConfig.registries, ...manifest.registries]);
-    await registrySync.sync(rootPath, onProgress: logger.info);
+    final allRepos = [...globalConfig.registries, ...manifest.registries];
+
+    // Only clone/update registries for a full `skills get` (no package filter).
+    // Targeted installs scan already-present local repos to avoid cloning
+    // unrelated registries into the workspace.
+    if (packageNames == null) {
+      final registrySync = RegistrySync(repos: allRepos);
+      await registrySync.sync(rootPath, onProgress: logger.info);
+    }
 
     final registryScanner = RegistryScanner();
     registrySkills
@@ -86,7 +92,7 @@ Future<bool> getSkills({
         repos: manifest.registries,
       ));
 
-    for (final repo in registrySync.repos) {
+    for (final repo in allRepos) {
       final repoPath = registryRepoPath(rootPath, repo);
       final commit = await _getGitCommit(repoPath);
       if (commit != null) {
