@@ -9,7 +9,8 @@
 - **Breaking Change**: Removed support for rest arguments, instead use the new
   `--package`, `--skill`, or `--all` options, or the built in dialogs.
 - **Breaking Change**: `getSkills` now takes a set of package names to install
-  instead of just a single package name.
+  instead of just a single package name. To install all skills pass the
+  `allFlag: true` argument.
 - refactor: Migrate from `.agent/skills` to `.agents/skills` for the generic IDE
   adapter. When a `.agent/` dir is detected you will be prompted for what action
   to take.
