@@ -243,6 +243,89 @@ void main() {
           packageNames: {'no_such_pkg'});
       expect(packages2, isEmpty);
     });
+
+    test(
+        'when multiple versions of the same package exist then preserves both based on path',
+        () async {
+      await d.dir('workspace3', [
+        d.dir('.dart_tool', [
+          d.file(
+            'package_config.json',
+            jsonEncode({
+              'configVersion': 2,
+              'packages': [
+                {
+                  'name': 'pkg_a',
+                  'rootUri': '../../pkg_a',
+                  'packageUri': 'lib/',
+                },
+                {
+                  'name': 'dep_m',
+                  'rootUri': 'file://${d.path('dep_m_v1')}/',
+                  'packageUri': 'lib/',
+                },
+              ],
+            }),
+          ),
+        ]),
+        d.dir('pkg_b', [
+          d.dir('.dart_tool', [
+            d.file(
+              'package_config.json',
+              jsonEncode({
+                'configVersion': 2,
+                'packages': [
+                  {
+                    'name': 'pkg_b',
+                    'rootUri': '../',
+                    'packageUri': 'lib/',
+                  },
+                  {
+                    'name': 'dep_m',
+                    'rootUri': 'file://${d.path('dep_m_v2')}/',
+                    'packageUri': 'lib/',
+                  },
+                ],
+              }),
+            ),
+          ]),
+        ]),
+      ]).create();
+
+      await d.dir('dep_m_v1', [
+        d.dir('lib', [d.file('dep_m.dart', '')]),
+      ]).create();
+
+      await d.dir('dep_m_v2', [
+        d.dir('lib', [d.file('dep_m.dart', '')]),
+      ]).create();
+
+      final layout = WorkspaceLayout(
+        rootPath: d.path('workspace3'),
+        packages: [
+          WorkspacePackage(
+            name: 'pkg_a',
+            path: d.path(p.join('workspace3', 'pkg_a')),
+            packageConfigPath: d.path(
+                p.join('workspace3', '.dart_tool', 'package_config.json')),
+          ),
+          WorkspacePackage(
+            name: 'pkg_b',
+            path: d.path(p.join('workspace3', 'pkg_b')),
+            packageConfigPath: d.path(p.join(
+                'workspace3', 'pkg_b', '.dart_tool', 'package_config.json')),
+          ),
+        ],
+      );
+
+      final packages = await PackageResolver.resolveWorkspace(layout);
+
+      final mPackages = packages.where((pkg) => pkg.name == 'dep_m').toList();
+      expect(mPackages, hasLength(2));
+      
+      final paths = mPackages.map((pkg) => p.normalize(pkg.rootPath)).toSet();
+      expect(paths, containsAll([d.path('dep_m_v1'), d.path('dep_m_v2')]));
+    });
   });
 
   group('Given a project without package_config.json', () {

@@ -80,7 +80,7 @@ class PackageResolver {
     final configPaths =
         workspace.packages.map((p) => p.packageConfigPath).toSet();
 
-    final seen = <String>{};
+    final seenPaths = <String>{};
     final results = <ResolvedPackage>[];
 
     for (final configPath in configPaths) {
@@ -90,7 +90,6 @@ class PackageResolver {
       final config = await loadPackageConfig(configFile);
       for (final package in config.packages) {
         if (memberNames.contains(package.name)) continue;
-        if (seen.contains(package.name)) continue;
 
         if (packageNames.isNotEmpty && !packageNames.contains(package.name)) {
           continue;
@@ -99,11 +98,13 @@ class PackageResolver {
         final rootUri = package.root;
         if (rootUri.scheme != 'file') continue;
 
-        seen.add(package.name);
+        final rootPath = rootUri.toFilePath();
+        if (!seenPaths.add(rootPath)) continue;
+
         results.add(
           ResolvedPackage(
               name: package.name,
-              rootPath: rootUri.toFilePath(),
+              rootPath: rootPath,
               originalPackageConfigPath: configPath),
         );
       }
