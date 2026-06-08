@@ -324,7 +324,12 @@ void main() {
       expect(mPackages, hasLength(2));
 
       final paths = mPackages.map((pkg) => p.normalize(pkg.rootPath)).toSet();
-      expect(paths, containsAll([d.path('dep_m_v1'), d.path('dep_m_v2')]));
+      expect(
+          paths,
+          containsAll([
+            p.normalize(d.path('dep_m_v1')),
+            p.normalize(d.path('dep_m_v2'))
+          ]));
     });
   });
 
