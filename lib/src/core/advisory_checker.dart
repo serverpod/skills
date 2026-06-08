@@ -41,8 +41,8 @@ class AdvisoryChecker {
       }
     }
 
-    final Map<String, Map<String, ({String? commit, String? version})>>
-        pubspecLockInfos = {};
+    // Map from pubspec.lock path to the extracted info.
+    final Map<String, PubspecLockInfoMap> pubspecLockInfos = {};
     for (final package in packages) {
       final pubspecLockFile = await _findPubspecLock(package);
       if (pubspecLockFile == null) {
@@ -53,11 +53,11 @@ class AdvisoryChecker {
         continue;
       }
 
-      // Queries for all the git and hosted packages.
-      final packagesInfo = pubspecLockInfos[pubspecLockFile.path] ??=
+      final pubspecLockInfo = pubspecLockInfos[pubspecLockFile.path] ??=
+          // Queries for all the git and hosted packages.
           await _readPubspecLockInfo(pubspecLockFile);
       final (:commit, :version) =
-          packagesInfo[package.name] ?? (commit: null, version: null);
+          pubspecLockInfo[package.name] ?? (commit: null, version: null);
       final query = commit != null
           ? {'commit': commit}
           : version != null
@@ -129,11 +129,10 @@ ${response.body}
     return null;
   }
 
-  /// Reads the pubspec.lock in [rootPath], extracting useful information.
+  /// Reads the [pubspecLock], extracting useful information.
   ///
   /// Returns a map from package name to a record of info.
-  Future<Map<String, ({String? commit, String? version})>> _readPubspecLockInfo(
-      File pubspecLock) async {
+  Future<PubspecLockInfoMap> _readPubspecLockInfo(File pubspecLock) async {
     final result = <String, ({String? commit, String? version})>{};
 
     try {
@@ -170,3 +169,6 @@ ${response.body}
     return result;
   }
 }
+
+/// Maps package names to either the git commit or hosted version.
+typedef PubspecLockInfoMap = Map<String, ({String? commit, String? version})>;

@@ -40,8 +40,8 @@ packages:
       });
 
       test(
-          'and some vulterabilities, when AdvisoryChecker.checkAdvisories '
-          'is called then those vulnerabilites are returned', () async {
+          'and some vulnerabilities, when AdvisoryChecker.checkAdvisories '
+          'is called then those vulnerabilities are returned', () async {
         final checker = AdvisoryChecker(
           httpClient: MockClient((_) async => http.Response(
               jsonEncode({
@@ -84,7 +84,7 @@ packages:
       });
 
       test(
-          'and a network error when quering AdvisoryChecker.checkAdvisories '
+          'and a network error when querying AdvisoryChecker.checkAdvisories '
           'then it returns an empty list', () async {
         final checker = AdvisoryChecker(
           httpClient: MockClient((request) async {
