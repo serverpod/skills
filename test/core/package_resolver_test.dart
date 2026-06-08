@@ -247,6 +247,15 @@ void main() {
     test(
         'when multiple versions of the same package exist then preserves both based on path',
         () async {
+      final depMV1 = d.dir('dep_m_v1', [
+        d.dir('lib', [d.file('dep_m.dart', '')]),
+      ]);
+      await depMV1.create();
+
+      final depMV2 = d.dir('dep_m_v2', [
+        d.dir('lib', [d.file('dep_m.dart', '')]),
+      ]);
+      await depMV2.create();
       await d.dir('workspace3', [
         d.dir('.dart_tool', [
           d.file(
@@ -261,7 +270,7 @@ void main() {
                 },
                 {
                   'name': 'dep_m',
-                  'rootUri': 'file://${d.path('dep_m_v1')}/',
+                  'rootUri': '${depMV1.io.path}/',
                   'packageUri': 'lib/',
                 },
               ],
@@ -282,7 +291,7 @@ void main() {
                   },
                   {
                     'name': 'dep_m',
-                    'rootUri': 'file://${d.path('dep_m_v2')}/',
+                    'rootUri': '${depMV2.io.path}/',
                     'packageUri': 'lib/',
                   },
                 ],
@@ -290,14 +299,6 @@ void main() {
             ),
           ]),
         ]),
-      ]).create();
-
-      await d.dir('dep_m_v1', [
-        d.dir('lib', [d.file('dep_m.dart', '')]),
-      ]).create();
-
-      await d.dir('dep_m_v2', [
-        d.dir('lib', [d.file('dep_m.dart', '')]),
       ]).create();
 
       final layout = WorkspaceLayout(
@@ -324,12 +325,7 @@ void main() {
       expect(mPackages, hasLength(2));
 
       final paths = mPackages.map((pkg) => p.normalize(pkg.rootPath)).toSet();
-      expect(
-          paths,
-          containsAll([
-            p.normalize(d.path('dep_m_v1')),
-            p.normalize(d.path('dep_m_v2'))
-          ]));
+      expect(paths, containsAll([depMV1.io.path, depMV2.io.path]));
     });
   });
 
