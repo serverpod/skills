@@ -270,7 +270,7 @@ void main() {
                 },
                 {
                   'name': 'dep_m',
-                  'rootUri': '${depMV1.io.path}/',
+                  'rootUri': '${depMV1.io.uri}/',
                   'packageUri': 'lib/',
                 },
               ],
@@ -291,7 +291,7 @@ void main() {
                   },
                   {
                     'name': 'dep_m',
-                    'rootUri': '${depMV2.io.path}/',
+                    'rootUri': '${depMV2.io.uri}/',
                     'packageUri': 'lib/',
                   },
                 ],
