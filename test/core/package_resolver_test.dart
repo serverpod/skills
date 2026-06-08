@@ -322,7 +322,7 @@ void main() {
 
       final mPackages = packages.where((pkg) => pkg.name == 'dep_m').toList();
       expect(mPackages, hasLength(2));
-      
+
       final paths = mPackages.map((pkg) => p.normalize(pkg.rootPath)).toSet();
       expect(paths, containsAll([d.path('dep_m_v1'), d.path('dep_m_v2')]));
     });
