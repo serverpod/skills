@@ -82,6 +82,7 @@ class SkillInstaller {
     required List<ScannedSkill> skills,
     required SkillManifest manifest,
     required GlobalConfig globalConfig,
+    bool force = false,
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     if (adapter is AgentSkillsAdapter) {
@@ -105,9 +106,13 @@ class SkillInstaller {
 
       final existingPkgs = updatedManifest.packagesForIde(ide.cliName);
       final existingEntry = existingPkgs[pkgName];
+      final abortedSkills = <String>{};
       if (existingEntry != null) {
         for (final existing in existingEntry.skills) {
-          await adapter.removeSkill(existing.name);
+          if (!await adapter.removeSkill(existing.name,
+              originalHash: existing.contentHash, force: force)) {
+            abortedSkills.add(existing.name);
+          }
         }
       }
 
@@ -115,11 +120,20 @@ class SkillInstaller {
       var updatedGlobalConfig = globalConfig;
 
       for (final skill in pkgSkills) {
-        final installedName = await adapter.installSkill(skill);
+        if (abortedSkills.contains(skill.skillName)) {
+          final existing = existingEntry!.skills
+              .firstWhere((s) => s.name == skill.skillName);
+          installedSkills.add(existing);
+          continue;
+        }
+
+        final installResult = await adapter.installSkill(skill);
+        final installedName = installResult.name;
         installedSkills.add(
           InstalledSkillEntry(
             name: installedName,
             installedAt: DateTime.now().toUtc(),
+            contentHash: installResult.contentHash,
           ),
         );
         installed.add(
@@ -186,12 +200,15 @@ class SkillInstaller {
   ///
   /// If [packageNames] is not empty, only those packages skills are removed.
   /// If [skillNames] is not empty, only those specific skills are removed.
+  /// If [force] is `false`, then the user will be prompted before removing any
+  /// skills that have had local modifications since they were installed.
   Future<SkillRemoveResult> removeSkillsForIde({
     required Ide ide,
     required String rootPath,
     required SkillManifest manifest,
     Set<String> packageNames = const {},
     Set<String> skillNames = const {},
+    bool force = false,
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     final removed = <RemovedSkillInfo>[];
@@ -207,7 +224,8 @@ class SkillInstaller {
       if (skillNames.isEmpty) {
         manifest = manifest.withoutPackage(ide.cliName, pkgName);
         for (final skill in skills) {
-          await adapter.removeSkill(skill.name);
+          await adapter.removeSkill(skill.name,
+              originalHash: skill.contentHash, force: force);
           removed.add(
             RemovedSkillInfo(ideName: ide.cliName, skillName: skill.name),
           );
@@ -220,7 +238,8 @@ class SkillInstaller {
 
         if (skillsToRemove.isNotEmpty) {
           for (final skill in skillsToRemove) {
-            await adapter.removeSkill(skill.name);
+            await adapter.removeSkill(skill.name,
+                originalHash: skill.contentHash, force: force);
             removed.add(
               RemovedSkillInfo(ideName: ide.cliName, skillName: skill.name),
             );

@@ -55,7 +55,7 @@ Steps to analyze.
       });
 
       test('when installing then creates in .agents/skills/', () async {
-        final name = await adapter.installSkill(skill);
+        final name = (await adapter.installSkill(skill)).name;
 
         expect(name, equals('ag_pkg-data-analysis'));
 

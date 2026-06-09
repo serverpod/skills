@@ -78,10 +78,10 @@ API design guidelines.
 
         final installedEntries = <InstalledSkillEntry>[];
         for (final skill in skills) {
-          final name = await adapter.installSkill(skill);
+          final result = await adapter.installSkill(skill);
           installedEntries.add(
             InstalledSkillEntry(
-              name: name,
+              name: result.name,
               installedAt: DateTime.now().toUtc(),
             ),
           );
@@ -113,7 +113,7 @@ API design guidelines.
           skillPath: d.path('dep_with_skills/skills/dep_with_skills-code-gen'),
         );
 
-        final installedName = await adapter.installSkill(skill);
+        final installedName = (await adapter.installSkill(skill)).name;
 
         var manifest = const SkillManifest();
         manifest = manifest.withPackage(

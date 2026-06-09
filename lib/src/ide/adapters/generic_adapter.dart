@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/core/dialog_support.dart';
@@ -12,11 +13,14 @@ import 'agent_skills_adapter.dart';
 ///
 /// Installs skills to `.agents/skills/<pkg>-<skill>/SKILL.md`.
 class GenericAdapter extends AgentSkillsAdapter {
+  @override
+  final Logger logger = Logger('GenericAdapter');
+
   final String _projectPath;
   final DialogSupport? _dialogSupport;
 
   GenericAdapter(this._projectPath, this._dialogSupport)
-      : super(Ide.generic.skillsPath(_projectPath));
+      : super(Ide.generic.skillsPath(_projectPath), _dialogSupport);
 
   @override
   Future<bool> performMigrations(SkillManifest manifest) async {

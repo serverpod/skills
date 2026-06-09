@@ -1,3 +1,6 @@
+import 'package:logging/logging.dart';
+
+import '../../core/dialog_support.dart';
 import '../ide.dart';
 import 'agent_skills_adapter.dart';
 
@@ -6,6 +9,9 @@ import 'agent_skills_adapter.dart';
 /// Installs skills to `.opencode/skills/<skill-name>/` per
 /// [OpenCode skills](https://opencode.ai/docs/skills/).
 class OpenCodeAdapter extends AgentSkillsAdapter {
-  OpenCodeAdapter(String projectPath)
-      : super(Ide.opencode.skillsPath(projectPath));
+  @override
+  final Logger logger = Logger('OpenCodeAdapter');
+
+  OpenCodeAdapter(String projectPath, [DialogSupport? dialogSupport])
+      : super(Ide.opencode.skillsPath(projectPath), dialogSupport);
 }

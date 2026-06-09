@@ -1,3 +1,6 @@
+import 'package:logging/logging.dart';
+
+import '../../core/dialog_support.dart';
 import '../ide.dart';
 import 'agent_skills_adapter.dart';
 
@@ -6,6 +9,9 @@ import 'agent_skills_adapter.dart';
 /// Installs skills to `.github/skills/<skill-name>/` per
 /// [Copilot agent skills](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills).
 class CopilotAdapter extends AgentSkillsAdapter {
-  CopilotAdapter(String projectPath)
-      : super(Ide.copilot.skillsPath(projectPath));
+  @override
+  final Logger logger = Logger('CopilotAdapter');
+
+  CopilotAdapter(String projectPath, [DialogSupport? dialogSupport])
+      : super(Ide.copilot.skillsPath(projectPath), dialogSupport);
 }
