@@ -1,6 +1,5 @@
 import 'package:logging/logging.dart';
 
-import '../../core/dialog_support.dart';
 import '../ide.dart';
 import 'agent_skills_adapter.dart';
 
@@ -11,6 +10,6 @@ class CursorAdapter extends AgentSkillsAdapter {
   @override
   final Logger logger = Logger('CursorAdapter');
 
-  CursorAdapter(String projectPath, [DialogSupport? dialogSupport])
-      : super(Ide.cursor.skillsPath(projectPath), dialogSupport);
+  CursorAdapter(String projectPath, {super.dialogSupport})
+      : super(Ide.cursor.skillsPath(projectPath));
 }

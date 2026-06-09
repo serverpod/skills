@@ -106,6 +106,9 @@ class SkillInstaller {
 
       final existingPkgs = updatedManifest.packagesForIde(ide.cliName);
       final existingEntry = existingPkgs[pkgName];
+
+      // Uninstall old skills but record the ones that were aborted, which
+      // may happen if the skill has local modifications.
       final abortedSkills = <String>{};
       if (existingEntry != null) {
         for (final existing in existingEntry.skills) {
@@ -120,6 +123,7 @@ class SkillInstaller {
       var updatedGlobalConfig = globalConfig;
 
       for (final skill in pkgSkills) {
+        // We aborted uninstalling this skill, just copy its old install entry.
         if (abortedSkills.contains(skill.skillName)) {
           final existing = existingEntry!.skills
               .firstWhere((s) => s.name == skill.skillName);
@@ -127,6 +131,7 @@ class SkillInstaller {
           continue;
         }
 
+        // Actually install the new skill
         final installResult = await adapter.installSkill(skill);
         final installedName = installResult.name;
         installedSkills.add(

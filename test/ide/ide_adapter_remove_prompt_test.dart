@@ -62,7 +62,7 @@ void main() {
 
             adapter = switch (adapterType) {
               const (CursorAdapter) =>
-                CursorAdapter(d.path('project'), fakeDialog),
+                CursorAdapter(d.path('project'), dialogSupport: fakeDialog),
               const (RulesAdapter) => RulesAdapter(
                   skillsDirectory: Ide.cursor.skillsPath(d.path('project')),
                   dialogSupport: fakeDialog,

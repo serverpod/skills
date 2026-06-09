@@ -1,6 +1,5 @@
 import 'package:logging/logging.dart';
 
-import '../../core/dialog_support.dart';
 import '../ide.dart';
 import 'agent_skills_adapter.dart';
 
@@ -12,6 +11,6 @@ class CopilotAdapter extends AgentSkillsAdapter {
   @override
   final Logger logger = Logger('CopilotAdapter');
 
-  CopilotAdapter(String projectPath, [DialogSupport? dialogSupport])
-      : super(Ide.copilot.skillsPath(projectPath), dialogSupport);
+  CopilotAdapter(String projectPath, {super.dialogSupport})
+      : super(Ide.copilot.skillsPath(projectPath));
 }

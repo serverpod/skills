@@ -36,12 +36,13 @@ abstract class IdeAdapter {
 /// Helper method to prompt the user if they want to overwrite a skill that has
 /// been modified locally since it was installed.
 ///
-/// Returns `true` if the  user approves it or the hashes were equal.
+/// Returns `true` if the user approves it, [originalHash] was null, or the
+/// hashes were equal.
 Future<bool> promptOverwriteIfChanged({
   required DialogSupport? dialogSupport,
   required String skillName,
   required String? originalHash,
-  required String? currentHash,
+  required String currentHash,
   required Logger logger,
   bool force = false,
 }) async {

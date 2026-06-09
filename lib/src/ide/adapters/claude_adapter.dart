@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-import '../../core/dialog_support.dart';
 import '../../core/hash_utils.dart';
 import '../../core/skill_scanner.dart';
 import '../ide.dart';
@@ -17,11 +16,11 @@ class ClaudeAdapter extends AgentSkillsAdapter {
   @override
   final Logger logger = Logger('ClaudeAdapter');
 
-  ClaudeAdapter(String projectPath, [DialogSupport? dialogSupport])
-      : super(Ide.claude.skillsPath(projectPath), dialogSupport);
+  ClaudeAdapter(String projectPath, {super.dialogSupport})
+      : super(Ide.claude.skillsPath(projectPath));
 
   @override
-  Future<({String name, String? contentHash})> installSkill(
+  Future<({String name, String contentHash})> installSkill(
     ScannedSkill skill,
   ) async {
     var result = await super.installSkill(skill);
@@ -41,6 +40,10 @@ class ClaudeAdapter extends AgentSkillsAdapter {
 
           // Re-calculate hash since we modified the file
           final hash = await tryCalculateDirectoryHash(targetDir);
+          if (hash == null) {
+            throw StateError('Failed to install skill ${skill.skillName} from '
+                '${skill.skillPath}');
+          }
           result = (name: result.name, contentHash: hash);
         }
       }

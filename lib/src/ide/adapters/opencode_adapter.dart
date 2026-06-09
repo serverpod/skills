@@ -1,6 +1,5 @@
 import 'package:logging/logging.dart';
 
-import '../../core/dialog_support.dart';
 import '../ide.dart';
 import 'agent_skills_adapter.dart';
 
@@ -12,6 +11,6 @@ class OpenCodeAdapter extends AgentSkillsAdapter {
   @override
   final Logger logger = Logger('OpenCodeAdapter');
 
-  OpenCodeAdapter(String projectPath, [DialogSupport? dialogSupport])
-      : super(Ide.opencode.skillsPath(projectPath), dialogSupport);
+  OpenCodeAdapter(String projectPath, {super.dialogSupport})
+      : super(Ide.opencode.skillsPath(projectPath));
 }
