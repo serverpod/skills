@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Allow config version 0.9.x.
+
 ## 0.3.0
 
 - feat: Adds support for OpenCode.
