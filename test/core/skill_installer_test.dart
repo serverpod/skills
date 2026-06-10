@@ -157,6 +157,10 @@ void main() {
 
       expect(pkgSkills.map((s) => s.name), isNot(contains('pkg_a-skill1')));
       expect(pkgSkills.map((s) => s.name), contains('pkg_a-skill2'));
+      final printedInstallPath = p.join(
+          Ide.generic.skillsRelativePath
+              .replaceAll(p.url.separator, p.separator),
+          'pkg_a-skill1');
       expect(
           logs,
           contains(isA<LogRecord>().having(
@@ -166,7 +170,7 @@ void main() {
                 contains('The following skills were not uninstalled but were '
                     'deleted upstream and are now orphaned'),
                 contains('- pkg_a-skill1 (installed at '
-                    '${p.join(Ide.generic.skillsRelativePath, 'pkg_a-skill1')})'),
+                    '$printedInstallPath)'),
               ))));
     });
   });
