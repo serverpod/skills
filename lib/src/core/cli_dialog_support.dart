@@ -57,12 +57,18 @@ class CliUtilDialogSupport implements DialogSupport {
   }
 }
 
+/// Uses `stdout.terminalLines` when possible to fill up all vertical space,
+/// with sensible defaults and minimums.
 int _computeMaxVisibleItems() {
-  if (!io.stdout.hasTerminal) return 10;
+  if (!io.stdout.hasTerminal) return _defaultItems;
   try {
     // One extra line for the title, and one for padding at bottom, minimum 5.
-    return math.max(io.stdout.terminalLines - 2, 5);
+    return math.max(io.stdout.terminalLines - 2, _minItems);
   } on io.StdoutException {
-    return 10;
+    return _defaultItems;
   }
 }
+
+/// Constants for dialog configuration.
+const _minItems = 5;
+const _defaultItems = 10;
