@@ -1,14 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
+import 'package:logging/logging.dart';
+import 'package:skills/src/commands/skills_command_runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/prune_command.dart';
 import 'package:skills/src/models/skill_manifest.dart';
+import '../fake_dialog_support.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
+  setUpAll(() {
+    Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+  });
+
   group('Prune command', () {
     test(
       'removes only unreferenced packages when manifest has pkg_a and pkg_b but deps only pkg_a',
@@ -92,8 +98,8 @@ environment:
         );
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
-        final pruneCommand = PruneCommand();
-        final runner = CommandRunner<void>('skills', 'Test')
+        final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
             .run(['prune', '--directory', projectPath, '--ide', 'cursor']);
@@ -107,9 +113,7 @@ environment:
           isFalse,
         );
 
-        final loaded = await SkillManifest.load(
-          File(SkillManifest.pathIn(projectPath)),
-        );
+        final loaded = await SkillManifest.loadFromRoot(projectPath);
         expect(loaded, isNotNull);
         expect(loaded!.packagesForIde('cursor').keys, contains('pkg_a'));
         expect(loaded.packagesForIde('cursor').keys, isNot(contains('pkg_b')));
@@ -174,8 +178,8 @@ environment:
         );
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
-        final pruneCommand = PruneCommand();
-        final runner = CommandRunner<void>('skills', 'Test')
+        final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
             .run(['prune', '--directory', projectPath, '--ide', 'cursor']);
@@ -185,7 +189,7 @@ environment:
           isFalse,
         );
         final dartSkillsDir = Directory(
-          p.join(projectPath, SkillManifest.dirName),
+          p.join(projectPath, SkillManifest.cacheDirPath),
         );
         expect(await dartSkillsDir.exists(), isFalse);
       },
@@ -223,8 +227,8 @@ environment:
 
       final projectPath = p.join(testRootPath, 'no_skills_project');
 
-      final pruneCommand = PruneCommand();
-      final runner = CommandRunner<void>('skills', 'Test')
+      final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+      final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(pruneCommand);
       await runner.run(['prune', '--directory', projectPath]);
 
@@ -347,8 +351,8 @@ environment:
         );
         await manifest.save(File(SkillManifest.pathIn(projectPath)));
 
-        final pruneCommand = PruneCommand();
-        final runner = CommandRunner<void>('skills', 'Test')
+        final pruneCommand = PruneCommand(dialogSupport: FakeDialogSupport());
+        final runner = SkillsCommandRunner('skills', 'Test')
           ..addCommand(pruneCommand);
         await runner
             .run(['prune', '--directory', projectPath, '--ide', 'cursor']);
@@ -362,9 +366,7 @@ environment:
           isTrue,
         );
 
-        final loaded = await SkillManifest.load(
-          File(SkillManifest.pathIn(projectPath)),
-        );
+        final loaded = await SkillManifest.loadFromRoot(projectPath);
         expect(loaded, isNotNull);
         expect(loaded!.packagesForIde('cursor').keys, contains('pkg_a'));
         expect(

@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:skills/src/commands/get_skills.dart';
+import 'package:skills/src/core/dialog_support.dart';
 
 import '../core/git_runner.dart';
 import 'options.dart';
@@ -14,33 +13,65 @@ class GetCommand extends SkillsCommand {
   @override
   final String description = 'Install skills from package dependencies.';
 
+  final DialogSupport? _dialogSupport;
   final GitRunner? _gitRunner;
 
-  GetCommand({GitRunner? gitRunner}) : _gitRunner = gitRunner {
+  GetCommand({
+    DialogSupport? dialogSupport,
+    GitRunner? gitRunner,
+  })  : _dialogSupport = dialogSupport,
+        _gitRunner = gitRunner {
     addIdeOption(argParser);
+    argParser.addMultiOption(
+      'package',
+      abbr: 'p',
+      help: 'Install skills from these packages.',
+    );
+    argParser.addMultiOption(
+      'skill',
+      abbr: 's',
+      help: 'Only install these specific skills.',
+    );
+    argParser.addFlag(
+      'all',
+      abbr: 'a',
+      help: 'Install all skills from all packages.',
+      negatable: false,
+    );
   }
 
   GitRunner get _effectiveGitRunner => _gitRunner ?? const GitRunner();
 
   @override
   Future<void> run() async {
+    final argResults = this.argResults!;
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;
 
     if (workspace.isWorkspace) {
-      stdout.writeln(
+      logger.info(
         'Detected workspace with ${workspace.packages.length} packages.',
       );
     }
 
-    final ides = resolveIdes(argResults: argResults, projectPath: rootPath);
+    final ides =
+        await resolveIdes(argResults: argResults, projectPath: rootPath);
+
+    final packageNames = argResults.multiOption('package').toSet();
+    final skillNames = argResults.multiOption('skill').toSet();
+
+    final allFlag = argResults.flag('all');
 
     await getSkills(
       ides: ides,
+      logger: logger,
       workspace: workspace,
+      dialogSupport: _dialogSupport,
       gitRunner: _effectiveGitRunner,
       usage: usage,
-      packageName: packageNameArg,
+      packageNames: packageNames,
+      skillNames: skillNames,
+      allFlag: allFlag,
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:args/command_runner.dart';
 
 import '../core/package_resolver.dart';
@@ -9,6 +7,7 @@ import '../ide/ide.dart';
 import '../models/skill_manifest.dart';
 import 'options.dart';
 import 'skills_command.dart';
+import 'package:skills/src/core/dialog_support.dart';
 
 /// Removes installed skills whose package is no longer in the dependency tree.
 class PruneCommand extends SkillsCommand {
@@ -19,12 +18,17 @@ class PruneCommand extends SkillsCommand {
   final String description =
       'Remove skills whose package is no longer in the dependency tree.';
 
-  PruneCommand() {
+  final DialogSupport? _dialogSupport;
+
+  PruneCommand({
+    DialogSupport? dialogSupport,
+  }) : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
   }
 
   @override
   Future<void> run() async {
+    final argResults = this.argResults!;
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;
 
@@ -36,10 +40,10 @@ class PruneCommand extends SkillsCommand {
     final packages = await PackageResolver.resolveWorkspace(workspace);
     final referencedNames = packages.map((p) => p.name).toSet();
 
-    final loaded = await SkillManifest.load(manifestFile(rootPath));
+    final loaded = await SkillManifest.loadOrEmptyFromRoot(rootPath);
 
-    if (loaded == null || loaded.isEmpty) {
-      stdout.writeln('No managed skills found.');
+    if (loaded.isEmpty) {
+      logger.info('No managed skills found.');
       return;
     }
 
@@ -56,40 +60,38 @@ class PruneCommand extends SkillsCommand {
           .toList();
     }
 
-    const installer = SkillInstaller();
+    final installer = SkillInstaller(_dialogSupport);
     var totalRemoved = 0;
     final prunedPackages = <String>{};
 
     for (final ide in targetIdes) {
       final pkgs = manifest.packagesForIde(ide.cliName);
-      for (final packageName in pkgs.keys) {
-        if (referencedNames.contains(packageName)) continue;
+      final pkgsToPrune =
+          pkgs.keys.where((name) => !referencedNames.contains(name)).toSet();
+      prunedPackages.addAll(pkgsToPrune);
 
-        final result = await installer.removeSkillsForIde(
-          ide: ide,
-          rootPath: rootPath,
-          manifest: manifest,
-          packageName: packageName,
-        );
-        manifest = result.manifest;
-        totalRemoved += result.removedCount;
-        prunedPackages.add(packageName);
-        for (final info in result.removed) {
-          stdout.writeln('  [${info.ideName}] Removed ${info.skillName}');
-        }
+      final result = await installer.removeSkillsForIde(
+        ide: ide,
+        rootPath: rootPath,
+        manifest: manifest,
+        packageNames: pkgsToPrune,
+      );
+      manifest = result.manifest;
+      totalRemoved += result.removedCount;
+      for (final info in result.removed) {
+        logger.info('  [${info.ideName}] Removed ${info.skillName}');
       }
     }
 
+    await manifest.save(manifestFile(rootPath));
     if (manifest.isEmpty) {
-      await SkillManifest.cleanupDir(rootPath);
-    } else {
-      await manifest.save(manifestFile(rootPath));
+      await SkillManifest.cleanup(rootPath);
     }
 
     if (totalRemoved == 0) {
-      stdout.writeln('No skills to prune.');
+      logger.info('No skills to prune.');
     } else {
-      stdout.writeln(
+      logger.info(
         'Pruned $totalRemoved skill(s) from ${prunedPackages.length} package(s).',
       );
     }

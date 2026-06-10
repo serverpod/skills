@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/core/registry_repos.dart';
 import 'package:skills/src/core/registry_sync.dart';
@@ -7,6 +8,9 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
+  setUpAll(() {
+    Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+  });
   group('RegistrySync', () {
     test(
       'when repos dir does not exist then creates it and clones local repo',
@@ -72,10 +76,7 @@ void main() {
         final syncWithLocal = RegistrySync(
           repos: [
             RegistryRepo(
-              owner: 'test_owner',
-              name: 'test_repo',
-              skillLayout: RegistrySkillLayout.flat,
-              customCloneUrl: fileUrl,
+              cloneUrl: fileUrl,
             ),
           ],
         );
@@ -86,10 +87,8 @@ void main() {
         final repoDir = Directory(
           registryRepoPath(
             projectPath,
-            const RegistryRepo(
-              owner: 'test_owner',
-              name: 'test_repo',
-              skillLayout: RegistrySkillLayout.flat,
+            RegistryRepo(
+              cloneUrl: fileUrl,
             ),
           ),
         );

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.4.0-dev
+
+- feat: Added a dialog to select which packages to install skills from during
+  `skills get` and `skills remove`.
+- feat: Added a dialog to select which specific skills to install during
+  `skills get` and `skills remove`.
+- **Breaking Change**: Removed support for rest arguments, instead use the new
+  `--package`, `--skill`, or `--all` options, or the built in dialogs.
+- **Breaking Change**: `getSkills` now takes a set of package names to install
+  instead of just a single package name. To install all skills pass the
+  `allFlag: true` argument.
+- refactor: Migrate from `.agent/skills` to `.agents/skills` for the generic IDE
+  adapter. When a `.agent/` dir is detected you will be prompted for what action
+  to take.
+- feat: Added `DialogSupport` interface and optional parameter to `getSkills`,
+  includes a `CliUtilDialogSupport` implementation for use in simple CLIs.
+- feat: **Breaking Change** - Removed `stdout` and `stdin` parameters to
+  `getSkills` and replaced them with a required `Logger logger`.
+- feat: Check packages for security advisories on install.
+- chore: Move cache dir to `.dart_tool/skills` from `.dart_skills`.
+- feat: Allow the user to select an IDE if none is detected.
+- feat: Add `registry` command with `add`, `list`, and `remove` commands. This
+  replaces the old hardcoded flutter/skills and serverpod/skills-registry
+  registries, and new installs will not get those auto installed.
+
 ## 0.3.1
 
 - Allow config version 0.9.x.

@@ -1,8 +1,13 @@
+import 'package:logging/logging.dart';
 import 'package:skills/src/ide/ide.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
+  setUpAll(() {
+    Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+  });
+
   group('Given a project with a .cursor directory', () {
     test('when detecting IDE then returns cursor', () async {
       await d.dir('cursor_project', [d.dir('.cursor')]).create();
@@ -14,9 +19,9 @@ void main() {
     });
   });
 
-  group('Given a project with a .agent directory', () {
+  group('Given a project with a .agents directory', () {
     test('when detecting IDE then returns generic', () async {
-      await d.dir('ag_project', [d.dir('.agent')]).create();
+      await d.dir('ag_project', [d.dir('.agents')]).create();
 
       const detector = IdeDetector();
       final ide = detector.detect(d.path('ag_project'));
@@ -99,7 +104,7 @@ void main() {
     test('when detecting single IDE then returns null', () async {
       await d.dir('multi_ide_project', [
         d.dir('.cursor'),
-        d.dir('.agent'),
+        d.dir('.agents'),
       ]).create();
 
       const detector = IdeDetector();
@@ -111,7 +116,7 @@ void main() {
     test('when detecting all IDEs then returns all detected', () async {
       await d.dir('multi_ide_project2', [
         d.dir('.cursor'),
-        d.dir('.agent'),
+        d.dir('.agents'),
         d.dir('.claude'),
       ]).create();
 

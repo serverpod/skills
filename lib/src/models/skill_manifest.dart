@@ -3,25 +3,74 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../core/registry_repos.dart';
+
 /// Tracks which skills are installed, per IDE and per package.
 class SkillManifest {
-  static const int currentVersion = 1;
-  static const String dirName = '.dart_skills';
-  static const String baseName = 'skills_config.json';
+  static const int currentVersion = 2;
+  static final String cacheDirPath = p.join('.dart_tool', 'skills');
+  static final String configDirPath = p.join('.config', 'dart_skills');
+  static const String configName = 'skills_config.json';
 
   /// Returns the platform-correct path to the manifest file under [rootPath].
-  static String pathIn(String rootPath) => p.join(rootPath, dirName, baseName);
+  static String pathIn(String rootPath) =>
+      p.join(rootPath, configDirPath, configName);
 
-  /// Deletes the [dirName] directory under [rootPath] if it exists.
-  static Future<void> cleanupDir(String rootPath) async {
-    final dir = Directory(p.join(rootPath, dirName));
-    if (await dir.exists()) await dir.delete(recursive: true);
+  /// Deletes cache files under [rootPath] if they exist, as well as config
+  /// files and directories if they are empty.
+  static Future<void> cleanup(String rootPath) async {
+    final cacheDir = Directory(p.join(rootPath, cacheDirPath));
+    if (await cacheDir.exists()) await cacheDir.delete(recursive: true);
+
+    final manifest = await loadFromRoot(rootPath);
+    if (manifest != null && manifest.isEmpty) {
+      await File(p.join(rootPath, configDirPath, configName)).delete();
+    }
+
+    final configDir = Directory(p.join(rootPath, configDirPath));
+    if (await configDir.exists() && await configDir.list().isEmpty) {
+      await configDir.delete();
+    }
   }
+
+  /// The version of the manifest when it was loaded.
+  final int version;
 
   /// Outer key: IDE name, inner key: package name.
   final Map<String, Map<String, PackageSkillsEntry>> installations;
 
-  const SkillManifest({this.installations = const {}});
+  /// Configured registries for this workspace.
+  final List<RegistryRepo> registries;
+
+  const SkillManifest({
+    this.version = currentVersion,
+    this.installations = const {},
+    this.registries = const [],
+  });
+
+  /// Migrates existing state from `.dart_skills` to `.dart_tool/skills`.
+  static Future<void> migrateIfNeeded(String rootPath) async {
+    final oldDir = Directory(p.join(rootPath, '.dart_skills'));
+    final newCacheDir = Directory(p.join(rootPath, cacheDirPath));
+    final newConfigDir = Directory(p.join(rootPath, configDirPath));
+    final oldManifestFile =
+        File(p.join(newCacheDir.path, SkillManifest.configName));
+
+    if (await oldDir.exists()) {
+      if (!await newCacheDir.exists()) {
+        await newCacheDir.parent.create(recursive: true);
+        await oldDir.rename(newCacheDir.path);
+        if (await oldManifestFile.exists()) {
+          if (!await newConfigDir.exists()) {
+            await newConfigDir.create(recursive: true);
+          }
+          await oldManifestFile.rename(
+            SkillManifest.pathIn(rootPath),
+          );
+        }
+      }
+    }
+  }
 
   /// Loads the manifest from [file], or returns null if it doesn't exist.
   static Future<SkillManifest?> load(File file) async {
@@ -38,7 +87,24 @@ class SkillManifest {
     return loaded ?? const SkillManifest();
   }
 
+  /// Loads the manifest for [rootPath], performing migration if needed.
+  ///
+  /// Returns null if the manifest does not exist.
+  static Future<SkillManifest?> loadFromRoot(String rootPath) async {
+    await migrateIfNeeded(rootPath);
+    return load(File(pathIn(rootPath)));
+  }
+
+  /// Loads the manifest for [rootPath], performing migration if needed.
+  ///
+  /// Returns an empty manifest if none exists.
+  static Future<SkillManifest> loadOrEmptyFromRoot(String rootPath) async {
+    final loaded = await loadFromRoot(rootPath);
+    return loaded ?? const SkillManifest();
+  }
+
   factory SkillManifest.fromJson(Map<String, dynamic> json) {
+    final version = json['version'] as int? ?? 1;
     final installationsJson =
         json['installations'] as Map<String, dynamic>? ?? {};
     final installations = installationsJson.map((ideKey, ideValue) {
@@ -52,7 +118,16 @@ class SkillManifest {
       return MapEntry(ideKey, pkgs);
     });
 
-    return SkillManifest(installations: installations);
+    final registriesJson = json['registries'] as List<dynamic>? ?? [];
+    final registries = registriesJson
+        .map((r) => RegistryRepo.fromJson(r as Map<String, dynamic>))
+        .toList();
+
+    return SkillManifest(
+      version: version,
+      installations: installations,
+      registries: registries,
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -64,6 +139,7 @@ class SkillManifest {
           pkgs.map((pkgKey, entry) => MapEntry(pkgKey, entry.toJson())),
         ),
       ),
+      'registries': registries.map((r) => r.toJson()).toList(),
     };
   }
 
@@ -82,6 +158,9 @@ class SkillManifest {
       installations[ide] ?? {};
 
   /// All installed skill entries for a given [ide].
+  ///
+  /// If [packageNames] is given and non-empty, only skills from those packages
+  /// will be returned.
   Iterable<InstalledSkillEntry> allSkillsForIde(String ide) sync* {
     for (final entry in packagesForIde(ide).values) {
       yield* entry.skills;
@@ -109,7 +188,7 @@ class SkillManifest {
     final updated = _deepCopy();
     updated.putIfAbsent(ide, () => {});
     updated[ide]![packageName] = entry;
-    return SkillManifest(installations: updated);
+    return SkillManifest(installations: updated, registries: registries);
   }
 
   /// Returns a copy with [packageName] removed from [ide].
@@ -117,14 +196,30 @@ class SkillManifest {
     final updated = _deepCopy();
     updated[ide]?.remove(packageName);
     if (updated[ide]?.isEmpty ?? false) updated.remove(ide);
-    return SkillManifest(installations: updated);
+    return SkillManifest(installations: updated, registries: registries);
   }
 
   /// Returns a copy with all packages removed for [ide].
   SkillManifest withoutIde(String ide) {
     final updated = _deepCopy();
     updated.remove(ide);
-    return SkillManifest(installations: updated);
+    return SkillManifest(installations: updated, registries: registries);
+  }
+
+  /// Returns a copy with [repo] added.
+  SkillManifest withRegistry(RegistryRepo repo) {
+    return SkillManifest(
+      installations: installations,
+      registries: [...registries, repo],
+    );
+  }
+
+  /// Returns a copy with [repo] removed.
+  SkillManifest withoutRegistry(RegistryRepo repo) {
+    return SkillManifest(
+      installations: installations,
+      registries: registries.where((r) => r.cloneUrl != repo.cloneUrl).toList(),
+    );
   }
 
   Map<String, Map<String, PackageSkillsEntry>> _deepCopy() {

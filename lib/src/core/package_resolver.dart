@@ -10,7 +10,13 @@ class ResolvedPackage {
   final String name;
   final String rootPath;
 
-  const ResolvedPackage({required this.name, required this.rootPath});
+  /// The path to the package config that resolved this package.
+  final String originalPackageConfigPath;
+
+  const ResolvedPackage(
+      {required this.name,
+      required this.rootPath,
+      required this.originalPackageConfigPath});
 }
 
 /// Resolves Dart package dependency locations from package_config.json.
@@ -25,24 +31,19 @@ class PackageResolver {
 
   const PackageResolver(this.projectPath);
 
-  /// Returns the path to the package_config.json file.
-  String get packageConfigPath =>
-      p.join(projectPath, '.dart_tool', 'package_config.json');
-
-  /// Whether the package_config.json file exists.
-  bool get hasPackageConfig => File(packageConfigPath).existsSync();
-
   /// Resolves all dependency packages to their on-disk locations.
   ///
   /// If [packageName] is provided, only that package is returned.
   /// Returns an empty list if the package is not found.
   Future<List<ResolvedPackage>> resolve({String? packageName}) async {
-    final config = await findPackageConfig(Directory(projectPath));
-    if (config == null) {
+    final configPath = await findPackageConfigPath(Directory(projectPath));
+    if (configPath == null) {
       throw StateError(
         'No package_config.json found. Run "dart pub get" first.',
       );
     }
+    final config = PackageConfig.parseString(
+        await File(configPath).readAsString(), Uri.file(configPath));
 
     final packages = <ResolvedPackage>[];
     for (final package in config.packages) {
@@ -53,7 +54,10 @@ class PackageResolver {
 
       final rootPath = rootUri.toFilePath();
 
-      packages.add(ResolvedPackage(name: package.name, rootPath: rootPath));
+      packages.add(ResolvedPackage(
+          name: package.name,
+          rootPath: rootPath,
+          originalPackageConfigPath: configPath));
     }
 
     return packages;
@@ -65,10 +69,10 @@ class PackageResolver {
   /// out workspace member packages (those are the user's own code, not
   /// external dependencies that might ship skills).
   ///
-  /// If [packageName] is provided, only that package is returned.
+  /// If [packageNames] is non-empty, only those packages are returned.
   static Future<List<ResolvedPackage>> resolveWorkspace(
     WorkspaceLayout workspace, {
-    String? packageName,
+    Set<String> packageNames = const {},
   }) async {
     final memberNames = workspace.packages.map((p) => p.name).toSet();
 
@@ -76,32 +80,46 @@ class PackageResolver {
     final configPaths =
         workspace.packages.map((p) => p.packageConfigPath).toSet();
 
-    final seen = <String>{};
+    final seenPaths = <String>{};
     final results = <ResolvedPackage>[];
 
     for (final configPath in configPaths) {
       final configFile = File(configPath);
       if (!configFile.existsSync()) continue;
 
-      final configDir = Directory(p.dirname(p.dirname(configPath)));
-      final config = await findPackageConfig(configDir);
-      if (config == null) continue;
-
+      final config = await loadPackageConfig(configFile);
       for (final package in config.packages) {
         if (memberNames.contains(package.name)) continue;
-        if (seen.contains(package.name)) continue;
-        if (packageName != null && package.name != packageName) continue;
+
+        if (packageNames.isNotEmpty && !packageNames.contains(package.name)) {
+          continue;
+        }
 
         final rootUri = package.root;
         if (rootUri.scheme != 'file') continue;
 
-        seen.add(package.name);
+        final rootPath = rootUri.toFilePath();
+        if (!seenPaths.add(rootPath)) continue;
+
         results.add(
-          ResolvedPackage(name: package.name, rootPath: rootUri.toFilePath()),
+          ResolvedPackage(
+              name: package.name,
+              rootPath: rootPath,
+              originalPackageConfigPath: configPath),
         );
       }
     }
 
     return results;
+  }
+
+  static Future<String?> findPackageConfigPath(Directory dir) async {
+    while (dir.path != dir.parent.path) {
+      final configFile =
+          File(p.join(dir.path, '.dart_tool', 'package_config.json'));
+      if (await configFile.exists()) return configFile.path;
+      dir = dir.parent;
+    }
+    return null;
   }
 }

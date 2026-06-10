@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 import 'package_resolver.dart';
@@ -9,17 +10,23 @@ class ScannedSkill {
   final String packageName;
   final String skillName;
   final String skillPath;
+  final String? registryUrl;
+  final bool isGlobal;
 
   const ScannedSkill({
     required this.packageName,
     required this.skillName,
     required this.skillPath,
+    this.registryUrl,
+    this.isGlobal = false,
   });
 }
 
 /// Scans resolved packages for skills/ directories containing Agent Skills.
 class SkillScanner {
-  const SkillScanner();
+  final Logger logger;
+
+  SkillScanner(this.logger);
 
   /// Scans all [packages] for skills directories and returns found skills.
   Future<List<ScannedSkill>> scan(List<ResolvedPackage> packages) async {
@@ -54,8 +61,8 @@ class SkillScanner {
       if (!await skillMdFile.exists()) continue;
 
       if (!skillName.startsWith(prefix)) {
-        stderr.writeln(
-          'Warning: Skipping skill "$skillName" in ${package.name} '
+        logger.warning(
+          'Skipping skill "$skillName" in ${package.name} '
           '-- name must start with "${package.name}-"',
         );
         continue;

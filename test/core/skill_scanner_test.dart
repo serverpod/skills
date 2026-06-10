@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/core/package_resolver.dart';
 import 'package:skills/src/core/skill_scanner.dart';
@@ -5,10 +6,17 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
+  late Logger logger;
+
+  setUpAll(() {
+    Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+  });
+
   group('Given a package with correctly prefixed skills', () {
     late ResolvedPackage package;
 
     setUp(() async {
+      logger = Logger('SkillScanner test');
       await d.dir('my_package', [
         d.dir('skills', [
           d.dir('my_package-code-gen', [
@@ -41,11 +49,13 @@ Instructions.
       package = ResolvedPackage(
         name: 'my_package',
         rootPath: d.path('my_package'),
+        originalPackageConfigPath:
+            d.path(p.join('.dart_tool', 'package_config.json')),
       );
     });
 
     test('when scanning then finds all valid skills', () async {
-      const scanner = SkillScanner();
+      final scanner = SkillScanner(logger);
       final skills = await scanner.scanPackage(package);
 
       expect(skills, hasLength(2));
@@ -56,7 +66,7 @@ Instructions.
     });
 
     test('when scanning then skill paths point to skill directories', () async {
-      const scanner = SkillScanner();
+      final scanner = SkillScanner(logger);
       final skills = await scanner.scanPackage(package);
 
       for (final skill in skills) {
@@ -96,9 +106,11 @@ Body.
         final package = ResolvedPackage(
           name: 'my_package',
           rootPath: d.path('my_package'),
+          originalPackageConfigPath:
+              d.path(p.join('.dart_tool', 'package_config.json')),
         );
 
-        const scanner = SkillScanner();
+        final scanner = SkillScanner(logger);
         final skills = await scanner.scanPackage(package);
 
         expect(skills, hasLength(1));
@@ -116,9 +128,11 @@ Body.
       final package = ResolvedPackage(
         name: 'no_skills_package',
         rootPath: d.path('no_skills_package'),
+        originalPackageConfigPath:
+            d.path(p.join('.dart_tool', 'package_config.json')),
       );
 
-      const scanner = SkillScanner();
+      final scanner = SkillScanner(logger);
       final skills = await scanner.scanPackage(package);
 
       expect(skills, isEmpty);
@@ -138,9 +152,11 @@ Body.
       final package = ResolvedPackage(
         name: 'empty_skills',
         rootPath: d.path('empty_skills'),
+        originalPackageConfigPath:
+            d.path(p.join('.dart_tool', 'package_config.json')),
       );
 
-      const scanner = SkillScanner();
+      final scanner = SkillScanner(logger);
       final skills = await scanner.scanPackage(package);
 
       expect(skills, isEmpty);
@@ -178,11 +194,21 @@ Body B.
       ]).create();
 
       final packages = [
-        ResolvedPackage(name: 'pkg_a', rootPath: d.path('pkg_a')),
-        ResolvedPackage(name: 'pkg_b', rootPath: d.path('pkg_b')),
+        ResolvedPackage(
+          name: 'pkg_a',
+          rootPath: d.path('pkg_a'),
+          originalPackageConfigPath:
+              d.path(p.join('.dart_tool', 'package_config.json')),
+        ),
+        ResolvedPackage(
+          name: 'pkg_b',
+          rootPath: d.path('pkg_b'),
+          originalPackageConfigPath:
+              d.path(p.join('.dart_tool', 'package_config.json')),
+        ),
       ];
 
-      const scanner = SkillScanner();
+      final scanner = SkillScanner(logger);
       final skills = await scanner.scan(packages);
 
       expect(skills, hasLength(2));

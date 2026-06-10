@@ -1,9 +1,14 @@
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/core/workspace_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 void main() {
+  setUpAll(() {
+    Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
+  });
+
   group('Given a single-package project', () {
     test(
       'when resolving then returns one package pointing at project root',
@@ -26,6 +31,68 @@ environment:
         expect(layout.packages.first.path, equals(d.path('my_project')));
       },
     );
+  });
+
+  group('Given a single package within a pub workspace', () {
+    setUp(() async {
+      await d.dir('workspace_root', [
+        d.file('pubspec.yaml', '''
+name: _
+environment:
+  sdk: ^3.11.0
+workspace:
+  - my_pkg
+'''),
+        d.dir('my_pkg', [
+          d.file('pubspec.yaml', '''
+name: my_pkg
+environment:
+  sdk: ^3.11.0
+resolution: workspace
+'''),
+        ]),
+      ]).create();
+    });
+
+    test(
+      'when resolving the single package then uses the workspace '
+      'package_config.json path',
+      () async {
+        const resolver = WorkspaceResolver();
+        final layout = await resolver.resolve(
+          d.path(p.join('workspace_root', 'my_pkg')),
+        );
+
+        expect(
+          layout.rootPath,
+          equals(d.path(p.join('workspace_root', 'my_pkg'))),
+        );
+        expect(layout.isWorkspace, isFalse);
+        expect(layout.packages, hasLength(1));
+
+        final expectedConfig = d.path(
+          p.join('workspace_root', '.dart_tool', 'package_config.json'),
+        );
+        expect(layout.packages.first.packageConfigPath, equals(expectedConfig));
+      },
+    );
+
+    test('when workspace root is not found then throws StateError', () async {
+      await d.dir('isolated_pkg', [
+        d.file('pubspec.yaml', '''
+name: isolated_pkg
+environment:
+  sdk: ^3.11.0
+resolution: workspace
+'''),
+      ]).create();
+
+      const resolver = WorkspaceResolver();
+      expect(
+        () => resolver.resolve(d.path('isolated_pkg')),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 
   group('Given a Dart pub workspace', () {
