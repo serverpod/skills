@@ -16,6 +16,11 @@ void main() {
 
     setUp(() async {
       await d.dir('project', [
+        d.file('pubspec.lock', '''
+packages:
+  pkg_a:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.dir('skills', [
             d.dir('repos', [

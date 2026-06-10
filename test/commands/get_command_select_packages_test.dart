@@ -56,6 +56,15 @@ name: test_app
 environment:
   sdk: ^3.0.0
 '''),
+        d.file('pubspec.lock', '''
+packages:
+  dep1:
+    dependency: "direct main"
+  dep2:
+    dependency: "direct main"
+  dep3:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',

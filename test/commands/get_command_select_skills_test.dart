@@ -54,6 +54,13 @@ name: test_app
 environment:
   sdk: ^3.0.0
 '''),
+        d.file('pubspec.lock', '''
+packages:
+  dep1:
+    dependency: "direct main"
+  dep2:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',
@@ -220,6 +227,36 @@ environment:
 name: test_app
 environment:
   sdk: ^3.0.0
+'''),
+        d.file('pubspec.lock', '''packages:
+  dep1:
+    dependency: "direct main"
+  dep2:
+    dependency: "direct main"
+  dep3:
+    dependency: "direct main"
+  pkg_a:
+    dependency: "direct main"
+  pkg_b:
+    dependency: "direct main"
+  dep_m:
+    dependency: "direct main"
+  dep_x:
+    dependency: "direct main"
+  dep_y:
+    dependency: "direct main"
+  dep_z:
+    dependency: "direct main"
+  test_app:
+    dependency: "direct main"
+  my_app:
+    dependency: "direct main"
+  pkg:
+    dependency: "direct main"
+  dep:
+    dependency: "direct main"
+  dep_with_skills:
+    dependency: "direct main"
 '''),
         d.dir('.dart_tool', [
           d.file(

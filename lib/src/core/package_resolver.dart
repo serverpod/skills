@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
+import 'package:skills/src/models/pubspec_lock.dart';
 
 import 'workspace_resolver.dart';
 
@@ -28,6 +30,8 @@ class ResolvedPackage {
 ///   you have a [WorkspaceLayout].
 class PackageResolver {
   final String projectPath;
+
+  static final logger = Logger('PackageResolver');
 
   const PackageResolver(this.projectPath);
 
@@ -67,7 +71,8 @@ class PackageResolver {
   ///
   /// Reads each unique `package_config.json`, merges the results, and filters
   /// out workspace member packages (those are the user's own code, not
-  /// external dependencies that might ship skills).
+  /// external dependencies that might ship skills). Also filters out transitive
+  /// dependencies.
   ///
   /// If [packageNames] is non-empty, only those packages are returned.
   static Future<List<ResolvedPackage>> resolveWorkspace(
@@ -86,10 +91,28 @@ class PackageResolver {
     for (final configPath in configPaths) {
       final configFile = File(configPath);
       if (!configFile.existsSync()) continue;
-
       final config = await loadPackageConfig(configFile);
+
+      // pubspec.lock files should always exist in the same package as the
+      // package config file
+      final pubspecLockFile =
+          File(p.join(p.dirname(p.dirname(configPath)), 'pubspec.lock'));
+      if (!await pubspecLockFile.exists()) {
+        logger.warning('Missing pubspec.lock file at ${pubspecLockFile.path}');
+        continue;
+      }
+      final pubspecLock = await PubspecLock.fromFile(pubspecLockFile);
+
       for (final package in config.packages) {
         if (memberNames.contains(package.name)) continue;
+
+        final pubspecLockEntry = pubspecLock.packages[package.name];
+        if (pubspecLockEntry == null) {
+          logger.warning('Unable to find package ${package.name} in '
+              '${pubspecLockFile.path}');
+          continue;
+        }
+        if (pubspecLockEntry.isTransitiveDependency) continue;
 
         if (packageNames.isNotEmpty && !packageNames.contains(package.name)) {
           continue;

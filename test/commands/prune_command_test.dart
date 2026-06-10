@@ -38,6 +38,11 @@ name: my_app
 environment:
   sdk: ^3.0.0
 '''),
+          d.file('pubspec.lock', '''
+packages:
+  pkg_a:
+    dependency: "direct main"
+'''),
           d.dir('.dart_tool', [
             d.file(
               'package_config.json',
@@ -138,6 +143,9 @@ name: my_app
 environment:
   sdk: ^3.0.0
 '''),
+          d.file('pubspec.lock', '''
+packages:
+'''),
           d.dir('.dart_tool', [
             d.file(
               'package_config.json',
@@ -211,6 +219,9 @@ name: my_app
 environment:
   sdk: ^3.0.0
 '''),
+        d.file('pubspec.lock', '''
+packages:
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',
@@ -256,6 +267,11 @@ environment:
 name: my_app
 environment:
   sdk: ^3.0.0
+'''),
+          d.file('pubspec.lock', '''
+packages:
+  pkg_a:
+    dependency: "direct main"
 '''),
           d.dir('.dart_tool', [
             d.file(

@@ -17,6 +17,13 @@ void main() {
 
     setUp(() async {
       await d.dir('project', [
+        d.file('pubspec.lock', '''
+packages:
+  dep_b:
+    dependency: "direct main"
+  dep_a:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',
@@ -92,6 +99,13 @@ void main() {
         'when resolveWorkspace is called it merges dependencies and ignores '
         'members', () async {
       await d.dir('workspace', [
+        d.file('pubspec.lock', '''
+packages:
+  pkg_a:
+    dependency: "direct main"
+  dep_x:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',
@@ -113,6 +127,15 @@ void main() {
           ),
         ]),
         d.dir('pkg_b', [
+          d.file('pubspec.lock', '''
+packages:
+  pkg_b:
+    dependency: "direct main"
+  dep_x:
+    dependency: "direct main"
+  dep_y:
+    dependency: "direct main"
+'''),
           d.dir('.dart_tool', [
             d.file(
               'package_config.json',
@@ -196,6 +219,13 @@ void main() {
         'when resolving a specific package from workspace then returns only '
         'that one', () async {
       await d.dir('workspace2', [
+        d.file('pubspec.lock', '''
+packages:
+  pkg_a:
+    dependency: "direct main"
+  dep_z:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',
@@ -257,6 +287,19 @@ void main() {
       ]);
       await depMV2.create();
       await d.dir('workspace3', [
+        d.file('pubspec.lock', '''
+packages:
+  dep1:
+    dependency: "direct main"
+  dep2:
+    dependency: "direct main"
+  dep3:
+    dependency: "direct main"
+  pkg_a:
+    dependency: "direct main"
+  dep_m:
+    dependency: "direct main"
+'''),
         d.dir('.dart_tool', [
           d.file(
             'package_config.json',
@@ -278,6 +321,13 @@ void main() {
           ),
         ]),
         d.dir('pkg_b', [
+          d.file('pubspec.lock', '''
+packages:
+  pkg_b:
+    dependency: "direct main"
+  dep_m:
+    dependency: "direct main"
+'''),
           d.dir('.dart_tool', [
             d.file(
               'package_config.json',
@@ -326,6 +376,58 @@ void main() {
 
       final paths = mPackages.map((pkg) => p.normalize(pkg.rootPath)).toSet();
       expect(paths, containsAll([depMV1.io.path, depMV2.io.path]));
+    });
+
+    test('when a package is a transitive dependency then it is skipped',
+        () async {
+      await d.dir('workspace4', [
+        d.file('pubspec.lock', '''
+packages:
+  pkg_a:
+    dependency: "direct main"
+  dep_transitive:
+    dependency: "transitive"
+'''),
+        d.dir('.dart_tool', [
+          d.file(
+            'package_config.json',
+            jsonEncode({
+              'configVersion': 2,
+              'packages': [
+                {
+                  'name': 'pkg_a',
+                  'rootUri': '../../pkg_a',
+                  'packageUri': 'lib/',
+                },
+                {
+                  'name': 'dep_transitive',
+                  'rootUri': '../../dep_transitive',
+                  'packageUri': 'lib/',
+                },
+              ],
+            }),
+          ),
+        ]),
+      ]).create();
+
+      final layout = WorkspaceLayout(
+        rootPath: d.path('workspace4'),
+        packages: [
+          WorkspacePackage(
+            name: 'pkg_a',
+            path: d.path(p.join('workspace4', 'pkg_a')),
+            packageConfigPath: d.path(
+                p.join('workspace4', '.dart_tool', 'package_config.json')),
+          ),
+        ],
+      );
+
+      final packages = await PackageResolver.resolveWorkspace(layout);
+      final names = packages.map((pkg) => pkg.name).toSet();
+
+      expect(names, isNot(contains('dep_transitive')));
+      expect(names,
+          isEmpty); // Because pkg_a is member and dep_transitive is transitive.
     });
   });
 
