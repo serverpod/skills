@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../../core/hash_utils.dart';
 import '../../core/skill_scanner.dart';
 import '../ide.dart';
+import '../ide_adapter.dart';
 import 'agent_skills_adapter.dart';
 
 /// Claude Code adapter.
@@ -20,7 +21,7 @@ class ClaudeAdapter extends AgentSkillsAdapter {
       : super(Ide.claude.skillsPath(projectPath));
 
   @override
-  Future<({String name, String contentHash})> installSkill(
+  Future<InstallSkillResult> installSkill(
     ScannedSkill skill,
   ) async {
     var result = await super.installSkill(skill);
@@ -39,12 +40,10 @@ class ClaudeAdapter extends AgentSkillsAdapter {
           await skillMd.writeAsString(content);
 
           // Re-calculate hash since we modified the file
-          final hash = await tryCalculateDirectoryHash(targetDir);
-          if (hash == null) {
-            throw StateError('Failed to install skill ${skill.skillName} from '
-                '${skill.skillPath}');
-          }
-          result = (name: result.name, contentHash: hash);
+          result = (
+            name: result.name,
+            contentHash: await calculateDirectoryHash(targetDir)
+          );
         }
       }
     }

@@ -8,7 +8,7 @@ abstract class IdeAdapter {
   /// Installs a skill from the scanned location into the IDE's directory.
   ///
   /// Returns the skill name as installed and its content hash (if any).
-  Future<({String name, String? contentHash})> installSkill(ScannedSkill skill);
+  Future<InstallSkillResult> installSkill(ScannedSkill skill);
 
   /// A logger for this IDE Adapter. Should contain the name of the IDE.
   Logger get logger;
@@ -32,6 +32,9 @@ abstract class IdeAdapter {
   /// Creates the skills directory if it doesn't exist.
   Future<void> ensureSkillsDirectory();
 }
+
+/// The result type for [IdeAdapter.installSkill].
+typedef InstallSkillResult = ({String name, String contentHash});
 
 /// Helper method to prompt the user if they want to overwrite a skill that has
 /// been modified locally since it was installed.

@@ -31,7 +31,7 @@ abstract class AgentSkillsAdapter implements IdeAdapter {
   Future<bool> performMigrations(SkillManifest manifest) async => true;
 
   @override
-  Future<({String name, String contentHash})> installSkill(
+  Future<InstallSkillResult> installSkill(
     ScannedSkill skill,
   ) async {
     final targetDir = Directory(p.join(skillsDirectory, skill.skillName));
@@ -43,12 +43,10 @@ abstract class AgentSkillsAdapter implements IdeAdapter {
 
     await _copyDirectory(Directory(skill.skillPath), targetDir);
 
-    final hash = await tryCalculateDirectoryHash(targetDir);
-    if (hash == null) {
-      throw StateError(
-          'Failed to install skill ${skill.skillName} from ${skill.skillPath}');
-    }
-    return (name: skill.skillName, contentHash: hash);
+    return (
+      name: skill.skillName,
+      contentHash: await calculateDirectoryHash(targetDir)
+    );
   }
 
   @override
@@ -59,16 +57,11 @@ abstract class AgentSkillsAdapter implements IdeAdapter {
       return true;
     }
 
-    final currentHash = await tryCalculateDirectoryHash(targetDir);
-    if (currentHash == null) {
-      throw StateError(
-          'Failed to calculate hash for $skillName at ' '${targetDir.path}');
-    }
     if (!await promptOverwriteIfChanged(
         dialogSupport: dialogSupport,
         skillName: skillName,
         originalHash: originalHash,
-        currentHash: currentHash,
+        currentHash: await calculateDirectoryHash(targetDir),
         force: force,
         logger: logger)) {
       return false;

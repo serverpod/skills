@@ -46,7 +46,7 @@ class RulesAdapter implements IdeAdapter {
   }
 
   @override
-  Future<({String name, String contentHash})> installSkill(
+  Future<InstallSkillResult> installSkill(
     ScannedSkill skill,
   ) async {
     final skillMdFile = File(p.join(skill.skillPath, 'SKILL.md'));
