@@ -1,4 +1,6 @@
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+
 import '../ide/ide.dart';
 import '../ide/adapters/agent_skills_adapter.dart';
 import '../ide/ide_adapter_factory.dart';
@@ -74,6 +76,8 @@ class SkillInstaller {
 
   SkillInstaller(this._dialogSupport);
 
+  static final logger = Logger('SkillInstaller');
+
   /// Installs [skills] for the given [ide] at [rootPath], updating [manifest].
   /// Removes existing skills for each package before reinstalling.
   Future<SkillInstallResult?> installSkillsForIde({
@@ -127,7 +131,7 @@ class SkillInstaller {
 
       for (final skill in pkgSkills) {
         // We aborted uninstalling this skill, just copy its old install entry.
-        if (abortedSkills.contains(skill.skillName)) {
+        if (abortedSkills.remove(skill.skillName)) {
           final existing = existingEntry!.skills
               .firstWhere((s) => s.name == skill.skillName);
           installedSkills.add(existing);
@@ -188,6 +192,16 @@ class SkillInstaller {
             }
           }
         }
+      }
+      if (abortedSkills.isNotEmpty) {
+        final buffer = StringBuffer(
+            'The following skills were not uninstalled but were deleted '
+            'upstream and are now orphaned:\n\n');
+        for (final skill in abortedSkills) {
+          buffer.writeln(
+              '- $skill (installed at ${p.join(adapter.skillsDirectory, skill)})');
+        }
+        logger.warning(buffer.toString());
       }
 
       updatedManifest = updatedManifest.withPackage(
