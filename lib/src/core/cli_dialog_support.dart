@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' as io;
+import 'dart:math' as math;
 
 import 'package:cli_util/cli_components.dart' as cli;
 import 'package:io/io.dart';
@@ -23,7 +24,11 @@ class CliUtilDialogSupport implements DialogSupport {
   Future<int?> showSingleSelectDialog(List<String> options,
       {String? title}) async {
     if (title != null) io.stdout.writeln(title);
-    final result = await cli.showSingleSelectDialog(options, _sharedStdIn);
+    final result = await cli.showSingleSelectDialog(
+      options,
+      _sharedStdIn,
+      maxVisibleItems: _computeMaxVisibleItems(),
+    );
     if (result != null) {
       io.stdout.writeln('> ${options[result]}');
     }
@@ -41,6 +46,7 @@ class CliUtilDialogSupport implements DialogSupport {
       options,
       _sharedStdIn,
       initialSelected: initialSelected,
+      maxVisibleItems: _computeMaxVisibleItems(),
     );
     if (result != null) {
       final selectionStr =
@@ -48,5 +54,15 @@ class CliUtilDialogSupport implements DialogSupport {
       io.stdout.writeln('> $selectionStr');
     }
     return result;
+  }
+}
+
+int _computeMaxVisibleItems() {
+  if (!io.stdout.hasTerminal) return 10;
+  try {
+    // One extra line for the title, and one for padding at bottom, minimum 5.
+    return math.max(io.stdout.terminalLines - 2, 5);
+  } on io.StdoutException {
+    return 10;
   }
 }
