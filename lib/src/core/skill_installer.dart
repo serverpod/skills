@@ -199,7 +199,7 @@ class SkillInstaller {
             'upstream and are now orphaned:\n\n');
         for (final skill in abortedSkills) {
           buffer.writeln(
-              '- $skill (installed at ${p.join(adapter.skillsDirectory, skill)})');
+              '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})');
         }
         logger.warning(buffer.toString());
       }

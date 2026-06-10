@@ -166,7 +166,7 @@ void main() {
                 contains('The following skills were not uninstalled but were '
                     'deleted upstream and are now orphaned'),
                 contains('- pkg_a-skill1 (installed at '
-                    '${d.path('project/.agents/skills/pkg_a-skill1')})'),
+                    '${p.join(Ide.generic.skillsRelativePath, 'pkg_a-skill1')})'),
               ))));
     });
   });
