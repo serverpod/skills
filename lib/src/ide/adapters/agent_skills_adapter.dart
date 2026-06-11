@@ -12,12 +12,12 @@ import '../ide_adapter.dart';
 ///
 /// Copies the full skill directory (SKILL.md + scripts/ + references/ + assets/)
 /// using the skill's own name as the target directory name.
-abstract class AgentSkillsAdapter implements IdeAdapter {
+abstract class AgentSkillsAdapter extends IdeAdapter {
   @override
   final String skillsDirectory;
   final DialogSupport? dialogSupport;
 
-  AgentSkillsAdapter(this.skillsDirectory, {this.dialogSupport});
+  AgentSkillsAdapter(super.ide, this.skillsDirectory, {this.dialogSupport});
 
   @override
   Future<void> ensureSkillsDirectory() async {
@@ -50,22 +50,13 @@ abstract class AgentSkillsAdapter implements IdeAdapter {
   }
 
   @override
-  Future<bool> removeSkill(String skillName,
-      {String? originalHash, bool force = false}) async {
+  Future<bool> removeSkill(String skillName) async {
     final targetDir = Directory(p.join(skillsDirectory, skillName));
     if (!await targetDir.exists()) {
       return true;
     }
 
-    if (!await promptOverwriteIfChanged(
-        dialogSupport: dialogSupport,
-        skillName: skillName,
-        originalHash: originalHash,
-        currentHash: await calculateDirectoryHash(targetDir),
-        force: force,
-        logger: logger)) {
-      return false;
-    }
+    // Prompting is handled by the calling layer (e.g. `skills get` dialog).
 
     await targetDir.delete(recursive: true);
     return true;

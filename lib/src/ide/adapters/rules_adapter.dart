@@ -18,7 +18,7 @@ String defaultManagedHeader(SkillMetadata metadata) {
 /// Base adapter for IDEs that use a rules/instructions format.
 ///
 /// Transforms SKILL.md into the IDE's native rule file format.
-class RulesAdapter implements IdeAdapter {
+class RulesAdapter extends IdeAdapter {
   @override
   final Logger logger = Logger('RulesAdapter');
 
@@ -33,7 +33,8 @@ class RulesAdapter implements IdeAdapter {
   /// Optional prefix added before the markdown body.
   final String Function(SkillMetadata metadata)? headerBuilder;
 
-  RulesAdapter({
+  RulesAdapter(
+    super.ide, {
     required this.skillsDirectory,
     this.dialogSupport,
     this.fileExtension = '.md',
@@ -76,8 +77,7 @@ class RulesAdapter implements IdeAdapter {
   }
 
   @override
-  Future<bool> removeSkill(String skillName,
-      {String? originalHash, bool force = false}) async {
+  Future<bool> removeSkill(String skillName) async {
     final targetFile = File(
       p.join(skillsDirectory, '$skillName$fileExtension'),
     );
@@ -85,21 +85,7 @@ class RulesAdapter implements IdeAdapter {
       return true;
     }
 
-    final currentHash = await tryCalculateFileHash(targetFile);
-    if (currentHash == null) {
-      throw StateError(
-          'Failed to calculate hash for $skillName at ' '${targetFile.path}');
-    }
-    if (!await promptOverwriteIfChanged(
-      dialogSupport: dialogSupport,
-      skillName: skillName,
-      originalHash: originalHash,
-      currentHash: currentHash,
-      force: force,
-      logger: logger,
-    )) {
-      return false;
-    }
+    // Prompting is handled by the calling layer (e.g. `skills get` dialog).
 
     await targetFile.delete();
     return true;

@@ -308,7 +308,7 @@ Instructions for debugging.
       var result = await SkillInstaller(fakeDialogSupport).installSkillsForIde(
         ide: Ide.cursor,
         rootPath: rootPath,
-        skills: pkgBSkills,
+        skills: [...pkgASkills, ...pkgBSkills],
         manifest: manifest,
         globalConfig: const GlobalConfig(),
       );

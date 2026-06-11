@@ -137,8 +137,7 @@ void main() {
     });
 
     test('it is removed from the manifest and a message is logged', () async {
-      // Create a FakeDialogSupport that returns 1 ('No') to the overwrite prompt.
-      final dialogSupport = FakeDialogSupport()..singleSelectResults.add(1);
+      final dialogSupport = FakeDialogSupport();
       final installer = SkillInstaller(dialogSupport);
       final logs = <LogRecord>[];
       final sub = Logger.root.onRecord.listen(logs.add);
@@ -148,6 +147,7 @@ void main() {
         ide: Ide.generic,
         rootPath: rootPath,
         skills: scannedSkills,
+        selectedSkills: {'pkg_a-skill2'},
         manifest: manifest,
         globalConfig: const GlobalConfig(),
       );

@@ -2,6 +2,7 @@ import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/skills_command.dart';
 import 'package:skills/src/core/advisory_checker.dart';
 import 'package:skills/src/core/git_runner.dart';
@@ -16,9 +17,12 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/core/workspace_resolver.dart';
 import 'package:skills/src/ide/ide.dart';
 import 'package:skills/src/core/dialog_support.dart';
+import 'package:skills/src/core/hash_utils.dart';
+import 'package:skills/src/ide/ide_adapter_factory.dart';
 import 'package:skills/src/models/global_config.dart';
 
 import '../models/skill_manifest.dart';
+import '../ide/ide_adapter.dart';
 
 /// Installs skills from package dependencies for [ides].
 ///
@@ -143,6 +147,8 @@ Future<bool> getSkills({
     return false;
   }
 
+  Map<Ide, Set<String>>? selectedSkillNamesByIde;
+
   if (skillNames.isNotEmpty) {
     final foundSkillNames = skills.map((s) => s.skillName).toSet();
     final missingSkills = skillNames.difference(foundSkillNames);
@@ -151,95 +157,243 @@ Future<bool> getSkills({
           '${missingSkills.join(', ')}');
     }
     skills.removeWhere((s) => !skillNames.contains(s.skillName));
-  } else if (!allFlag) {
-    if (dialogSupport == null) {
-      // Just print the available skills if no dialog support and the user did not
-      // specify --all or --skill.
-      logger.info('Available skills:');
-      final sortedSkills = List<ScannedSkill>.from(skills)
-        ..sort((a, b) => a.skillName.compareTo(b.skillName));
-      for (final skill in sortedSkills) {
-        logger.info(
-            '  ${skill.skillName} (from ${_getSourceDisplayName(skill)})');
-      }
-      logger.info('Rerun with `--skill <name>`, or `--all` to '
-          'install the chosen skills.');
-      return false;
-    } else {
-      // We have dialog support, have the user select the packages to install
-      // skills for and then the specific skills.
-      if (packageNames.isEmpty) {
-        final packagesWithSkills =
-            skills.map((skill) => skill.packageName).toSet().toList()..sort();
-        if (packagesWithSkills.isNotEmpty) {
-          final initialSelected =
-              Iterable<int>.generate(packagesWithSkills.length).toSet();
-          final selectedIndices = await dialogSupport.showMultiSelectDialog(
-            packagesWithSkills,
-            title: 'Select packages to install skills from:',
-            initialSelected: initialSelected,
+  }
+
+  final ideAdapters = [
+    for (final ide in ides) createIdeAdapter(ide, rootPath, dialogSupport)
+  ];
+
+  final skillsBySource = <String, List<ScannedSkill>>{};
+  for (final skill in skills) {
+    final sourceId = _getSourceId(skill);
+    skillsBySource.putIfAbsent(sourceId, () => []).add(skill);
+  }
+
+  for (final adapter in ideAdapters) {
+    final existingPkgs = manifest.packagesForIde(adapter.ide.cliName);
+    for (final MapEntry(key: pkgName, value: entry) in existingPkgs.entries) {
+      for (final existingSkill in entry.skills) {
+        if (!existingSkill.isInstalled) continue;
+
+        final isStillPresent = skills.any((s) =>
+            s.packageName == pkgName && s.skillName == existingSkill.name);
+        if (!isStillPresent) {
+          final fakeSkill = RemovedSkill(
+            packageName: pkgName,
+            skillName: existingSkill.name,
           );
-          if (selectedIndices != null) {
-            final selectedPackages =
-                selectedIndices.map((i) => packagesWithSkills[i]).toSet();
-            skills
-                .removeWhere((s) => !selectedPackages.contains(s.packageName));
-          } else {
-            logger.info('Installation aborted by user.');
-            return false;
-          }
-        }
-      }
-
-      if (skills.isNotEmpty) {
-        final skillsBySource = <String, List<ScannedSkill>>{};
-        for (final skill in skills) {
-          final sourceId = _getSourceId(skill);
-          skillsBySource.putIfAbsent(sourceId, () => []).add(skill);
-        }
-
-        final sortedSourceIds = skillsBySource.keys.toList()
-          ..sort((a, b) {
-            final skillA = skillsBySource[a]!.first;
-            final skillB = skillsBySource[b]!.first;
-            return _getSourceDisplayName(skillA)
-                .compareTo(_getSourceDisplayName(skillB));
-          });
-
-        for (final sourceId in sortedSourceIds) {
-          final sourceSkills = skillsBySource[sourceId]!;
-          if (sourceSkills.length > 1) {
-            sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
-            final skillNamesList =
-                sourceSkills.map((s) => s.skillName).toList();
-            final initialSelected =
-                Iterable<int>.generate(sourceSkills.length).toSet();
-
-            final displayName = _getSourceDisplayName(sourceSkills.first);
-            final selectedIndices = await dialogSupport.showMultiSelectDialog(
-              skillNamesList,
-              title: 'Select skills to install from $displayName:',
-              initialSelected: initialSelected,
-            );
-
-            if (selectedIndices != null) {
-              final selectedSkills =
-                  selectedIndices.map((i) => sourceSkills[i]).toSet();
-              skills.removeWhere((s) =>
-                  _getSourceId(s) == sourceId && !selectedSkills.contains(s));
-            } else {
-              logger.info('Installation aborted by user.');
-              return false;
-            }
+          final sourceId = _getSourceId(fakeSkill);
+          final list = skillsBySource.putIfAbsent(sourceId, () => []);
+          if (list.where((s) => s.skillName == existingSkill.name).isEmpty) {
+            list.add(fakeSkill);
           }
         }
       }
     }
   }
 
-  if (skills.isEmpty) {
+  if (skillsBySource.isEmpty) {
     logger.info('No skills selected to install.');
     return false;
+  }
+
+  final sortedSourceIds = skillsBySource.keys.toList()
+    ..sort((a, b) {
+      final skillA = skillsBySource[a]!.first;
+      final skillB = skillsBySource[b]!.first;
+      return _getSourceDisplayName(skillA)
+          .compareTo(_getSourceDisplayName(skillB));
+    });
+
+  final allSkillStates = <ScannedSkill, Map<IdeAdapter, _SkillState>>{};
+  final sourceIdsWithDiff = <String>{};
+
+  for (final sourceId in sortedSourceIds) {
+    final sourceSkills = skillsBySource[sourceId]!;
+    sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
+
+    for (final skill in sourceSkills) {
+      final newHash = skill is RemovedSkill
+          ? null
+          : await calculateDirectoryHash(io.Directory(skill.skillPath));
+      final statesForSkill =
+          allSkillStates[skill] = <IdeAdapter, _SkillState>{};
+
+      for (final adapter in ideAdapters) {
+        var state = _SkillState.isNew;
+        final currentSkillEntry = manifest
+            .packagesForIde(adapter.ide.cliName)[skill.packageName]
+            ?.skills
+            .where((s) => s.name == skill.skillName)
+            .firstOrNull;
+
+        if (currentSkillEntry != null) {
+          if (!currentSkillEntry.isInstalled) {
+            state = _SkillState.skipped;
+          } else if (skill is RemovedSkill) {
+            state = _SkillState.removed;
+          } else {
+            final targetDir =
+                io.Directory(p.join(adapter.skillsDirectory, skill.skillName));
+            final currentHash = await targetDir.exists()
+                ? await calculateDirectoryHash(targetDir)
+                : null;
+            final installedHash = currentSkillEntry.contentHash;
+            if (installedHash != null && currentHash != installedHash) {
+              state = _SkillState.localEdits;
+            } else if (newHash != installedHash) {
+              state = _SkillState.updateAvailable;
+            } else {
+              state = _SkillState.upToDate;
+            }
+          }
+        }
+        statesForSkill[adapter] = state;
+        if (state != _SkillState.upToDate) {
+          sourceIdsWithDiff.add(sourceId);
+        }
+      }
+    }
+  }
+
+  if (!allFlag && dialogSupport != null && packageNames.isEmpty) {
+    final packagesWithDiffs = <String>{};
+    for (final sourceId in sourceIdsWithDiff) {
+      final firstSkill = skillsBySource[sourceId]!.first;
+      if (firstSkill.registryUrl == null) {
+        packagesWithDiffs.add(firstSkill.packageName);
+      }
+    }
+
+    final packagesWithSkills = packagesWithDiffs.toList()..sort();
+    if (packagesWithSkills.isNotEmpty) {
+      final initialSelected =
+          Iterable<int>.generate(packagesWithSkills.length).toSet();
+      final selectedIndices = await dialogSupport.showMultiSelectDialog(
+        packagesWithSkills,
+        title: 'Select packages to install skills from:',
+        initialSelected: initialSelected,
+      );
+      if (selectedIndices != null) {
+        final selectedPackages =
+            selectedIndices.map((i) => packagesWithSkills[i]).toSet();
+        skills.removeWhere((s) =>
+            packagesWithDiffs.contains(s.packageName) &&
+            !selectedPackages.contains(s.packageName));
+
+        for (final list in skillsBySource.values) {
+          list.removeWhere((s) =>
+              packagesWithDiffs.contains(s.packageName) &&
+              !selectedPackages.contains(s.packageName));
+        }
+        skillsBySource.removeWhere((k, v) => v.isEmpty);
+        sortedSourceIds.removeWhere((id) => !skillsBySource.containsKey(id));
+        sourceIdsWithDiff.removeWhere((id) => !skillsBySource.containsKey(id));
+      } else {
+        logger.info('Installation aborted by user.');
+        return false;
+      }
+    }
+  }
+
+  // Only prompt or print if we didn't specify specific skills or --all
+  if (skillNames.isEmpty && !allFlag) {
+    selectedSkillNamesByIde = {for (final ide in ides) ide: {}};
+    var hasAnyChangesToPrint = false;
+
+    for (final sourceId in sortedSourceIds) {
+      final sourceSkills = skillsBySource[sourceId]!;
+
+      if (!sourceIdsWithDiff.contains(sourceId)) {
+        continue;
+      }
+
+      hasAnyChangesToPrint = true;
+      final options = <String>[];
+      final initialSelected = <int>{};
+      final dialogOptions = <_DialogOption>[];
+
+      for (final skill in sourceSkills) {
+        final statesForSkill = allSkillStates[skill]!;
+        final adaptersByState = <_SkillState, List<IdeAdapter>>{};
+        for (final entry in statesForSkill.entries) {
+          adaptersByState.putIfAbsent(entry.value, () => []).add(entry.key);
+        }
+
+        for (final MapEntry(key: state, value: adapters)
+            in adaptersByState.entries) {
+          if (state == _SkillState.upToDate) {
+            continue;
+          }
+
+          final labelSuffix = state.label;
+          final isSelected = state.selectedDefault;
+          final ideStr = adapters.length == ideAdapters.length
+              ? ''
+              : ' for ${adapters.map((a) => a.ide.cliName).join(', ')}';
+
+          dialogOptions.add((
+            skill: skill,
+            adapters: adapters,
+            state: state,
+            label: '${skill.skillName}$ideStr ($labelSuffix)',
+            isSelected: isSelected,
+          ));
+        }
+      }
+
+      dialogOptions.sort((a, b) {
+        if (a.state.index != b.state.index) {
+          return a.state.index.compareTo(b.state.index);
+        }
+        return a.skill.skillName.compareTo(b.skill.skillName);
+      });
+
+      for (var i = 0; i < dialogOptions.length; i++) {
+        options.add(dialogOptions[i].label);
+        if (dialogOptions[i].isSelected) {
+          initialSelected.add(i);
+        }
+      }
+
+      final displayName = _getSourceDisplayName(sourceSkills.first);
+
+      if (dialogSupport == null) {
+        logger.info('Available skills from $displayName:');
+        for (final opt in dialogOptions) {
+          logger.info('  ${opt.label}');
+        }
+      } else {
+        final selectedIndices = await dialogSupport.showMultiSelectDialog(
+          options,
+          title: 'Select skills to install/update from $displayName:',
+          initialSelected: initialSelected,
+        );
+
+        if (selectedIndices != null) {
+          for (final index in selectedIndices) {
+            final opt = dialogOptions[index];
+            for (final adapter in opt.adapters) {
+              selectedSkillNamesByIde[adapter.ide]!.add(opt.skill.skillName);
+            }
+          }
+        } else {
+          logger.info('Installation aborted by user.');
+          return false;
+        }
+      }
+    }
+
+    if (!hasAnyChangesToPrint) {
+      logger.info('All skills are up to date.');
+      return false;
+    }
+
+    if (dialogSupport == null) {
+      logger.info('Rerun with `--skill <name>`, or `--all` to '
+          'install, update, or remove the given skills.');
+      return false;
+    }
   }
 
   final installer = SkillInstaller(dialogSupport);
@@ -249,6 +403,7 @@ Future<bool> getSkills({
       ide: ide,
       rootPath: rootPath,
       skills: skills,
+      selectedSkills: selectedSkillNamesByIde?[ide],
       manifest: manifest,
       globalConfig: globalConfig,
       force: force,
@@ -262,13 +417,12 @@ Future<bool> getSkills({
     for (final info in result.installed) {
       logger.info('  [${info.ideName}] Installed ${info.skillName}');
     }
+    logger.info(
+        'Installed ${result.installed.length} skill(s) for ${ide.cliName}.');
   }
 
   await globalConfig.save(globalConfigFile);
   await manifest.save(manifestFile(rootPath));
-
-  final ideNames = ides.map((e) => e.cliName).join(', ');
-  logger.info('Installed ${skills.length} skill(s) for $ideNames.');
 
   return true;
 }
@@ -300,4 +454,49 @@ String _getSourceDisplayName(ScannedSkill skill) {
   } else {
     return 'package ${skill.packageName}';
   }
+}
+
+enum _SkillState {
+  localEdits('Local edits', false),
+  isNew('New', false),
+  updateAvailable('Update available', true),
+  removed('Removed', true),
+  skipped('Skipped previously', false),
+  upToDate('', false);
+
+  final String label;
+  final bool selectedDefault;
+
+  const _SkillState(this.label, this.selectedDefault);
+}
+
+typedef _DialogOption = ({
+  ScannedSkill skill,
+  List<IdeAdapter> adapters,
+  _SkillState state,
+  String label,
+  bool isSelected
+});
+
+class RemovedSkill implements ScannedSkill {
+  @override
+  bool get isGlobal => throw UnimplementedError();
+
+  @override
+  final String packageName;
+
+  @override
+  String? get registryUrl => throw UnimplementedError();
+
+  @override
+  final String skillName;
+
+  /// Not a real skill, this shouldn't be called.
+  @override
+  String get skillPath => throw UnimplementedError();
+
+  RemovedSkill({
+    required this.packageName,
+    required this.skillName,
+  });
 }

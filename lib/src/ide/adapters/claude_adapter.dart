@@ -18,7 +18,7 @@ class ClaudeAdapter extends AgentSkillsAdapter {
   final Logger logger = Logger('ClaudeAdapter');
 
   ClaudeAdapter(String projectPath, {super.dialogSupport})
-      : super(Ide.claude.skillsPath(projectPath));
+      : super(Ide.claude, Ide.claude.skillsPath(projectPath));
 
   @override
   Future<InstallSkillResult> installSkill(
