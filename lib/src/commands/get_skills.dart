@@ -1,5 +1,7 @@
 import 'dart:io' as io;
 
+import 'package:io/ansi.dart' as ansi;
+
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -260,7 +262,7 @@ Future<bool> getSkills({
     final packagesWithDiffs = <String>{};
     for (final sourceId in sourceIdsWithDiff) {
       final firstSkill = skillsBySource[sourceId]!.first;
-      if (firstSkill.registryUrl == null) {
+      if (firstSkill is RemovedSkill || firstSkill.registryUrl == null) {
         packagesWithDiffs.add(firstSkill.packageName);
       }
     }
@@ -332,11 +334,13 @@ Future<bool> getSkills({
               ? ''
               : ' for ${adapters.map((a) => a.ide.cliName).join(', ')}';
 
+          final fullLabel = '${skill.skillName}$ideStr ($labelSuffix)';
+
           dialogOptions.add((
             skill: skill,
             adapters: adapters,
             state: state,
-            label: '${skill.skillName}$ideStr ($labelSuffix)',
+            label: state.colorize(fullLabel),
             isSelected: isSelected,
           ));
         }
@@ -445,10 +449,13 @@ Future<String?> _getGitCommit(String repoPath) async {
 }
 
 String _getSourceId(ScannedSkill skill) {
-  return skill.registryUrl ?? 'pkg:${skill.packageName}';
+  return skill is RemovedSkill
+      ? 'unknown'
+      : skill.registryUrl ?? 'pkg:${skill.packageName}';
 }
 
 String _getSourceDisplayName(ScannedSkill skill) {
+  if (skill is RemovedSkill) return 'unknown';
   if (skill.registryUrl != null) {
     return 'registry ${skill.registryUrl!}';
   } else {
@@ -468,6 +475,18 @@ enum _SkillState {
   final bool selectedDefault;
 
   const _SkillState(this.label, this.selectedDefault);
+
+  String colorize(String text) {
+    return switch (this) {
+          _SkillState.localEdits => ansi.yellow.wrap(text),
+          _SkillState.isNew => ansi.cyan.wrap(text),
+          _SkillState.updateAvailable => ansi.green.wrap(text),
+          _SkillState.removed => ansi.red.wrap(text),
+          _SkillState.skipped => ansi.darkGray.wrap(text),
+          _SkillState.upToDate => ansi.green.wrap(text),
+        } ??
+        text;
+  }
 }
 
 typedef _DialogOption = ({
