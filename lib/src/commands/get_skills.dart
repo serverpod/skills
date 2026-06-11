@@ -77,6 +77,154 @@ Future<bool> getSkills({
   final globalConfigFile = io.File(globalConfigPath);
   var globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
 
+  final registryData = await _syncAndScanRegistries(
+    gitRunner: gitRunner,
+    globalConfig: globalConfig,
+    manifest: manifest,
+    rootPath: rootPath,
+    logger: logger,
+  );
+
+  await _checkSecurityAdvisories(
+    packages: packages,
+    rootPath: rootPath,
+    logger: logger,
+    registryRepoCommits: registryData.registryRepoCommits,
+  );
+
+  final scanner = SkillScanner(logger);
+  final dartSkills = await scanner.scan(packages);
+
+  final resolvedPackageNames = packages.map((p) => p.name).toSet();
+  var skills = mergeSkills(
+    dartSkills: dartSkills,
+    registrySkills: registryData.registrySkills,
+    resolvedPackageNames: resolvedPackageNames,
+  );
+
+  if (skills.isEmpty) {
+    final plural = resolvedPackageNames.length > 1 ? 's' : '';
+    final filterDescription = resolvedPackageNames.isNotEmpty
+        ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
+        : '';
+    logger.info('No skills found$filterDescription.');
+    return false;
+  }
+
+  Map<Ide, Set<String>>? selectedSkillNamesByIde;
+
+  // If given a list of skills, remove all other ones.
+  if (skillNames.isNotEmpty) {
+    final foundSkillNames = skills.map((s) => s.skillName).toSet();
+    final missingSkills = skillNames.difference(foundSkillNames);
+    if (missingSkills.isNotEmpty) {
+      logger.warning('Warning: The following requested skills were not found: '
+          '${missingSkills.join(', ')}');
+    }
+    skills.removeWhere((s) => !skillNames.contains(s.skillName));
+  }
+
+  final ideAdapters = [
+    for (final ide in ides) createIdeAdapter(ide, rootPath, dialogSupport)
+  ];
+
+  final skillsBySource = _groupSkillsBySourceAndFindRemoved(
+    skills: skills,
+    ideAdapters: ideAdapters,
+    manifest: manifest,
+  );
+
+  if (skillsBySource.isEmpty) {
+    logger.info('No skills selected to install.');
+    return false;
+  }
+
+  final sortedSourceIds = skillsBySource.keys.toList()..sort();
+
+  final skillStatesResult = await _computeSkillStates(
+    sortedSourceIds: sortedSourceIds,
+    skillsBySource: skillsBySource,
+    ideAdapters: ideAdapters,
+    manifest: manifest,
+  );
+
+  final allSkillStates = skillStatesResult.allSkillStates;
+  final sourceIdsWithDiff = skillStatesResult.sourceIdsWithDiff;
+
+  if (!allFlag && dialogSupport != null && packageNames.isEmpty) {
+    final continueInstall = await _promptForPackagesWithDiffs(
+      sourceIdsWithDiff: sourceIdsWithDiff,
+      skillsBySource: skillsBySource,
+      sortedSourceIds: sortedSourceIds,
+      skills: skills,
+      dialogSupport: dialogSupport,
+      logger: logger,
+    );
+    if (!continueInstall) {
+      return false;
+    }
+  }
+
+  // Only prompt or print if we didn't specify specific skills or --all
+  if (skillNames.isEmpty && !allFlag) {
+    final promptResult = await _promptForSkillsToInstall(
+      sortedSourceIds: sortedSourceIds,
+      skillsBySource: skillsBySource,
+      sourceIdsWithDiff: sourceIdsWithDiff,
+      allSkillStates: allSkillStates,
+      ideAdapters: ideAdapters,
+      ides: ides,
+      dialogSupport: dialogSupport,
+      logger: logger,
+    );
+    if (!promptResult.continueInstall) {
+      return false;
+    }
+    selectedSkillNamesByIde = promptResult.selectedSkillNamesByIde;
+  }
+
+  final installer = SkillInstaller(dialogSupport);
+
+  for (final ide in ides) {
+    final result = await installer.installSkillsForIde(
+      ide: ide,
+      rootPath: rootPath,
+      skills: skills,
+      selectedSkills: selectedSkillNamesByIde?[ide],
+      manifest: manifest,
+      globalConfig: globalConfig,
+      force: force,
+    );
+    if (result == null) {
+      logger.warning('Installation aborted for IDE ${ide.cliName}');
+      continue;
+    }
+    manifest = result.manifest;
+    globalConfig = result.globalConfig;
+    for (final info in result.installed) {
+      logger.info('  [${info.ideName}] Installed ${info.skillName}');
+    }
+    logger.info(
+        'Installed ${result.installed.length} skill(s) for ${ide.cliName}.');
+  }
+
+  await globalConfig.save(globalConfigFile);
+  await manifest.save(manifestFile(rootPath));
+
+  return true;
+}
+
+/// Syncs and scans skill registries from [globalConfig] and [manifest].
+///
+/// If git is available, it syncs the repositories, scans for global and local
+/// registry skills, and records the git commits for each repo.
+Future<_RegistryData> _syncAndScanRegistries({
+  required GitRunner gitRunner,
+  required GlobalConfig globalConfig,
+  required SkillManifest manifest,
+  required String rootPath,
+  required Logger logger,
+}) async {
   final registrySkills = <ScannedSkill>[];
   final registryRepoCommits = <String, String>{};
 
@@ -111,6 +259,22 @@ Future<bool> getSkills({
     );
   }
 
+  return (
+    registrySkills: registrySkills,
+    registryRepoCommits: registryRepoCommits,
+  );
+}
+
+/// Checks for security advisories for the given [packages] using OSV.dev.
+///
+/// Logs warnings if any known security advisories exist for the given packages
+/// or registry commits.
+Future<void> _checkSecurityAdvisories({
+  required List<ResolvedPackage> packages,
+  required String rootPath,
+  required Logger logger,
+  required Map<String, String> registryRepoCommits,
+}) async {
   final advisoryChecker = AdvisoryChecker();
   final advisories = await advisoryChecker.checkAdvisories(
     packages,
@@ -129,42 +293,18 @@ Future<bool> getSkills({
     }
     logger.warning(buffer.toString());
   }
+}
 
-  final scanner = SkillScanner(logger);
-  final dartSkills = await scanner.scan(packages);
-
-  final resolvedPackageNames = packages.map((p) => p.name).toSet();
-  var skills = mergeSkills(
-    dartSkills: dartSkills,
-    registrySkills: registrySkills,
-    resolvedPackageNames: resolvedPackageNames,
-  );
-
-  if (skills.isEmpty) {
-    final plural = resolvedPackageNames.length > 1 ? 's' : '';
-    final filterDescription = resolvedPackageNames.isNotEmpty
-        ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
-        : '';
-    logger.info('No skills found$filterDescription.');
-    return false;
-  }
-
-  Map<Ide, Set<String>>? selectedSkillNamesByIde;
-
-  if (skillNames.isNotEmpty) {
-    final foundSkillNames = skills.map((s) => s.skillName).toSet();
-    final missingSkills = skillNames.difference(foundSkillNames);
-    if (missingSkills.isNotEmpty) {
-      logger.warning('Warning: The following requested skills were not found: '
-          '${missingSkills.join(', ')}');
-    }
-    skills.removeWhere((s) => !skillNames.contains(s.skillName));
-  }
-
-  final ideAdapters = [
-    for (final ide in ides) createIdeAdapter(ide, rootPath, dialogSupport)
-  ];
-
+/// Groups scanned [skills] by their source ID (package or registry URL).
+///
+/// It also compares the scanned skills against the previously installed skills
+/// from the [manifest] to identify any skills that were removed or are no
+/// longer present in the dependencies, returning them as `RemovedSkill` instances.
+Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
+  required List<ScannedSkill> skills,
+  required List<IdeAdapter> ideAdapters,
+  required SkillManifest manifest,
+}) {
   final skillsBySource = <String, List<ScannedSkill>>{};
   for (final skill in skills) {
     final sourceId = _getSourceId(skill);
@@ -194,19 +334,19 @@ Future<bool> getSkills({
     }
   }
 
-  if (skillsBySource.isEmpty) {
-    logger.info('No skills selected to install.');
-    return false;
-  }
+  return skillsBySource;
+}
 
-  final sortedSourceIds = skillsBySource.keys.toList()
-    ..sort((a, b) {
-      final skillA = skillsBySource[a]!.first;
-      final skillB = skillsBySource[b]!.first;
-      return _getSourceDisplayName(skillA)
-          .compareTo(_getSourceDisplayName(skillB));
-    });
-
+/// Computes the installation state for all scanned [skillsBySource].
+///
+/// For each skill and each IDE adapter, determines whether the skill is new,
+/// up-to-date, has local edits, has an update available, or was removed.
+Future<_SkillStatesResult> _computeSkillStates({
+  required List<String> sortedSourceIds,
+  required Map<String, List<ScannedSkill>> skillsBySource,
+  required List<IdeAdapter> ideAdapters,
+  required SkillManifest manifest,
+}) async {
   final allSkillStates = <ScannedSkill, Map<IdeAdapter, _SkillState>>{};
   final sourceIdsWithDiff = <String>{};
 
@@ -258,177 +398,188 @@ Future<bool> getSkills({
     }
   }
 
-  if (!allFlag && dialogSupport != null && packageNames.isEmpty) {
-    final packagesWithDiffs = <String>{};
-    for (final sourceId in sourceIdsWithDiff) {
-      final firstSkill = skillsBySource[sourceId]!.first;
-      if (firstSkill is RemovedSkill || firstSkill.registryUrl == null) {
-        packagesWithDiffs.add(firstSkill.packageName);
-      }
-    }
+  return (
+    allSkillStates: allSkillStates,
+    sourceIdsWithDiff: sourceIdsWithDiff,
+  );
+}
 
-    final packagesWithSkills = packagesWithDiffs.toList()..sort();
-    if (packagesWithSkills.isNotEmpty) {
-      final initialSelected =
-          Iterable<int>.generate(packagesWithSkills.length).toSet();
-      final selectedIndices = await dialogSupport.showMultiSelectDialog(
-        packagesWithSkills,
-        title: 'Select packages to install skills from:',
-        initialSelected: initialSelected,
-      );
-      if (selectedIndices != null) {
-        final selectedPackages =
-            selectedIndices.map((i) => packagesWithSkills[i]).toSet();
-        skills.removeWhere((s) =>
+/// Prompts the user to filter skills by the packages they come from.
+///
+/// If there are skills with differences across multiple packages, a dialog is
+/// shown for the user to select which packages to include. Unselected packages
+/// and their skills are removed from the input sets.
+///
+/// Returns `true` if the installation should continue, or `false` if aborted.
+Future<bool> _promptForPackagesWithDiffs({
+  required Set<String> sourceIdsWithDiff,
+  required Map<String, List<ScannedSkill>> skillsBySource,
+  required List<String> sortedSourceIds,
+  required List<ScannedSkill> skills,
+  required DialogSupport dialogSupport,
+  required Logger logger,
+}) async {
+  final packagesWithDiffs = <String>{};
+  for (final sourceId in sourceIdsWithDiff) {
+    final firstSkill = skillsBySource[sourceId]!.first;
+    if (firstSkill is RemovedSkill || firstSkill.registryUrl == null) {
+      packagesWithDiffs.add(firstSkill.packageName);
+    }
+  }
+
+  final packagesWithSkills = packagesWithDiffs.toList()..sort();
+  if (packagesWithSkills.isNotEmpty) {
+    final initialSelected =
+        Iterable<int>.generate(packagesWithSkills.length).toSet();
+    final selectedIndices = await dialogSupport.showMultiSelectDialog(
+      packagesWithSkills,
+      title: 'Select packages to install skills from:',
+      initialSelected: initialSelected,
+    );
+    if (selectedIndices != null) {
+      final selectedPackages =
+          selectedIndices.map((i) => packagesWithSkills[i]).toSet();
+      skills.removeWhere((s) =>
+          packagesWithDiffs.contains(s.packageName) &&
+          !selectedPackages.contains(s.packageName));
+
+      for (final list in skillsBySource.values) {
+        list.removeWhere((s) =>
             packagesWithDiffs.contains(s.packageName) &&
             !selectedPackages.contains(s.packageName));
-
-        for (final list in skillsBySource.values) {
-          list.removeWhere((s) =>
-              packagesWithDiffs.contains(s.packageName) &&
-              !selectedPackages.contains(s.packageName));
-        }
-        skillsBySource.removeWhere((k, v) => v.isEmpty);
-        sortedSourceIds.removeWhere((id) => !skillsBySource.containsKey(id));
-        sourceIdsWithDiff.removeWhere((id) => !skillsBySource.containsKey(id));
-      } else {
-        logger.info('Installation aborted by user.');
-        return false;
       }
+      skillsBySource.removeWhere((k, v) => v.isEmpty);
+      sortedSourceIds.removeWhere((id) => !skillsBySource.containsKey(id));
+      sourceIdsWithDiff.removeWhere((id) => !skillsBySource.containsKey(id));
+    } else {
+      logger.info('Installation aborted by user.');
+      return false; // aborted
     }
   }
+  return true; // continue
+}
 
-  // Only prompt or print if we didn't specify specific skills or --all
-  if (skillNames.isEmpty && !allFlag) {
-    selectedSkillNamesByIde = {for (final ide in ides) ide: {}};
-    var hasAnyChangesToPrint = false;
+/// Prompts the user to select which specific skills to install, update, or remove.
+///
+/// Displays an interactive dialog (or logs if [dialogSupport] is null) with the
+/// computed states (e.g. New, Update available, Local edits) for each skill.
+///
+/// Returns a continue boolean and a map of selected skill names by IDE.
+Future<_PromptResult> _promptForSkillsToInstall({
+  required List<String> sortedSourceIds,
+  required Map<String, List<ScannedSkill>> skillsBySource,
+  required Set<String> sourceIdsWithDiff,
+  required Map<ScannedSkill, Map<IdeAdapter, _SkillState>> allSkillStates,
+  required List<IdeAdapter> ideAdapters,
+  required List<Ide> ides,
+  required DialogSupport? dialogSupport,
+  required Logger logger,
+}) async {
+  final selectedSkillNamesByIde = <Ide, Set<String>>{
+    for (final ide in ides) ide: {}
+  };
+  var hasAnyChangesToPrint = false;
 
-    for (final sourceId in sortedSourceIds) {
-      final sourceSkills = skillsBySource[sourceId]!;
+  for (final sourceId in sortedSourceIds) {
+    final sourceSkills = skillsBySource[sourceId]!;
 
-      if (!sourceIdsWithDiff.contains(sourceId)) {
-        continue;
-      }
-
-      hasAnyChangesToPrint = true;
-      final options = <String>[];
-      final initialSelected = <int>{};
-      final dialogOptions = <_DialogOption>[];
-
-      for (final skill in sourceSkills) {
-        final statesForSkill = allSkillStates[skill]!;
-        final adaptersByState = <_SkillState, List<IdeAdapter>>{};
-        for (final entry in statesForSkill.entries) {
-          adaptersByState.putIfAbsent(entry.value, () => []).add(entry.key);
-        }
-
-        for (final MapEntry(key: state, value: adapters)
-            in adaptersByState.entries) {
-          if (state == _SkillState.upToDate) {
-            continue;
-          }
-
-          final labelSuffix = state.label;
-          final isSelected = state.selectedDefault;
-          final ideStr = adapters.length == ideAdapters.length
-              ? ''
-              : ' for ${adapters.map((a) => a.ide.cliName).join(', ')}';
-
-          final fullLabel = '${skill.skillName}$ideStr ($labelSuffix)';
-
-          dialogOptions.add((
-            skill: skill,
-            adapters: adapters,
-            state: state,
-            label: state.colorize(fullLabel),
-            isSelected: isSelected,
-          ));
-        }
-      }
-
-      dialogOptions.sort((a, b) {
-        if (a.state.index != b.state.index) {
-          return a.state.index.compareTo(b.state.index);
-        }
-        return a.skill.skillName.compareTo(b.skill.skillName);
-      });
-
-      for (var i = 0; i < dialogOptions.length; i++) {
-        options.add(dialogOptions[i].label);
-        if (dialogOptions[i].isSelected) {
-          initialSelected.add(i);
-        }
-      }
-
-      final displayName = _getSourceDisplayName(sourceSkills.first);
-
-      if (dialogSupport == null) {
-        logger.info('Available skills from $displayName:');
-        for (final opt in dialogOptions) {
-          logger.info('  ${opt.label}');
-        }
-      } else {
-        final selectedIndices = await dialogSupport.showMultiSelectDialog(
-          options,
-          title: 'Select skills to install/update from $displayName:',
-          initialSelected: initialSelected,
-        );
-
-        if (selectedIndices != null) {
-          for (final index in selectedIndices) {
-            final opt = dialogOptions[index];
-            for (final adapter in opt.adapters) {
-              selectedSkillNamesByIde[adapter.ide]!.add(opt.skill.skillName);
-            }
-          }
-        } else {
-          logger.info('Installation aborted by user.');
-          return false;
-        }
-      }
-    }
-
-    if (!hasAnyChangesToPrint) {
-      logger.info('All skills are up to date.');
-      return false;
-    }
-
-    if (dialogSupport == null) {
-      logger.info('Rerun with `--skill <name>`, or `--all` to '
-          'install, update, or remove the given skills.');
-      return false;
-    }
-  }
-
-  final installer = SkillInstaller(dialogSupport);
-
-  for (final ide in ides) {
-    final result = await installer.installSkillsForIde(
-      ide: ide,
-      rootPath: rootPath,
-      skills: skills,
-      selectedSkills: selectedSkillNamesByIde?[ide],
-      manifest: manifest,
-      globalConfig: globalConfig,
-      force: force,
-    );
-    if (result == null) {
-      logger.warning('Installation aborted for IDE ${ide.cliName}');
+    if (!sourceIdsWithDiff.contains(sourceId)) {
       continue;
     }
-    manifest = result.manifest;
-    globalConfig = result.globalConfig;
-    for (final info in result.installed) {
-      logger.info('  [${info.ideName}] Installed ${info.skillName}');
+
+    hasAnyChangesToPrint = true;
+    final options = <String>[];
+    final initialSelected = <int>{};
+    final dialogOptions = <_DialogOption>[];
+
+    for (final skill in sourceSkills) {
+      final statesForSkill = allSkillStates[skill]!;
+      final adaptersByState = <_SkillState, List<IdeAdapter>>{};
+      for (final entry in statesForSkill.entries) {
+        adaptersByState.putIfAbsent(entry.value, () => []).add(entry.key);
+      }
+
+      for (final MapEntry(key: state, value: adapters)
+          in adaptersByState.entries) {
+        if (state == _SkillState.upToDate) {
+          continue;
+        }
+
+        final labelSuffix = state.label;
+        final isSelected = state.selectedDefault;
+        final ideStr = adapters.length == ideAdapters.length
+            ? ''
+            : ' for ${adapters.map((a) => a.ide.cliName).join(', ')}';
+
+        final fullLabel = '${skill.skillName}$ideStr ($labelSuffix)';
+
+        dialogOptions.add((
+          skill: skill,
+          adapters: adapters,
+          state: state,
+          label: state.colorize(fullLabel),
+          isSelected: isSelected,
+        ));
+      }
     }
-    logger.info(
-        'Installed ${result.installed.length} skill(s) for ${ide.cliName}.');
+
+    dialogOptions.sort((a, b) {
+      if (a.state.index != b.state.index) {
+        return a.state.index.compareTo(b.state.index);
+      }
+      return a.skill.skillName.compareTo(b.skill.skillName);
+    });
+
+    for (var i = 0; i < dialogOptions.length; i++) {
+      options.add(dialogOptions[i].label);
+      if (dialogOptions[i].isSelected) {
+        initialSelected.add(i);
+      }
+    }
+
+    final displayName = _getSourceDisplayName(sourceSkills.first);
+
+    if (dialogSupport == null) {
+      logger.info('Available skills from $displayName:');
+      for (final opt in dialogOptions) {
+        logger.info('  ${opt.label}');
+      }
+    } else {
+      final selectedIndices = await dialogSupport.showMultiSelectDialog(
+        options,
+        title: 'Select skills to install/update from $displayName:',
+        initialSelected: initialSelected,
+      );
+
+      if (selectedIndices != null) {
+        for (final index in selectedIndices) {
+          final opt = dialogOptions[index];
+          for (final adapter in opt.adapters) {
+            selectedSkillNamesByIde[adapter.ide]!.add(opt.skill.skillName);
+          }
+        }
+      } else {
+        logger.info('Installation aborted by user.');
+        return (continueInstall: false, selectedSkillNamesByIde: null);
+      }
+    }
   }
 
-  await globalConfig.save(globalConfigFile);
-  await manifest.save(manifestFile(rootPath));
+  if (!hasAnyChangesToPrint) {
+    logger.info('All skills are up to date.');
+    return (continueInstall: false, selectedSkillNamesByIde: null);
+  }
 
-  return true;
+  if (dialogSupport == null) {
+    logger.info('Rerun with `--skill <name>`, or `--all` to '
+        'install, update, or remove the given skills.');
+    return (continueInstall: false, selectedSkillNamesByIde: null);
+  }
+
+  return (
+    continueInstall: true,
+    selectedSkillNamesByIde: selectedSkillNamesByIde,
+  );
 }
 
 Future<String?> _getGitCommit(String repoPath) async {
@@ -488,6 +639,21 @@ enum _SkillState {
         text;
   }
 }
+
+typedef _RegistryData = ({
+  List<ScannedSkill> registrySkills,
+  Map<String, String> registryRepoCommits,
+});
+
+typedef _SkillStatesResult = ({
+  Map<ScannedSkill, Map<IdeAdapter, _SkillState>> allSkillStates,
+  Set<String> sourceIdsWithDiff,
+});
+
+typedef _PromptResult = ({
+  bool continueInstall,
+  Map<Ide, Set<String>>? selectedSkillNamesByIde,
+});
 
 typedef _DialogOption = ({
   ScannedSkill skill,
