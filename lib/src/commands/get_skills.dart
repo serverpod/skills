@@ -102,15 +102,6 @@ Future<bool> getSkills({
     resolvedPackageNames: resolvedPackageNames,
   );
 
-  if (skills.isEmpty) {
-    final plural = resolvedPackageNames.length > 1 ? 's' : '';
-    final filterDescription = resolvedPackageNames.isNotEmpty
-        ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
-        : '';
-    logger.info('No skills found$filterDescription.');
-    return false;
-  }
-
   Map<Ide, Set<String>>? selectedSkillNamesByIde;
 
   // If given a list of skills, remove all other ones.
@@ -132,10 +123,19 @@ Future<bool> getSkills({
     skills: skills,
     ideAdapters: ideAdapters,
     manifest: manifest,
+    packageNames: packageNames,
   );
 
   if (skillsBySource.isEmpty) {
-    logger.info('No skills selected to install.');
+    if (skills.isEmpty) {
+      final plural = resolvedPackageNames.length > 1 ? 's' : '';
+      final filterDescription = resolvedPackageNames.isNotEmpty
+          ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
+          : '';
+      logger.info('No skills found$filterDescription.');
+    } else {
+      logger.info('No skills selected to install.');
+    }
     return false;
   }
 
@@ -304,6 +304,7 @@ Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
   required List<ScannedSkill> skills,
   required List<IdeAdapter> ideAdapters,
   required SkillManifest manifest,
+  required Set<String> packageNames,
 }) {
   final skillsBySource = <String, List<ScannedSkill>>{};
   for (final skill in skills) {
@@ -314,6 +315,9 @@ Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
   for (final adapter in ideAdapters) {
     final existingPkgs = manifest.packagesForIde(adapter.ide.cliName);
     for (final MapEntry(key: pkgName, value: entry) in existingPkgs.entries) {
+      if (packageNames.isNotEmpty && !packageNames.contains(pkgName)) {
+        continue;
+      }
       for (final existingSkill in entry.skills) {
         if (!existingSkill.isInstalled) continue;
 
