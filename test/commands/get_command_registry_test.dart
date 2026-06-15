@@ -164,6 +164,122 @@ environment:
       expect(repo.installs, isNotEmpty);
       expect(repo.installs.first, contains('pkg-skill'));
     });
+
+    test(
+        'when installing a specific package then registries are not cloned',
+        () async {
+      final mockRegistry = d.dir('mock_registry', [
+        d.dir('skills', [
+          d.dir('pkg-skill', [
+            d.file('SKILL.md', '---\nname: pkg-skill\n---\n'),
+          ]),
+        ]),
+      ]);
+      await mockRegistry.create();
+      final registryPath = mockRegistry.io.path;
+
+      // Initialize git repo
+      await Process.run('git', ['init'], workingDirectory: registryPath);
+      await Process.run('git', ['config', 'user.name', 'Test'],
+          workingDirectory: registryPath);
+      await Process.run('git', ['config', 'user.email', 'test@example.com'],
+          workingDirectory: registryPath);
+      await Process.run('git', ['add', '.'], workingDirectory: registryPath);
+      await Process.run('git', ['commit', '-m', 'initial'],
+          workingDirectory: registryPath);
+
+      // dep_pkg has its own Dart skills — no registry needed.
+      final depPkg = d.dir('dep_pkg', [
+        d.dir('lib', [d.file('dep.dart', '')]),
+        d.dir('skills', [
+          d.dir('dep_pkg-feature', [
+            d.file('SKILL.md', '---\nname: dep_pkg-feature\n---\n'),
+          ]),
+        ]),
+      ]);
+      await depPkg.create();
+
+      final project = d.dir('project_no_registry_clone', [
+        d.file('pubspec.yaml', '''
+name: test_app
+environment:
+  sdk: ^3.0.0
+'''),
+        d.dir('.dart_tool', [
+          d.file(
+            'package_config.json',
+            jsonEncode({
+              'configVersion': 2,
+              'packages': [
+                {
+                  'name': 'test_app',
+                  'rootUri': '../',
+                  'packageUri': 'lib/',
+                },
+                {
+                  'name': 'dep_pkg',
+                  'rootUri': '../../dep_pkg',
+                  'packageUri': 'lib/',
+                },
+                // 'pkg' is a dependency with registry skills but we are NOT
+                // requesting it, so its registry must not be cloned.
+                {
+                  'name': 'pkg',
+                  'rootUri': '../../pkg',
+                  'packageUri': 'lib/',
+                },
+              ],
+            }),
+          ),
+        ]),
+        d.dir('.cursor', [d.dir('skills')]),
+      ]);
+      await project.create();
+      final projectPath = project.io.path;
+
+      final globalConfigPath = d.file('global_config_no_clone.json').io.path;
+      GlobalConfig.globalPathOverride = globalConfigPath;
+      addTearDown(() => GlobalConfig.globalPathOverride = null);
+
+      var globalConfig = const GlobalConfig();
+      globalConfig =
+          globalConfig.withRegistry(RegistryRepo(cloneUrl: registryPath));
+      await globalConfig.save(File(globalConfigPath));
+
+      final getCommand = GetCommand(
+        dialogSupport: FakeDialogSupport()..multiSelectResult = {0},
+      );
+      final runner = SkillsCommandRunner('skills', 'Test')
+        ..addCommand(getCommand);
+
+      // Request only dep_pkg — the global registry (for 'pkg') must NOT be
+      // cloned as a side-effect.
+      await runner.run([
+        '--directory',
+        projectPath,
+        'get',
+        '--ide',
+        'cursor',
+        'dep_pkg',
+      ]);
+
+      // dep_pkg's own skill should be installed.
+      await d
+          .dir(projectPath, [d.dir('.cursor/skills/dep_pkg-feature')])
+          .validate();
+
+      // The registry repo must not have been cloned into the workspace.
+      final repoDir = Directory(p.join(
+        projectPath,
+        '.dart_tool',
+        'skills',
+        'repos',
+        RegistryRepo(cloneUrl: registryPath).pathSegment,
+      ));
+      expect(await repoDir.exists(), isFalse,
+          reason: 'Registry must not be cloned when a specific package is '
+              'requested via `skills get <package>`');
+    });
   });
 }
 
