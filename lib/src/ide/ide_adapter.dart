@@ -20,14 +20,8 @@ abstract class IdeAdapter {
 
   /// Removes a previously installed skill by its name.
   ///
-  /// If [originalHash] is provided, then it will check the current hash of the
-  /// directory and prompt the user if they want to overwrite it, if there have
-  /// been any manual changes since it was installed. If we do not have dialog
-  /// support then it will log a warning advertising the `--force` flag and
-  /// return `false`.
-  ///
   /// Returns `true` if removed successfully or it didn't exist.
-  /// Returns `false` if the user aborted the removal.
+  /// Returns `false` if the removal failed.
   Future<bool> removeSkill(String skillName);
 
   /// Returns the absolute path to the IDE's skills/rules directory.
@@ -39,9 +33,3 @@ abstract class IdeAdapter {
 
 /// The result type for [IdeAdapter.installSkill].
 typedef InstallSkillResult = ({String name, String contentHash});
-
-/// Helper method to prompt the user if they want to overwrite a skill that has
-/// been modified locally since it was installed.
-///
-/// Returns `true` if the user approves it, [originalHash] was null, or the
-/// hashes were equal.

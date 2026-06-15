@@ -2,6 +2,7 @@ import 'dart:io' as io;
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:skills/src/core/hash_utils.dart';
 
 import '../ide/ide.dart';
 import '../ide/adapters/agent_skills_adapter.dart';
@@ -9,7 +10,6 @@ import '../ide/ide_adapter_factory.dart';
 import '../models/global_config.dart';
 import '../models/skill_manifest.dart';
 import 'dialog_support.dart';
-import 'hash_utils.dart';
 import 'skill_scanner.dart';
 
 /// Result of installing skills for an IDE.
@@ -81,7 +81,8 @@ class SkillInstaller {
 
   static final logger = Logger('SkillInstaller');
 
-  /// Installs [skills] for the given [ide] at [rootPath], updating [manifest].
+  /// Installs [skills] for the given [ide] at [rootPath], returning
+  /// an updated version of [previousManifest].
   ///
   /// Removes existing skills for each package before reinstalling.
   ///
@@ -91,14 +92,13 @@ class SkillInstaller {
     required Ide ide,
     required String rootPath,
     required List<ScannedSkill> skills,
-    required SkillManifest manifest,
+    required SkillManifest previousManifest,
     required GlobalConfig globalConfig,
     Set<String>? selectedSkills,
-    bool force = false,
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     if (adapter is AgentSkillsAdapter) {
-      if (!await adapter.performMigrations(manifest)) {
+      if (!await adapter.performMigrations(previousManifest)) {
         return null;
       }
     }
@@ -112,8 +112,8 @@ class SkillInstaller {
           skill.packageName, () => {})[skill.skillName] ??= skill;
     }
 
-    var updatedManifest = manifest;
-    final installed = <InstalledSkillInfo>[];
+    var updatedManifest = previousManifest;
+    final installedSkillInfos = <InstalledSkillInfo>[];
 
     for (final entry in skillsByPackage.entries) {
       final pkgName = entry.key;
@@ -122,38 +122,37 @@ class SkillInstaller {
       final existingPkgs = updatedManifest.packagesForIde(ide.cliName);
       final existingEntry = existingPkgs[pkgName];
 
-      // Uninstall old skills but record the ones that were skipped (doesn't
-      // exist in selectedSkills).
+      // Uninstall existing skills that we are going to update, and record any
+      // skipped skills or failed uninstalls.
       final skippedSkills = <String>{};
       if (existingEntry != null) {
         for (final existing in existingEntry.skills) {
-          if (!existing.isInstalled) continue;
           if (selectedSkills != null &&
               !selectedSkills.contains(existing.name)) {
             skippedSkills.add(existing.name);
-          } else {
-            if (!await adapter.removeSkill(existing.name)) {
-              skippedSkills.add(existing.name);
-            }
+          } else if (existing.isInstalled &&
+              !await adapter.removeSkill(existing.name)) {
+            skippedSkills.add(existing.name);
           }
         }
       }
 
-      final installedSkills = <InstalledSkillEntry>[];
+      final updatedSkillEntries = <InstalledSkillEntry>[];
       var updatedGlobalConfig = globalConfig;
 
       for (final skill in pkgSkills) {
-        // We aborted uninstalling this skill, just copy its old install entry.
+        // We skipped uninstalling this skill, just copy its old install entry.
         if (skippedSkills.remove(skill.skillName)) {
           final existing = existingEntry!.skills
               .firstWhere((s) => s.name == skill.skillName);
-          installedSkills.add(existing);
+          updatedSkillEntries.add(existing);
           continue;
         }
 
+        // New skill, but not in the selected skills to install.
         if (selectedSkills != null &&
             !selectedSkills.contains(skill.skillName)) {
-          installedSkills.add(
+          updatedSkillEntries.add(
             InstalledSkillEntry(
               name: skill.skillName,
               installedAt: DateTime.now().toUtc(),
@@ -168,14 +167,16 @@ class SkillInstaller {
         // Actually install the new skill
         final installResult = await adapter.installSkill(skill);
         final installedName = installResult.name;
-        installedSkills.add(
+        updatedSkillEntries.add(
           InstalledSkillEntry(
             name: installedName,
             installedAt: DateTime.now().toUtc(),
             contentHash: installResult.contentHash,
           ),
         );
-        installed.add(
+        // This skill was actually installed fresh, so we record it in the
+        // response.
+        installedSkillInfos.add(
           InstalledSkillInfo(
             ideName: ide.cliName,
             skillName: skill.skillName,
@@ -185,6 +186,9 @@ class SkillInstaller {
           ),
         );
 
+        // Update local/global manifests for registries so that we have a back
+        // link from each registry to where its skills were installed, for
+        // cleanup later on.
         if (skill.registryUrl case var registryUrl?) {
           final installLocation =
               p.join(rootPath, ide.skillsRelativePath, installedName);
@@ -220,6 +224,9 @@ class SkillInstaller {
           }
         }
       }
+
+      // Anything left here was not uninstalled, but also no longer exists
+      // upstream, so they are orphaned.
       if (skippedSkills.isNotEmpty) {
         final buffer = StringBuffer(
             'The following skills were not uninstalled but were deleted '
@@ -234,7 +241,7 @@ class SkillInstaller {
       updatedManifest = updatedManifest.withPackage(
         ide.cliName,
         pkgName,
-        PackageSkillsEntry(skills: installedSkills),
+        PackageSkillsEntry(skills: updatedSkillEntries),
       );
       globalConfig = updatedGlobalConfig;
     }
@@ -282,22 +289,19 @@ class SkillInstaller {
     return SkillInstallResult(
         manifest: updatedManifest,
         globalConfig: globalConfig,
-        installed: installed);
+        installed: installedSkillInfos);
   }
 
   /// Removes skills for [ide] from [manifest].
   ///
   /// If [packageNames] is not empty, only those packages skills are removed.
   /// If [skillNames] is not empty, only those specific skills are removed.
-  /// If [force] is `false`, then the user will be prompted before removing any
-  /// skills that have had local modifications since they were installed.
   Future<SkillRemoveResult> removeSkillsForIde({
     required Ide ide,
     required String rootPath,
     required SkillManifest manifest,
     Set<String> packageNames = const {},
     Set<String> skillNames = const {},
-    bool force = false,
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     final removed = <RemovedSkillInfo>[];

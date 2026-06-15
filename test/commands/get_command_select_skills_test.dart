@@ -110,7 +110,8 @@ environment:
       expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
       expect(
         fakeDialogSupport.allMultiSelectOptions[0],
-        unorderedEquals(['dep1-skill1 (New)', 'dep1-skill2 (New)']),
+        unorderedEquals(
+            [contains('dep1-skill1 (New)'), contains('dep1-skill2 (New)')]),
       );
       expect(fakeDialogSupport.allInitialSelected[0], isEmpty);
       expect(
@@ -161,7 +162,8 @@ environment:
       );
       expect(
         fakeDialogSupport.allMultiSelectOptions[1],
-        equals(['dep1-skill1 (New)', 'dep1-skill2 (New)']),
+        unorderedEquals(
+            [contains('dep1-skill1 (New)'), contains('dep1-skill2 (New)')]),
       );
       expect(
         fakeDialogSupport.allTitles[1],
@@ -286,11 +288,13 @@ environment:
       );
       expect(
         fakeDialogSupport.allMultiSelectOptions[1],
-        equals(['dep1-skill1 (New)', 'dep1-skill2 (New)']),
+        unorderedEquals(
+            [contains('dep1-skill1 (New)'), contains('dep1-skill2 (New)')]),
       );
       expect(
         fakeDialogSupport.allMultiSelectOptions[2],
-        equals(['dep2-skill1 (New)', 'dep2-skill2 (New)']),
+        unorderedEquals(
+            [contains('dep2-skill1 (New)'), contains('dep2-skill2 (New)')]),
       );
 
       // Sorted by display name: package dep1, package dep2

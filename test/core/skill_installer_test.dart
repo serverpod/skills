@@ -69,7 +69,7 @@ void main() {
         ide: Ide.generic,
         rootPath: rootPath,
         skills: scannedSkills,
-        manifest: manifest,
+        previousManifest: manifest,
         globalConfig: const GlobalConfig(),
       );
 
@@ -83,7 +83,7 @@ void main() {
     });
   });
 
-  group('Given an orphaned skill that is not uninstalled', () {
+  group('Given an orphaned skill', () {
     late String rootPath;
     late List<ScannedSkill> scannedSkills;
     late SkillManifest manifest;
@@ -136,7 +136,7 @@ void main() {
       ];
     });
 
-    test('it is removed from the manifest and a message is logged', () async {
+    test('when the skill is not uninstalled', () async {
       final dialogSupport = FakeDialogSupport();
       final installer = SkillInstaller(dialogSupport);
       final logs = <LogRecord>[];
@@ -148,14 +148,15 @@ void main() {
         rootPath: rootPath,
         skills: scannedSkills,
         selectedSkills: {'pkg_a-skill2'},
-        manifest: manifest,
+        previousManifest: manifest,
         globalConfig: const GlobalConfig(),
       );
 
       final newManifest = result!.manifest;
       final pkgSkills = newManifest.packagesForIde('generic')['pkg_a']!.skills;
 
-      expect(pkgSkills.map((s) => s.name), isNot(contains('pkg_a-skill1')));
+      expect(pkgSkills.map((s) => s.name), isNot(contains('pkg_a-skill1')),
+          reason: 'then it is removed from the manifest');
       expect(pkgSkills.map((s) => s.name), contains('pkg_a-skill2'));
       final printedInstallPath = p.join(
           Ide.generic.skillsRelativePath
@@ -171,7 +172,8 @@ void main() {
                     'deleted upstream and are now orphaned'),
                 contains('- pkg_a-skill1 (installed at '
                     '$printedInstallPath)'),
-              ))));
+              ))),
+          reason: 'then a message about the orphaned skill is logged');
     });
   });
 }

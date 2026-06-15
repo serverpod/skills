@@ -173,8 +173,6 @@ class RemoveCommand extends SkillsCommand {
         manifest: manifest,
         packageNames: packagesToRemove,
         skillNames: skillsToRemove,
-        // Don't worry about local modifications for the remove command
-        force: true,
       );
       manifest = result.manifest;
       totalRemoved += result.removedCount;
