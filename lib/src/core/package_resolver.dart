@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:skills/src/models/pubspec_lock.dart';
+import 'package:skills/src/models/package_graph.dart';
 
 import 'workspace_resolver.dart';
 
@@ -93,43 +93,52 @@ class PackageResolver {
       if (!configFile.existsSync()) continue;
       final config = await loadPackageConfig(configFile);
 
-      // pubspec.lock files should always exist in the same package as the
-      // package config file
-      final pubspecLockFile =
-          File(p.join(p.dirname(p.dirname(configPath)), 'pubspec.lock'));
-      if (!await pubspecLockFile.exists()) {
-        logger.warning('Missing pubspec.lock file at ${pubspecLockFile.path}');
+      // package_graph.json files always exist next to the package config.
+      final packageGraphFile =
+          File(p.join(p.dirname(configPath), 'package_graph.json'));
+      if (!await packageGraphFile.exists()) {
+        logger.warning(
+            'Missing `package_graph.json` file at ${packageGraphFile.path}');
         continue;
       }
-      final pubspecLock = await PubspecLock.fromFile(pubspecLockFile);
+      final packageGraph = await PackageGraph.fromFile(packageGraphFile);
 
-      for (final package in config.packages) {
-        if (memberNames.contains(package.name)) continue;
+      for (final packageEntry in packageGraph.packages) {
+        /// We only care about the workspace packages dependencies.
+        if (!memberNames.contains(packageEntry.name)) continue;
 
-        final pubspecLockEntry = pubspecLock.packages[package.name];
-        if (pubspecLockEntry == null) {
-          logger.warning('Unable to find package ${package.name} in '
-              '${pubspecLockFile.path}');
-          continue;
+        for (final dependency in [
+          ...packageEntry.dependencies,
+          ...packageEntry.devDependencies
+        ]) {
+          if (packageNames.isNotEmpty && !packageNames.contains(dependency)) {
+            continue;
+          }
+
+          final packageConfigEntry = config[dependency];
+          if (packageConfigEntry == null) {
+            logger
+                .severe('Missing dependency "$dependency" in package config.');
+            continue;
+          }
+
+          final rootUri = packageConfigEntry.root;
+          if (rootUri.scheme != 'file') {
+            logger.warning(
+                'Skipping skills for "$dependency" due to non-file URI: '
+                '$rootUri');
+          }
+
+          final rootPath = rootUri.toFilePath();
+          if (!seenPaths.add(rootPath)) continue;
+
+          results.add(
+            ResolvedPackage(
+                name: packageEntry.name,
+                rootPath: rootPath,
+                originalPackageConfigPath: configPath),
+          );
         }
-        if (pubspecLockEntry.isTransitiveDependency) continue;
-
-        if (packageNames.isNotEmpty && !packageNames.contains(package.name)) {
-          continue;
-        }
-
-        final rootUri = package.root;
-        if (rootUri.scheme != 'file') continue;
-
-        final rootPath = rootUri.toFilePath();
-        if (!seenPaths.add(rootPath)) continue;
-
-        results.add(
-          ResolvedPackage(
-              name: package.name,
-              rootPath: rootPath,
-              originalPackageConfigPath: configPath),
-        );
       }
     }
 
