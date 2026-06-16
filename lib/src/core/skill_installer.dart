@@ -121,8 +121,11 @@ class SkillInstaller {
       final abortedSkills = <String>{};
       if (existingEntry != null) {
         for (final existing in existingEntry.skills) {
-          if (!await adapter.removeSkill(existing.name,
-              originalHash: existing.contentHash, force: force)) {
+          if (!await adapter.removeSkill(
+            existing.name,
+            originalHash: existing.contentHash,
+            force: force,
+          )) {
             abortedSkills.add(existing.name);
           }
         }
@@ -134,8 +137,9 @@ class SkillInstaller {
       for (final skill in pkgSkills) {
         // We aborted uninstalling this skill, just copy its old install entry.
         if (abortedSkills.remove(skill.skillName)) {
-          final existing = existingEntry!.skills
-              .firstWhere((s) => s.name == skill.skillName);
+          final existing = existingEntry!.skills.firstWhere(
+            (s) => s.name == skill.skillName,
+          );
           installedSkills.add(existing);
           continue;
         }
@@ -202,11 +206,13 @@ class SkillInstaller {
       }
       if (abortedSkills.isNotEmpty) {
         final buffer = StringBuffer(
-            'The following skills were not uninstalled but were deleted '
-            'upstream and are now orphaned:\n\n');
+          'The following skills were not uninstalled but were deleted '
+          'upstream and are now orphaned:\n\n',
+        );
         for (final skill in abortedSkills) {
           buffer.writeln(
-              '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})');
+            '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})',
+          );
         }
         logger.warning(buffer.toString());
       }
@@ -254,8 +260,11 @@ class SkillInstaller {
       if (skillNames.isEmpty) {
         manifest = manifest.withoutPackage(ide.cliName, pkgName);
         for (final skill in skills) {
-          await adapter.removeSkill(skill.name,
-              originalHash: skill.contentHash, force: force);
+          await adapter.removeSkill(
+            skill.name,
+            originalHash: skill.contentHash,
+            force: force,
+          );
           removed.add(
             RemovedSkillInfo(ideName: ide.cliName, skillName: skill.name),
           );
@@ -270,8 +279,11 @@ class SkillInstaller {
 
         if (skillsToRemove.isNotEmpty) {
           for (final skill in skillsToRemove) {
-            await adapter.removeSkill(skill.name,
-                originalHash: skill.contentHash, force: force);
+            await adapter.removeSkill(
+              skill.name,
+              originalHash: skill.contentHash,
+              force: force,
+            );
             removed.add(
               RemovedSkillInfo(ideName: ide.cliName, skillName: skill.name),
             );

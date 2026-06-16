@@ -59,8 +59,10 @@ void main() {
 
       projectPath = projectRootDir.io.path;
       fakeDialogSupport = FakeDialogSupport();
-      skillsAdapter =
-          GenericAdapter(projectPath, dialogSupport: fakeDialogSupport);
+      skillsAdapter = GenericAdapter(
+        projectPath,
+        dialogSupport: fakeDialogSupport,
+      );
     });
 
     test('when running `skills get` and the user only selects dep1 then only '

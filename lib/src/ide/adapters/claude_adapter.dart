@@ -18,12 +18,10 @@ class ClaudeAdapter extends AgentSkillsAdapter {
   final Logger logger = Logger('ClaudeAdapter');
 
   ClaudeAdapter(String projectPath, {super.dialogSupport})
-      : super(Ide.claude.skillsPath(projectPath));
+    : super(Ide.claude.skillsPath(projectPath));
 
   @override
-  Future<InstallSkillResult> installSkill(
-    ScannedSkill skill,
-  ) async {
+  Future<InstallSkillResult> installSkill(ScannedSkill skill) async {
     var result = await super.installSkill(skill);
 
     final targetDir = Directory(p.join(skillsDirectory, skill.skillName));
@@ -42,7 +40,7 @@ class ClaudeAdapter extends AgentSkillsAdapter {
           // Re-calculate hash since we modified the file
           result = (
             name: result.name,
-            contentHash: await calculateDirectoryHash(targetDir)
+            contentHash: await calculateDirectoryHash(targetDir),
           );
         }
       }
