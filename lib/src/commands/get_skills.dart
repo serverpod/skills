@@ -331,14 +331,14 @@ Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
           (s) => s.packageName == pkgName && s.skillName == existingSkill.name,
         );
         if (!isStillPresent) {
-          final fakeSkill = RemovedSkill(
+          final orphanedSkill = OrphanedSkill(
             packageName: pkgName,
             skillName: existingSkill.name,
           );
-          final sourceId = _getSourceId(fakeSkill);
+          final sourceId = _getSourceId(orphanedSkill);
           final list = skillsBySource.putIfAbsent(sourceId, () => []);
           if (list.where((s) => s.skillName == existingSkill.name).isEmpty) {
-            list.add(fakeSkill);
+            list.add(orphanedSkill);
           }
         }
       }
@@ -366,7 +366,7 @@ Future<_SkillStatesResult> _computeSkillStates({
     sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
 
     for (final skill in sourceSkills) {
-      final newHash = skill is RemovedSkill
+      final newHash = skill is OrphanedSkill
           ? null
           : await calculateDirectoryHash(io.Directory(skill.skillPath));
       final statesForSkill = allSkillStates[skill] =
@@ -383,7 +383,7 @@ Future<_SkillStatesResult> _computeSkillStates({
         if (currentSkillEntry != null) {
           if (!currentSkillEntry.isInstalled) {
             state = _SkillState.skipped;
-          } else if (skill is RemovedSkill) {
+          } else if (skill is OrphanedSkill) {
             state = _SkillState.removed;
           } else {
             final targetDir = io.Directory(
@@ -431,7 +431,7 @@ Future<bool> _promptForPackagesWithDiffs({
   final packagesWithDiffs = <String>{};
   for (final sourceId in sourceIdsWithDiff) {
     final firstSkill = skillsBySource[sourceId]!.first;
-    if (firstSkill is RemovedSkill || firstSkill.registryUrl == null) {
+    if (firstSkill is OrphanedSkill || firstSkill.registryUrl == null) {
       packagesWithDiffs.add(firstSkill.packageName);
     }
   }
@@ -617,13 +617,13 @@ Future<String?> _getGitCommit(String repoPath) async {
 }
 
 String _getSourceId(ScannedSkill skill) {
-  return skill is RemovedSkill
+  return skill is OrphanedSkill
       ? 'unknown'
       : skill.registryUrl ?? 'pkg:${skill.packageName}';
 }
 
 String _getSourceDisplayName(ScannedSkill skill) {
-  if (skill is RemovedSkill) return 'unknown';
+  if (skill is OrphanedSkill) return 'unknown';
   if (skill.registryUrl != null) {
     return 'registry ${skill.registryUrl!}';
   } else {
@@ -680,7 +680,13 @@ typedef _DialogOption = ({
   bool isSelected,
 });
 
-class RemovedSkill implements ScannedSkill {
+/// An orphaned skill is one that was deleted upstream.
+///
+/// These can exist during the upgrade process, and the user chooses whether
+/// to uninstall them or keep them. If they keep them, then they are no longer
+/// tracked by the manifest and the user must manage them on their own after
+/// that.
+class OrphanedSkill implements ScannedSkill {
   @override
   bool get isGlobal => throw UnimplementedError();
 
@@ -697,5 +703,5 @@ class RemovedSkill implements ScannedSkill {
   @override
   String get skillPath => throw UnimplementedError();
 
-  RemovedSkill({required this.packageName, required this.skillName});
+  OrphanedSkill({required this.packageName, required this.skillName});
 }
