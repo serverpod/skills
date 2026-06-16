@@ -36,6 +36,7 @@ Future<bool> getSkills({
   Set<String> packageNames = const {},
   Set<String> skillNames = const {},
   bool allFlag = false,
+  bool force = false,
 }) async {
   final ready = await PubRunner.ensureWorkspaceConfigs(workspace);
   if (!ready) {
@@ -269,6 +270,7 @@ Future<bool> getSkills({
       skills: skills,
       manifest: manifest,
       globalConfig: globalConfig,
+      force: force,
     );
     if (result == null) {
       logger.warning('Installation aborted for IDE ${ide.cliName}');

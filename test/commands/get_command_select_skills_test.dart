@@ -58,7 +58,10 @@ void main() {
 
         projectPath = projectRootDir.io.path;
         fakeDialogSupport = FakeDialogSupport();
-        skillsAdapter = GenericAdapter(projectPath, fakeDialogSupport);
+        skillsAdapter = GenericAdapter(
+          projectPath,
+          dialogSupport: fakeDialogSupport,
+        );
       });
 
       test('when running `skills get dep1` (interactive) and user selects only '
@@ -203,7 +206,10 @@ void main() {
 
         projectPath = projectRootDir.io.path;
         fakeDialogSupport = FakeDialogSupport();
-        skillsAdapter = GenericAdapter(projectPath, fakeDialogSupport);
+        skillsAdapter = GenericAdapter(
+          projectPath,
+          dialogSupport: fakeDialogSupport,
+        );
       });
 
       test('when running `skills get` (interactive), user selects both packages, '
