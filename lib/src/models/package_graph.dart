@@ -12,8 +12,10 @@ extension type PackageGraph(Map<String, Object?> source) {
     if (json is Map<String, Object?>) {
       return PackageGraph(json);
     } else {
-      throw FormatException('Error parsing ${file.uri}: Expected a Map but got '
-          '${json.runtimeType}');
+      throw FormatException(
+        'Error parsing ${file.uri}: Expected a Map but got '
+        '${json.runtimeType}',
+      );
     }
   }
 
@@ -21,8 +23,10 @@ extension type PackageGraph(Map<String, Object?> source) {
   List<PackageInfo> get packages {
     final packages = source['packages'];
     if (packages is! List) {
-      throw FormatException('Expected `packages` key to be a List but got a '
-          '${packages.runtimeType}]}');
+      throw FormatException(
+        'Expected `packages` key to be a List but got a '
+        '${packages.runtimeType}]}',
+      );
     }
     return packages.cast();
   }
@@ -31,8 +35,10 @@ extension type PackageGraph(Map<String, Object?> source) {
   List<String> get roots {
     final roots = source['roots'];
     if (roots is! List) {
-      throw FormatException('Expected `roots` key to be a List but got a '
-          '${roots.runtimeType}]}');
+      throw FormatException(
+        'Expected `roots` key to be a List but got a '
+        '${roots.runtimeType}]}',
+      );
     }
     return roots.cast();
   }
@@ -41,8 +47,10 @@ extension type PackageGraph(Map<String, Object?> source) {
   int get version {
     final version = source['version'];
     if (version is! int) {
-      throw FormatException('Expected `version` key to be an int but got a '
-          '${version.runtimeType}]}');
+      throw FormatException(
+        'Expected `version` key to be an int but got a '
+        '${version.runtimeType}]}',
+      );
     }
     return version;
   }
@@ -54,8 +62,10 @@ extension type PackageInfo(Map<String, Object?> source) {
   String get name {
     final name = source['name'];
     if (name is! String) {
-      throw FormatException('Expected `name` key to be a String but got a '
-          '${name.runtimeType}]}');
+      throw FormatException(
+        'Expected `name` key to be a String but got a '
+        '${name.runtimeType}]}',
+      );
     }
     return name;
   }
@@ -64,8 +74,10 @@ extension type PackageInfo(Map<String, Object?> source) {
   String? get version {
     final version = source['version'];
     if (version is! String?) {
-      throw FormatException('Expected `version` key to be a String? but got a '
-          '${version.runtimeType}]}');
+      throw FormatException(
+        'Expected `version` key to be a String? but got a '
+        '${version.runtimeType}]}',
+      );
     }
     return version;
   }
@@ -75,8 +87,9 @@ extension type PackageInfo(Map<String, Object?> source) {
     final deps = source['dependencies'];
     if (deps is! List) {
       throw FormatException(
-          'Expected `dependencies` key to be a List but got a '
-          '${deps.runtimeType}]}');
+        'Expected `dependencies` key to be a List but got a '
+        '${deps.runtimeType}]}',
+      );
     }
     return deps.cast();
   }
@@ -86,8 +99,9 @@ extension type PackageInfo(Map<String, Object?> source) {
     final devDeps = source['devDependencies'];
     if (devDeps is! List) {
       throw FormatException(
-          'Expected `devDependencies` key to be a List but got a '
-          '${devDeps.runtimeType}]}');
+        'Expected `devDependencies` key to be a List but got a '
+        '${devDeps.runtimeType}]}',
+      );
     }
     return devDeps.cast();
   }

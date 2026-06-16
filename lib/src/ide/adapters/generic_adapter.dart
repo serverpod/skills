@@ -16,7 +16,7 @@ class GenericAdapter extends AgentSkillsAdapter {
   final DialogSupport? _dialogSupport;
 
   GenericAdapter(this._projectPath, this._dialogSupport)
-      : super(Ide.generic.skillsPath(_projectPath));
+    : super(Ide.generic.skillsPath(_projectPath));
 
   @override
   Future<bool> performMigrations(SkillManifest manifest) async {
@@ -58,15 +58,17 @@ class GenericAdapter extends AgentSkillsAdapter {
 
       // In interactive mode, we give a few more options for the migration.
       if (_dialogSupport case var dialogSupport?) {
-        final result = await dialogSupport.showSingleSelectDialog([
-          'Move ONLY managed skills to .agents/skills',
-          'Move ALL skills to .agents/skills',
-          'Leave .agent/skills in place (may result in duplicate skills)',
-          'Abort'
-        ],
-            title:
-                'Found an old `.agent/skills` directory with managed skills. '
-                'What would you like to do?');
+        final result = await dialogSupport.showSingleSelectDialog(
+          [
+            'Move ONLY managed skills to .agents/skills',
+            'Move ALL skills to .agents/skills',
+            'Leave .agent/skills in place (may result in duplicate skills)',
+            'Abort',
+          ],
+          title:
+              'Found an old `.agent/skills` directory with managed skills. '
+              'What would you like to do?',
+        );
 
         if (result == 2) {
           // Leave old skills in place

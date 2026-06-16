@@ -15,10 +15,11 @@ class ResolvedPackage {
   /// The path to the package config that resolved this package.
   final String originalPackageConfigPath;
 
-  const ResolvedPackage(
-      {required this.name,
-      required this.rootPath,
-      required this.originalPackageConfigPath});
+  const ResolvedPackage({
+    required this.name,
+    required this.rootPath,
+    required this.originalPackageConfigPath,
+  });
 }
 
 /// Resolves Dart package dependency locations from package_config.json.
@@ -47,7 +48,9 @@ class PackageResolver {
       );
     }
     final config = PackageConfig.parseString(
-        await File(configPath).readAsString(), Uri.file(configPath));
+      await File(configPath).readAsString(),
+      Uri.file(configPath),
+    );
 
     final packages = <ResolvedPackage>[];
     for (final package in config.packages) {
@@ -58,10 +61,13 @@ class PackageResolver {
 
       final rootPath = rootUri.toFilePath();
 
-      packages.add(ResolvedPackage(
+      packages.add(
+        ResolvedPackage(
           name: package.name,
           rootPath: rootPath,
-          originalPackageConfigPath: configPath));
+          originalPackageConfigPath: configPath,
+        ),
+      );
     }
 
     return packages;
@@ -82,23 +88,26 @@ class PackageResolver {
     final memberNames = workspace.packages.map((p) => p.name).toSet();
 
     // Deduplicate by config path -- pub workspaces share one config.
-    final configPaths =
-        workspace.packages.map((p) => p.packageConfigPath).toSet();
+    final configPaths = workspace.packages
+        .map((p) => p.packageConfigPath)
+        .toSet();
 
     final seenPaths = <String>{};
     final results = <ResolvedPackage>[];
 
     for (final configPath in configPaths) {
       final configFile = File(configPath);
-      if (!configFile.existsSync()) continue;
+      if (!await configFile.exists()) continue;
       final config = await loadPackageConfig(configFile);
 
       // package_graph.json files always exist next to the package config.
-      final packageGraphFile =
-          File(p.join(p.dirname(configPath), 'package_graph.json'));
+      final packageGraphFile = File(
+        p.join(p.dirname(configPath), 'package_graph.json'),
+      );
       if (!await packageGraphFile.exists()) {
         logger.warning(
-            'Missing `package_graph.json` file at ${packageGraphFile.path}');
+          'Missing `package_graph.json` file at ${packageGraphFile.path}',
+        );
         continue;
       }
       final packageGraph = await PackageGraph.fromFile(packageGraphFile);
@@ -109,7 +118,7 @@ class PackageResolver {
 
         for (final dependency in [
           ...packageEntry.dependencies,
-          ...packageEntry.devDependencies
+          ...packageEntry.devDependencies,
         ]) {
           if (packageNames.isNotEmpty && !packageNames.contains(dependency)) {
             continue;
@@ -117,16 +126,18 @@ class PackageResolver {
 
           final packageConfigEntry = config[dependency];
           if (packageConfigEntry == null) {
-            logger
-                .severe('Missing dependency "$dependency" in package config.');
+            logger.severe(
+              'Missing dependency "$dependency" in package config.',
+            );
             continue;
           }
 
           final rootUri = packageConfigEntry.root;
           if (rootUri.scheme != 'file') {
             logger.warning(
-                'Skipping skills for "$dependency" due to non-file URI: '
-                '$rootUri');
+              'Skipping skills for "$dependency" due to non-file URI: '
+              '$rootUri',
+            );
           }
 
           final rootPath = rootUri.toFilePath();
@@ -134,9 +145,10 @@ class PackageResolver {
 
           results.add(
             ResolvedPackage(
-                name: packageEntry.name,
-                rootPath: rootPath,
-                originalPackageConfigPath: configPath),
+              name: dependency,
+              rootPath: rootPath,
+              originalPackageConfigPath: configPath,
+            ),
           );
         }
       }
@@ -147,8 +159,9 @@ class PackageResolver {
 
   static Future<String?> findPackageConfigPath(Directory dir) async {
     while (dir.path != dir.parent.path) {
-      final configFile =
-          File(p.join(dir.path, '.dart_tool', 'package_config.json'));
+      final configFile = File(
+        p.join(dir.path, '.dart_tool', 'package_config.json'),
+      );
       if (await configFile.exists()) return configFile.path;
       dir = dir.parent;
     }

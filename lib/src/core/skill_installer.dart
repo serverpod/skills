@@ -96,7 +96,9 @@ class SkillInstaller {
       // de-dupe skills by name, we can find multiple versions of a package
       // which can result in duplicates.
       skillsByPackage.putIfAbsent(
-          skill.packageName, () => {})[skill.skillName] ??= skill;
+        skill.packageName,
+        () => {},
+      )[skill.skillName] ??= skill;
     }
 
     var updatedManifest = manifest;
@@ -136,12 +138,16 @@ class SkillInstaller {
         );
 
         if (skill.registryUrl case var registryUrl?) {
-          final installLocation =
-              p.join(rootPath, ide.skillsRelativePath, installedName);
+          final installLocation = p.join(
+            rootPath,
+            ide.skillsRelativePath,
+            installedName,
+          );
 
           if (skill.isGlobal) {
-            final index = updatedGlobalConfig.registries
-                .indexWhere((r) => r.cloneUrl == registryUrl);
+            final index = updatedGlobalConfig.registries.indexWhere(
+              (r) => r.cloneUrl == registryUrl,
+            );
             if (index >= 0) {
               final repo = updatedGlobalConfig.registries[index];
               updatedGlobalConfig = GlobalConfig(
@@ -153,8 +159,9 @@ class SkillInstaller {
               );
             }
           } else {
-            final index = updatedManifest.registries
-                .indexWhere((r) => r.cloneUrl == registryUrl);
+            final index = updatedManifest.registries.indexWhere(
+              (r) => r.cloneUrl == registryUrl,
+            );
             if (index >= 0) {
               final repo = updatedManifest.registries[index];
               updatedManifest = SkillManifest(
@@ -180,9 +187,10 @@ class SkillInstaller {
     }
 
     return SkillInstallResult(
-        manifest: updatedManifest,
-        globalConfig: globalConfig,
-        installed: installed);
+      manifest: updatedManifest,
+      globalConfig: globalConfig,
+      installed: installed,
+    );
   }
 
   /// Removes skills for [ide] from [manifest].
@@ -216,10 +224,12 @@ class SkillInstaller {
           );
         }
       } else {
-        final skillsToRemove =
-            skills.where((s) => skillNames.contains(s.name)).toList();
-        final skillsToKeep =
-            skills.where((s) => !skillNames.contains(s.name)).toList();
+        final skillsToRemove = skills
+            .where((s) => skillNames.contains(s.name))
+            .toList();
+        final skillsToKeep = skills
+            .where((s) => !skillNames.contains(s.name))
+            .toList();
 
         if (skillsToRemove.isNotEmpty) {
           for (final skill in skillsToRemove) {

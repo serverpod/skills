@@ -25,9 +25,7 @@ void main() {
       await d.dir('project', [
         d.dir('.agent', [
           d.dir('skills', [
-            d.dir('pkg_a-skill', [
-              d.file('SKILL.md', 'old content'),
-            ]),
+            d.dir('pkg_a-skill', [d.file('SKILL.md', 'old content')]),
           ]),
         ]),
       ]).create();
@@ -48,8 +46,8 @@ void main() {
 
       await d.dir('pkg_a', [
         d.dir('skills', [
-          d.dir('pkg_a-skill', [d.file('SKILL.md', 'Skill content')])
-        ])
+          d.dir('pkg_a-skill', [d.file('SKILL.md', 'Skill content')]),
+        ]),
       ]).create();
       scannedSkills = [
         ScannedSkill(
@@ -74,9 +72,11 @@ void main() {
       expect(result, isNotNull);
 
       expect(
-          Directory(p.join(rootPath, '.agents', 'skills', 'pkg_a-skill'))
-              .existsSync(),
-          isTrue);
+        Directory(
+          p.join(rootPath, '.agents', 'skills', 'pkg_a-skill'),
+        ).existsSync(),
+        isTrue,
+      );
       expect(Directory(p.join(rootPath, '.agent')).existsSync(), isFalse);
     });
   });

@@ -20,8 +20,10 @@ class CliUtilDialogSupport implements DialogSupport {
   CliUtilDialogSupport(this._sharedStdIn);
 
   @override
-  Future<int?> showSingleSelectDialog(List<String> options,
-      {String? title}) async {
+  Future<int?> showSingleSelectDialog(
+    List<String> options, {
+    String? title,
+  }) async {
     if (title != null) io.stdout.writeln(title);
     final result = await cli.showSingleSelectDialog(options, _sharedStdIn);
     if (result != null) {
@@ -43,8 +45,9 @@ class CliUtilDialogSupport implements DialogSupport {
       initialSelected: initialSelected,
     );
     if (result != null) {
-      final selectionStr =
-          result.isEmpty ? 'None' : result.map((i) => options[i]).join(', ');
+      final selectionStr = result.isEmpty
+          ? 'None'
+          : result.map((i) => options[i]).join(', ');
       io.stdout.writeln('> $selectionStr');
     }
     return result;

@@ -7,6 +7,8 @@ import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
+import '../utils.dart';
+
 void main() {
   setUpAll(() {
     Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
@@ -17,7 +19,7 @@ void main() {
 
     setUp(() async {
       await d.dir('dep_with_skills', [
-        d.dir('lib', [d.file('dep.dart', '')]),
+        pubspec('dep_with_skills'),
         d.dir('skills', [
           d.dir('dep_with_skills-code-gen', [
             d.file('SKILL.md', '''
@@ -47,6 +49,7 @@ API design guidelines.
       ]).create();
 
       await d.dir('project', [
+        pubspec('project', dependencies: [.new('dep_with_skills')]),
         d.dir('.cursor', [d.dir('skills')]),
       ]).create();
 
