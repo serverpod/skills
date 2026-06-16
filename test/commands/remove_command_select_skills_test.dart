@@ -92,116 +92,125 @@ environment:
     });
 
     test(
-        'when running `skills remove --package dep1` (interactive) and user selects '
-        'only dep1-skill-1 for removal, then only dep1-skill-1 is removed',
-        () async {
-      // We skip package selection (because of --package).
-      // We have 2 skills in dep1, so we prompt.
-      // Index 0 is dep1-skill-1, index 1 is dep1-skill-2 (sorted).
-      // We select only index 0 (dep1-skill-1) to remove.
-      fakeDialogSupport.multiSelectResults.add({0});
+      'when running `skills remove --package dep1` (interactive) and user selects '
+      'only dep1-skill-1 for removal, then only dep1-skill-1 is removed',
+      () async {
+        // We skip package selection (because of --package).
+        // We have 2 skills in dep1, so we prompt.
+        // Index 0 is dep1-skill-1, index 1 is dep1-skill-2 (sorted).
+        // We select only index 0 (dep1-skill-1) to remove.
+        fakeDialogSupport.multiSelectResults.add({0});
 
-      await runner.run([
-        'remove',
-        '--directory',
-        projectPath,
-        '--ide',
-        'cursor',
-        '--package',
-        'dep1',
-      ]);
+        await runner.run([
+          'remove',
+          '--directory',
+          projectPath,
+          '--ide',
+          'cursor',
+          '--package',
+          'dep1',
+        ]);
 
-      expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        equals(['dep1-skill-1', 'dep1-skill-2']),
-      );
-      expect(
-        fakeDialogSupport.allTitles[0],
-        equals('Select skills to remove'),
-      );
+        expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[0],
+          equals(['dep1-skill-1', 'dep1-skill-2']),
+        );
+        expect(
+          fakeDialogSupport.allTitles[0],
+          equals('Select skills to remove'),
+        );
 
-      await d.dir('project', [
-        d.dir('.cursor', [
-          d.dir('skills', [
-            d.nothing('dep1-skill-1'),
-            d.dir('dep1-skill-2'), // retained!
-            d.dir('dep2-skill-1'), // unaffected!
-            d.dir('dep2-skill-2'), // unaffected!
+        await d.dir('project', [
+          d.dir('.cursor', [
+            d.dir('skills', [
+              d.nothing('dep1-skill-1'),
+              d.dir('dep1-skill-2'), // retained!
+              d.dir('dep2-skill-1'), // unaffected!
+              d.dir('dep2-skill-2'), // unaffected!
+            ]),
           ]),
-        ]),
-      ]).validate();
+        ]).validate();
 
-      final updatedManifest =
-          await SkillManifest.loadOrEmptyFromRoot(projectPath);
-      final dep1Skills = updatedManifest
-          .packagesForIde('cursor')['dep1']!
-          .skills
-          .map((s) => s.name)
-          .toList();
-      expect(dep1Skills, equals(['dep1-skill-2']));
-    });
+        final updatedManifest = await SkillManifest.loadOrEmptyFromRoot(
+          projectPath,
+        );
+        final dep1Skills = updatedManifest
+            .packagesForIde('cursor')['dep1']!
+            .skills
+            .map((s) => s.name)
+            .toList();
+        expect(dep1Skills, equals(['dep1-skill-2']));
+      },
+    );
 
     test(
-        'when running `skills remove` (interactive), user selects both packages, '
-        'then selects dep1-skill-1 from dep1 and dep2-skill-2 from dep2, '
-        'then only those two are removed', () async {
-      fakeDialogSupport.multiSelectResults = [
-        // Select both packages dep1 and dep2 in package dialog
-        {0, 1},
-        // Select dep1-skill-1 and dep2-skill-2
-        {0, 3},
-      ];
+      'when running `skills remove` (interactive), user selects both packages, '
+      'then selects dep1-skill-1 from dep1 and dep2-skill-2 from dep2, '
+      'then only those two are removed',
+      () async {
+        fakeDialogSupport.multiSelectResults = [
+          // Select both packages dep1 and dep2 in package dialog
+          {0, 1},
+          // Select dep1-skill-1 and dep2-skill-2
+          {0, 3},
+        ];
 
-      await runner.run([
-        'remove',
-        '--directory',
-        projectPath,
-        '--ide',
-        'cursor',
-      ]);
+        await runner.run([
+          'remove',
+          '--directory',
+          projectPath,
+          '--ide',
+          'cursor',
+        ]);
 
-      expect(fakeDialogSupport.allMultiSelectOptions, hasLength(2));
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        unorderedEquals(['dep1', 'dep2']),
-      );
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[1],
-        equals(
-            ['dep1-skill-1', 'dep1-skill-2', 'dep2-skill-1', 'dep2-skill-2']),
-      );
-
-      expect(
-        fakeDialogSupport.allTitles[1],
-        equals('Select skills to remove'),
-      );
-
-      await d.dir('project', [
-        d.dir('.cursor', [
-          d.dir('skills', [
-            d.nothing('dep1-skill-1'), // removed!
-            d.dir('dep1-skill-2'), // kept!
-            d.dir('dep2-skill-1'), // kept!
-            d.nothing('dep2-skill-2'), // removed!
+        expect(fakeDialogSupport.allMultiSelectOptions, hasLength(2));
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[0],
+          unorderedEquals(['dep1', 'dep2']),
+        );
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[1],
+          equals([
+            'dep1-skill-1',
+            'dep1-skill-2',
+            'dep2-skill-1',
+            'dep2-skill-2',
           ]),
-        ]),
-      ]).validate();
+        );
 
-      final updatedManifest =
-          await SkillManifest.loadOrEmptyFromRoot(projectPath);
-      final dep1Skills = updatedManifest
-          .packagesForIde('cursor')['dep1']!
-          .skills
-          .map((s) => s.name)
-          .toList();
-      expect(dep1Skills, equals(['dep1-skill-2']));
-      final dep2Skills = updatedManifest
-          .packagesForIde('cursor')['dep2']!
-          .skills
-          .map((s) => s.name)
-          .toList();
-      expect(dep2Skills, equals(['dep2-skill-1']));
-    });
+        expect(
+          fakeDialogSupport.allTitles[1],
+          equals('Select skills to remove'),
+        );
+
+        await d.dir('project', [
+          d.dir('.cursor', [
+            d.dir('skills', [
+              d.nothing('dep1-skill-1'), // removed!
+              d.dir('dep1-skill-2'), // kept!
+              d.dir('dep2-skill-1'), // kept!
+              d.nothing('dep2-skill-2'), // removed!
+            ]),
+          ]),
+        ]).validate();
+
+        final updatedManifest = await SkillManifest.loadOrEmptyFromRoot(
+          projectPath,
+        );
+        final dep1Skills = updatedManifest
+            .packagesForIde('cursor')['dep1']!
+            .skills
+            .map((s) => s.name)
+            .toList();
+        expect(dep1Skills, equals(['dep1-skill-2']));
+        final dep2Skills = updatedManifest
+            .packagesForIde('cursor')['dep2']!
+            .skills
+            .map((s) => s.name)
+            .toList();
+        expect(dep2Skills, equals(['dep2-skill-1']));
+      },
+    );
   });
 }

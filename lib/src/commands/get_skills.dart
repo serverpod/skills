@@ -55,8 +55,9 @@ Future<bool> getSkills({
 
   if (packageNames.isNotEmpty) {
     if (packages.isEmpty) {
-      logger
-          .severe('None of the requested packages were found in dependencies.');
+      logger.severe(
+        'None of the requested packages were found in dependencies.',
+      );
       return false;
     }
 
@@ -64,8 +65,9 @@ Future<bool> getSkills({
     final missing = packageNames.difference(foundNames);
     if (missing.isNotEmpty) {
       logger.warning(
-          'Warning: The following requested packages were not found in '
-          'dependencies: ${missing.join(', ')}');
+        'Warning: The following requested packages were not found in '
+        'dependencies: ${missing.join(', ')}',
+      );
     }
   }
 
@@ -108,14 +110,16 @@ Future<bool> getSkills({
     final foundSkillNames = skills.map((s) => s.skillName).toSet();
     final missingSkills = skillNames.difference(foundSkillNames);
     if (missingSkills.isNotEmpty) {
-      logger.warning('Warning: The following requested skills were not found: '
-          '${missingSkills.join(', ')}');
+      logger.warning(
+        'Warning: The following requested skills were not found: '
+        '${missingSkills.join(', ')}',
+      );
     }
     skills.removeWhere((s) => !skillNames.contains(s.skillName));
   }
 
   final ideAdapters = [
-    for (final ide in ides) createIdeAdapter(ide, rootPath, dialogSupport)
+    for (final ide in ides) createIdeAdapter(ide, rootPath, dialogSupport),
   ];
 
   final skillsBySource = _groupSkillsBySourceAndFindRemoved(
@@ -203,7 +207,8 @@ Future<bool> getSkills({
       logger.info('  [${info.ideName}] Installed ${info.skillName}');
     }
     logger.info(
-        'Installed ${result.installed.length} skill(s) for ${ide.cliName}.');
+      'Installed ${result.installed.length} skill(s) for ${ide.cliName}.',
+    );
   }
 
   await globalConfig.save(globalConfigFile);
@@ -228,21 +233,26 @@ Future<_RegistryData> _syncAndScanRegistries({
 
   if (await gitRunner.isAvailable) {
     final registrySync = RegistrySync(
-        repos: [...globalConfig.registries, ...manifest.registries]);
+      repos: [...globalConfig.registries, ...manifest.registries],
+    );
     await registrySync.sync(rootPath, onProgress: logger.info);
 
     final registryScanner = RegistryScanner();
     registrySkills
-      ..addAll(await registryScanner.scan(
-        rootPath,
-        isGlobal: true,
-        repos: globalConfig.registries,
-      ))
-      ..addAll(await registryScanner.scan(
-        rootPath,
-        isGlobal: false,
-        repos: manifest.registries,
-      ));
+      ..addAll(
+        await registryScanner.scan(
+          rootPath,
+          isGlobal: true,
+          repos: globalConfig.registries,
+        ),
+      )
+      ..addAll(
+        await registryScanner.scan(
+          rootPath,
+          isGlobal: false,
+          repos: manifest.registries,
+        ),
+      );
 
     for (final repo in registrySync.repos) {
       final repoPath = registryRepoPath(rootPath, repo);
@@ -252,9 +262,7 @@ Future<_RegistryData> _syncAndScanRegistries({
       }
     }
   } else {
-    logger.warning(
-      'Warning: git not found. Skipping GitHub registry skills.',
-    );
+    logger.warning('Warning: git not found. Skipping GitHub registry skills.');
   }
 
   return (
@@ -319,8 +327,9 @@ Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
       for (final existingSkill in entry.skills) {
         if (!existingSkill.isInstalled) continue;
 
-        final isStillPresent = skills.any((s) =>
-            s.packageName == pkgName && s.skillName == existingSkill.name);
+        final isStillPresent = skills.any(
+          (s) => s.packageName == pkgName && s.skillName == existingSkill.name,
+        );
         if (!isStillPresent) {
           final fakeSkill = RemovedSkill(
             packageName: pkgName,
@@ -360,8 +369,8 @@ Future<_SkillStatesResult> _computeSkillStates({
       final newHash = skill is RemovedSkill
           ? null
           : await calculateDirectoryHash(io.Directory(skill.skillPath));
-      final statesForSkill =
-          allSkillStates[skill] = <IdeAdapter, _SkillState>{};
+      final statesForSkill = allSkillStates[skill] =
+          <IdeAdapter, _SkillState>{};
 
       for (final adapter in ideAdapters) {
         var state = _SkillState.isNew;
@@ -377,8 +386,9 @@ Future<_SkillStatesResult> _computeSkillStates({
           } else if (skill is RemovedSkill) {
             state = _SkillState.removed;
           } else {
-            final targetDir =
-                io.Directory(p.join(adapter.skillsDirectory, skill.skillName));
+            final targetDir = io.Directory(
+              p.join(adapter.skillsDirectory, skill.skillName),
+            );
             final currentHash = await targetDir.exists()
                 ? await calculateDirectoryHash(targetDir)
                 : null;
@@ -400,10 +410,7 @@ Future<_SkillStatesResult> _computeSkillStates({
     }
   }
 
-  return (
-    allSkillStates: allSkillStates,
-    sourceIdsWithDiff: sourceIdsWithDiff,
-  );
+  return (allSkillStates: allSkillStates, sourceIdsWithDiff: sourceIdsWithDiff);
 }
 
 /// Prompts the user to filter skills by the packages they come from.
@@ -431,24 +438,30 @@ Future<bool> _promptForPackagesWithDiffs({
 
   final packagesWithSkills = packagesWithDiffs.toList()..sort();
   if (packagesWithSkills.isNotEmpty) {
-    final initialSelected =
-        Iterable<int>.generate(packagesWithSkills.length).toSet();
+    final initialSelected = Iterable<int>.generate(
+      packagesWithSkills.length,
+    ).toSet();
     final selectedIndices = await dialogSupport.showMultiSelectDialog(
       packagesWithSkills,
       title: 'Select packages to install skills from:',
       initialSelected: initialSelected,
     );
     if (selectedIndices != null) {
-      final selectedPackages =
-          selectedIndices.map((i) => packagesWithSkills[i]).toSet();
-      skills.removeWhere((s) =>
-          packagesWithDiffs.contains(s.packageName) &&
-          !selectedPackages.contains(s.packageName));
+      final selectedPackages = selectedIndices
+          .map((i) => packagesWithSkills[i])
+          .toSet();
+      skills.removeWhere(
+        (s) =>
+            packagesWithDiffs.contains(s.packageName) &&
+            !selectedPackages.contains(s.packageName),
+      );
 
       for (final list in skillsBySource.values) {
-        list.removeWhere((s) =>
-            packagesWithDiffs.contains(s.packageName) &&
-            !selectedPackages.contains(s.packageName));
+        list.removeWhere(
+          (s) =>
+              packagesWithDiffs.contains(s.packageName) &&
+              !selectedPackages.contains(s.packageName),
+        );
       }
       skillsBySource.removeWhere((k, v) => v.isEmpty);
       sortedSourceIds.removeWhere((id) => !skillsBySource.containsKey(id));
@@ -478,7 +491,7 @@ Future<_PromptResult> _promptForSkillsToInstall({
   required Logger logger,
 }) async {
   final selectedSkillNamesByIde = <Ide, Set<String>>{
-    for (final ide in ides) ide: {}
+    for (final ide in ides) ide: {},
   };
   var hasAnyChangesToPrint = false;
 
@@ -573,8 +586,10 @@ Future<_PromptResult> _promptForSkillsToInstall({
   }
 
   if (dialogSupport == null) {
-    logger.info('Rerun with `--skill <name>`, or `--all` to '
-        'install, update, or remove the given skills.');
+    logger.info(
+      'Rerun with `--skill <name>`, or `--all` to '
+      'install, update, or remove the given skills.',
+    );
     return (continueInstall: false, selectedSkillNamesByIde: null);
   }
 
@@ -662,7 +677,7 @@ typedef _DialogOption = ({
   List<IdeAdapter> adapters,
   _SkillState state,
   String label,
-  bool isSelected
+  bool isSelected,
 });
 
 class RemovedSkill implements ScannedSkill {
@@ -682,8 +697,5 @@ class RemovedSkill implements ScannedSkill {
   @override
   String get skillPath => throw UnimplementedError();
 
-  RemovedSkill({
-    required this.packageName,
-    required this.skillName,
-  });
+  RemovedSkill({required this.packageName, required this.skillName});
 }

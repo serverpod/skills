@@ -38,8 +38,10 @@ class FakeDialogSupport implements DialogSupport {
   }
 
   @override
-  Future<int?> showSingleSelectDialog(List<String> options,
-      {String? title}) async {
+  Future<int?> showSingleSelectDialog(
+    List<String> options, {
+    String? title,
+  }) async {
     lastSingleSelectOptions.add(options);
     return singleSelectResults[_singleSelectCallCount++];
   }

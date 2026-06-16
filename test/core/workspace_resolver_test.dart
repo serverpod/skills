@@ -54,28 +54,25 @@ resolution: workspace
       ]).create();
     });
 
-    test(
-      'when resolving the single package then uses the workspace '
-      'package_config.json path',
-      () async {
-        const resolver = WorkspaceResolver();
-        final layout = await resolver.resolve(
-          d.path(p.join('workspace_root', 'my_pkg')),
-        );
+    test('when resolving the single package then uses the workspace '
+        'package_config.json path', () async {
+      const resolver = WorkspaceResolver();
+      final layout = await resolver.resolve(
+        d.path(p.join('workspace_root', 'my_pkg')),
+      );
 
-        expect(
-          layout.rootPath,
-          equals(d.path(p.join('workspace_root', 'my_pkg'))),
-        );
-        expect(layout.isWorkspace, isFalse);
-        expect(layout.packages, hasLength(1));
+      expect(
+        layout.rootPath,
+        equals(d.path(p.join('workspace_root', 'my_pkg'))),
+      );
+      expect(layout.isWorkspace, isFalse);
+      expect(layout.packages, hasLength(1));
 
-        final expectedConfig = d.path(
-          p.join('workspace_root', '.dart_tool', 'package_config.json'),
-        );
-        expect(layout.packages.first.packageConfigPath, equals(expectedConfig));
-      },
-    );
+      final expectedConfig = d.path(
+        p.join('workspace_root', '.dart_tool', 'package_config.json'),
+      );
+      expect(layout.packages.first.packageConfigPath, equals(expectedConfig));
+    });
 
     test('when workspace root is not found then throws StateError', () async {
       await d.dir('isolated_pkg', [

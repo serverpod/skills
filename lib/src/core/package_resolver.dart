@@ -13,10 +13,11 @@ class ResolvedPackage {
   /// The path to the package config that resolved this package.
   final String originalPackageConfigPath;
 
-  const ResolvedPackage(
-      {required this.name,
-      required this.rootPath,
-      required this.originalPackageConfigPath});
+  const ResolvedPackage({
+    required this.name,
+    required this.rootPath,
+    required this.originalPackageConfigPath,
+  });
 }
 
 /// Resolves Dart package dependency locations from package_config.json.
@@ -43,7 +44,9 @@ class PackageResolver {
       );
     }
     final config = PackageConfig.parseString(
-        await File(configPath).readAsString(), Uri.file(configPath));
+      await File(configPath).readAsString(),
+      Uri.file(configPath),
+    );
 
     final packages = <ResolvedPackage>[];
     for (final package in config.packages) {
@@ -54,10 +57,13 @@ class PackageResolver {
 
       final rootPath = rootUri.toFilePath();
 
-      packages.add(ResolvedPackage(
+      packages.add(
+        ResolvedPackage(
           name: package.name,
           rootPath: rootPath,
-          originalPackageConfigPath: configPath));
+          originalPackageConfigPath: configPath,
+        ),
+      );
     }
 
     return packages;
@@ -77,8 +83,9 @@ class PackageResolver {
     final memberNames = workspace.packages.map((p) => p.name).toSet();
 
     // Deduplicate by config path -- pub workspaces share one config.
-    final configPaths =
-        workspace.packages.map((p) => p.packageConfigPath).toSet();
+    final configPaths = workspace.packages
+        .map((p) => p.packageConfigPath)
+        .toSet();
 
     final seenPaths = <String>{};
     final results = <ResolvedPackage>[];
@@ -103,9 +110,10 @@ class PackageResolver {
 
         results.add(
           ResolvedPackage(
-              name: package.name,
-              rootPath: rootPath,
-              originalPackageConfigPath: configPath),
+            name: package.name,
+            rootPath: rootPath,
+            originalPackageConfigPath: configPath,
+          ),
         );
       }
     }
@@ -115,8 +123,9 @@ class PackageResolver {
 
   static Future<String?> findPackageConfigPath(Directory dir) async {
     while (dir.path != dir.parent.path) {
-      final configFile =
-          File(p.join(dir.path, '.dart_tool', 'package_config.json'));
+      final configFile = File(
+        p.join(dir.path, '.dart_tool', 'package_config.json'),
+      );
       if (await configFile.exists()) return configFile.path;
       dir = dir.parent;
     }

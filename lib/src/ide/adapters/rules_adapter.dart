@@ -47,9 +47,7 @@ class RulesAdapter extends IdeAdapter {
   }
 
   @override
-  Future<InstallSkillResult> installSkill(
-    ScannedSkill skill,
-  ) async {
+  Future<InstallSkillResult> installSkill(ScannedSkill skill) async {
     final skillMdFile = File(p.join(skill.skillPath, 'SKILL.md'));
     final metadata = await SkillMetadata.parse(skillMdFile);
 
@@ -70,7 +68,8 @@ class RulesAdapter extends IdeAdapter {
     final hash = await tryCalculateFileHash(targetFile);
     if (hash == null) {
       throw StateError(
-          'Failed to install skill ${skill.skillName} from ${skill.skillPath}');
+        'Failed to install skill ${skill.skillName} from ${skill.skillPath}',
+      );
     }
 
     return (name: skill.skillName, contentHash: hash);

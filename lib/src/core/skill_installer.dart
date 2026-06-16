@@ -109,7 +109,9 @@ class SkillInstaller {
       // de-dupe skills by name, we can find multiple versions of a package
       // which can result in duplicates.
       skillsByPackage.putIfAbsent(
-          skill.packageName, () => {})[skill.skillName] ??= skill;
+        skill.packageName,
+        () => {},
+      )[skill.skillName] ??= skill;
     }
 
     var updatedManifest = previousManifest;
@@ -143,8 +145,9 @@ class SkillInstaller {
       for (final skill in pkgSkills) {
         // We skipped uninstalling this skill, just copy its old install entry.
         if (skippedSkills.remove(skill.skillName)) {
-          final existing = existingEntry!.skills
-              .firstWhere((s) => s.name == skill.skillName);
+          final existing = existingEntry!.skills.firstWhere(
+            (s) => s.name == skill.skillName,
+          );
           updatedSkillEntries.add(existing);
           continue;
         }
@@ -156,8 +159,9 @@ class SkillInstaller {
             InstalledSkillEntry(
               name: skill.skillName,
               installedAt: DateTime.now().toUtc(),
-              contentHash:
-                  await calculateDirectoryHash(io.Directory(skill.skillPath)),
+              contentHash: await calculateDirectoryHash(
+                io.Directory(skill.skillPath),
+              ),
               isInstalled: false,
             ),
           );
@@ -190,12 +194,16 @@ class SkillInstaller {
         // link from each registry to where its skills were installed, for
         // cleanup later on.
         if (skill.registryUrl case var registryUrl?) {
-          final installLocation =
-              p.join(rootPath, ide.skillsRelativePath, installedName);
+          final installLocation = p.join(
+            rootPath,
+            ide.skillsRelativePath,
+            installedName,
+          );
 
           if (skill.isGlobal) {
-            final index = updatedGlobalConfig.registries
-                .indexWhere((r) => r.cloneUrl == registryUrl);
+            final index = updatedGlobalConfig.registries.indexWhere(
+              (r) => r.cloneUrl == registryUrl,
+            );
             if (index >= 0) {
               final repo = updatedGlobalConfig.registries[index];
               updatedGlobalConfig = GlobalConfig(
@@ -207,8 +215,9 @@ class SkillInstaller {
               );
             }
           } else {
-            final index = updatedManifest.registries
-                .indexWhere((r) => r.cloneUrl == registryUrl);
+            final index = updatedManifest.registries.indexWhere(
+              (r) => r.cloneUrl == registryUrl,
+            );
             if (index >= 0) {
               final repo = updatedManifest.registries[index];
               updatedManifest = SkillManifest(
@@ -229,11 +238,13 @@ class SkillInstaller {
       // upstream, so they are orphaned.
       if (skippedSkills.isNotEmpty) {
         final buffer = StringBuffer(
-            'The following skills were not uninstalled but were deleted '
-            'upstream and are now orphaned:\n\n');
+          'The following skills were not uninstalled but were deleted '
+          'upstream and are now orphaned:\n\n',
+        );
         for (final skill in skippedSkills) {
           buffer.writeln(
-              '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})');
+            '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})',
+          );
         }
         logger.warning(buffer.toString());
       }
@@ -251,8 +262,9 @@ class SkillInstaller {
     final allPkgs = updatedManifest.packagesForIde(ide.cliName).keys.toSet();
     final missingPkgs = allPkgs.difference(skillsByPackage.keys.toSet());
     for (final pkgName in missingPkgs) {
-      final existingEntry =
-          updatedManifest.packagesForIde(ide.cliName)[pkgName]!;
+      final existingEntry = updatedManifest.packagesForIde(
+        ide.cliName,
+      )[pkgName]!;
       final skippedSkills = <String>{};
 
       for (final existing in existingEntry.skills) {
@@ -268,11 +280,13 @@ class SkillInstaller {
 
       if (skippedSkills.isNotEmpty) {
         final buffer = StringBuffer(
-            'The following skills were not uninstalled but were deleted '
-            'upstream and are now orphaned:\n\n');
+          'The following skills were not uninstalled but were deleted '
+          'upstream and are now orphaned:\n\n',
+        );
         for (final skill in skippedSkills) {
           buffer.writeln(
-              '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})');
+            '- $skill (installed at ${p.relative(p.join(adapter.skillsDirectory, skill), from: rootPath)})',
+          );
         }
         logger.warning(buffer.toString());
 
@@ -280,16 +294,20 @@ class SkillInstaller {
             .where((s) => skippedSkills.contains(s.name))
             .toList();
         updatedManifest = updatedManifest.withPackage(
-            ide.cliName, pkgName, PackageSkillsEntry(skills: keptSkills));
+          ide.cliName,
+          pkgName,
+          PackageSkillsEntry(skills: keptSkills),
+        );
       } else {
         updatedManifest = updatedManifest.withoutPackage(ide.cliName, pkgName);
       }
     }
 
     return SkillInstallResult(
-        manifest: updatedManifest,
-        globalConfig: globalConfig,
-        installed: installedSkillInfos);
+      manifest: updatedManifest,
+      globalConfig: globalConfig,
+      installed: installedSkillInfos,
+    );
   }
 
   /// Removes skills for [ide] from [manifest].
@@ -323,10 +341,12 @@ class SkillInstaller {
           );
         }
       } else {
-        final skillsToRemove =
-            skills.where((s) => skillNames.contains(s.name)).toList();
-        final skillsToKeep =
-            skills.where((s) => !skillNames.contains(s.name)).toList();
+        final skillsToRemove = skills
+            .where((s) => skillNames.contains(s.name))
+            .toList();
+        final skillsToKeep = skills
+            .where((s) => !skillNames.contains(s.name))
+            .toList();
 
         if (skillsToRemove.isNotEmpty) {
           for (final skill in skillsToRemove) {

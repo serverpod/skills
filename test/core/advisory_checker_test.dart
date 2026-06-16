@@ -22,10 +22,12 @@ void main() {
 
       packages = [
         ResolvedPackage(
-            name: 'pkg1',
-            rootPath: d.path('pkg1'),
-            originalPackageConfigPath:
-                d.path(p.join('.dart_tool', 'package_config.json'))),
+          name: 'pkg1',
+          rootPath: d.path('pkg1'),
+          originalPackageConfigPath: d.path(
+            p.join('.dart_tool', 'package_config.json'),
+          ),
+        ),
       ];
     });
 
@@ -39,52 +41,63 @@ packages:
 ''').create();
       });
 
-      test(
-          'and some vulnerabilities, when AdvisoryChecker.checkAdvisories '
+      test('and some vulnerabilities, when AdvisoryChecker.checkAdvisories '
           'is called then those vulnerabilities are returned', () async {
         final checker = AdvisoryChecker(
-          httpClient: MockClient((_) async => http.Response(
+          httpClient: MockClient(
+            (_) async => http.Response(
               jsonEncode({
                 'results': [
                   {
                     'vulns': [
                       {'id': 'GHSA-1'},
-                    ]
-                  }
-                ]
+                    ],
+                  },
+                ],
               }),
-              HttpStatus.ok)),
+              HttpStatus.ok,
+            ),
+          ),
         );
 
-        final result =
-            await checker.checkAdvisories(packages, d.sandbox, logger);
+        final result = await checker.checkAdvisories(
+          packages,
+          d.sandbox,
+          logger,
+        );
 
         expect(result, contains('package:pkg1'));
-        expect(result['package:pkg1'],
-            contains('https://osv.dev/vulnerability/GHSA-1'));
+        expect(
+          result['package:pkg1'],
+          contains('https://osv.dev/vulnerability/GHSA-1'),
+        );
       });
 
-      test(
-          'no vulnerabilities, when AdvisoryChecker.checkAdvisories is called '
+      test('no vulnerabilities, when AdvisoryChecker.checkAdvisories is called '
           'then an empty result is returned', () async {
         final checker = AdvisoryChecker(
-          httpClient: MockClient((_) async => http.Response(
+          httpClient: MockClient(
+            (_) async => http.Response(
               jsonEncode({
                 'results': [
-                  {'vulns': []}
-                ]
+                  {'vulns': []},
+                ],
               }),
-              HttpStatus.ok)),
+              HttpStatus.ok,
+            ),
+          ),
         );
 
-        final result =
-            await checker.checkAdvisories(packages, d.sandbox, logger);
+        final result = await checker.checkAdvisories(
+          packages,
+          d.sandbox,
+          logger,
+        );
 
         expect(result, isEmpty);
       });
 
-      test(
-          'and a network error when querying AdvisoryChecker.checkAdvisories '
+      test('and a network error when querying AdvisoryChecker.checkAdvisories '
           'then it returns an empty list', () async {
         final checker = AdvisoryChecker(
           httpClient: MockClient((request) async {
@@ -92,8 +105,11 @@ packages:
           }),
         );
 
-        final result =
-            await checker.checkAdvisories(packages, d.sandbox, logger);
+        final result = await checker.checkAdvisories(
+          packages,
+          d.sandbox,
+          logger,
+        );
 
         expect(result, isEmpty);
       });
@@ -114,8 +130,7 @@ packages:
 ''').create();
       });
 
-      test(
-          'when AdvisoryChecker.checkAdvisories is called then it queries by '
+      test('when AdvisoryChecker.checkAdvisories is called then it queries by '
           'commit found in the pubspec.lock', () async {
         var wasCalled = false;
         final checker = AdvisoryChecker(
@@ -123,12 +138,13 @@ packages:
             wasCalled = true;
             expect(request.body, contains('"commit":"commit123"'));
             return http.Response(
-                jsonEncode({
-                  'results': [
-                    {'vulns': []}
-                  ]
-                }),
-                HttpStatus.ok);
+              jsonEncode({
+                'results': [
+                  {'vulns': []},
+                ],
+              }),
+              HttpStatus.ok,
+            );
           }),
         );
 
@@ -152,7 +168,7 @@ packages:
   pkg1:
     source: hosted
     version: "1.0.0"
-''')
+'''),
       ]).create();
       await d.dir('project2', [
         d.file('pubspec.lock', '''
@@ -160,20 +176,24 @@ packages:
   pkg2:
     source: hosted
     version: "2.0.0"
-''')
+'''),
       ]).create();
 
       packages = [
         ResolvedPackage(
-            name: 'pkg1',
-            rootPath: d.path('pkg1'),
-            originalPackageConfigPath: d
-                .path(p.join('project1', '.dart_tool', 'package_config.json'))),
+          name: 'pkg1',
+          rootPath: d.path('pkg1'),
+          originalPackageConfigPath: d.path(
+            p.join('project1', '.dart_tool', 'package_config.json'),
+          ),
+        ),
         ResolvedPackage(
-            name: 'pkg2',
-            rootPath: d.path('pkg1'),
-            originalPackageConfigPath: d
-                .path(p.join('project2', '.dart_tool', 'package_config.json'))),
+          name: 'pkg2',
+          rootPath: d.path('pkg1'),
+          originalPackageConfigPath: d.path(
+            p.join('project2', '.dart_tool', 'package_config.json'),
+          ),
+        ),
       ];
     });
 
@@ -185,26 +205,40 @@ packages:
           final json = jsonDecode(request.body) as Map<String, Object?>;
           final query = json['queries'] as List<Object?>;
           expect(
-              query,
-              unorderedMatches([
-                isA<Map>()
-                    .having((request) => request['package']['name'] as String,
-                        'name', 'pkg1')
-                    .having((request) => request['version'] as String,
-                        'version', '1.0.0'),
-                isA<Map>()
-                    .having((request) => request['package']['name'] as String,
-                        'name', 'pkg2')
-                    .having((request) => request['version'] as String,
-                        'version', '2.0.0')
-              ]));
+            query,
+            unorderedMatches([
+              isA<Map>()
+                  .having(
+                    (request) => request['package']['name'] as String,
+                    'name',
+                    'pkg1',
+                  )
+                  .having(
+                    (request) => request['version'] as String,
+                    'version',
+                    '1.0.0',
+                  ),
+              isA<Map>()
+                  .having(
+                    (request) => request['package']['name'] as String,
+                    'name',
+                    'pkg2',
+                  )
+                  .having(
+                    (request) => request['version'] as String,
+                    'version',
+                    '2.0.0',
+                  ),
+            ]),
+          );
           return http.Response(
-              jsonEncode({
-                'results': [
-                  {'vulns': []}
-                ]
-              }),
-              HttpStatus.ok);
+            jsonEncode({
+              'results': [
+                {'vulns': []},
+              ],
+            }),
+            HttpStatus.ok,
+          );
         }),
       );
 
@@ -213,19 +247,21 @@ packages:
     });
   });
 
-  test(
-      'Given some git registries when AdvisoryChecker.checkAdvisories is '
+  test('Given some git registries when AdvisoryChecker.checkAdvisories is '
       'called then it queries by the current registry commit hash', () async {
-    final checker = AdvisoryChecker(httpClient: MockClient((request) async {
-      expect(request.body, contains('"commit":"commit456"'));
-      return http.Response(
+    final checker = AdvisoryChecker(
+      httpClient: MockClient((request) async {
+        expect(request.body, contains('"commit":"commit456"'));
+        return http.Response(
           jsonEncode({
             'results': [
-              {'vulns': []}
-            ]
+              {'vulns': []},
+            ],
           }),
-          HttpStatus.ok);
-    }));
+          HttpStatus.ok,
+        );
+      }),
+    );
 
     await checker.checkAdvisories(
       [],

@@ -28,9 +28,7 @@ void main() {
       depDir = d.dir('dep', [
         d.dir('lib', [d.file('dep.dart', '')]),
         d.dir('skills', [
-          d.dir('dep-skill1', [
-            d.file('SKILL.md', defaultSkillContent),
-          ]),
+          d.dir('dep-skill1', [d.file('SKILL.md', defaultSkillContent)]),
         ]),
       ]);
       await depDir.create();
@@ -51,7 +49,7 @@ environment:
                 {
                   'name': 'dep',
                   'rootUri': depDir.io.uri.toString(),
-                  'packageUri': 'lib/'
+                  'packageUri': 'lib/',
                 },
               ],
             }),
@@ -84,14 +82,15 @@ environment:
       ]);
     }
 
-    Future<void> expectSkill(
-        {bool isInstalled = true,
-        String content = defaultSkillContent,
-        String skill = 'dep-skill1'}) async {
+    Future<void> expectSkill({
+      bool isInstalled = true,
+      String content = defaultSkillContent,
+      String skill = 'dep-skill1',
+    }) async {
       await d.dir('project', [
         d.dir('.agents', [
-          d.dir('skills', [isInstalled ? d.dir(skill) : d.nothing(skill)])
-        ])
+          d.dir('skills', [isInstalled ? d.dir(skill) : d.nothing(skill)]),
+        ]),
       ]).validate();
     }
 
@@ -103,91 +102,106 @@ environment:
       fakeDialogSupport.allInitialSelected.clear();
 
       await runGetCommand();
-      expect(fakeDialogSupport.allMultiSelectOptions, isEmpty,
-          reason: 'then no prompt is shown');
-    });
-
-    test('when running skills get after the source skill is modified',
-        () async {
-      await runGetCommand(all: true);
-      await expectSkill();
-
-      // Modify source skill
-      final skillFile =
-          File(p.join(depDir.io.path, 'skills', 'dep-skill1', 'SKILL.md'));
-      await skillFile
-          .writeAsString('---\nname: dep-skill1\n---\nUpdated content\n');
-
-      // Run again
-      fakeDialogSupport.multiSelectResults.add({0});
-      await runGetCommand();
-
-      expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
       expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        [contains('dep-skill1 (Update available)')],
-        reason: 'then the prompt shows the Update available state',
+        fakeDialogSupport.allMultiSelectOptions,
+        isEmpty,
+        reason: 'then no prompt is shown',
       );
-      expect(fakeDialogSupport.allInitialSelected[0], contains(0),
-          reason: 'then it is selected by default');
     });
 
     test(
-        'when running skills get after the installed skill is modified locally',
-        () async {
-      await runGetCommand(all: true);
-      await expectSkill();
+      'when running skills get after the source skill is modified',
+      () async {
+        await runGetCommand(all: true);
+        await expectSkill();
 
-      // Modify installed skill locally
-      final installedSkillFile = File(
-          p.join(projectPath, '.agents', 'skills', 'dep-skill1', 'SKILL.md'));
-      final editedContent = '---\nname: dep-skill1\n---\nLocal edits\n';
-      await installedSkillFile.writeAsString(editedContent);
+        // Modify source skill
+        final skillFile = File(
+          p.join(depDir.io.path, 'skills', 'dep-skill1', 'SKILL.md'),
+        );
+        await skillFile.writeAsString(
+          '---\nname: dep-skill1\n---\nUpdated content\n',
+        );
 
-      fakeDialogSupport.multiSelectResults.add({0});
-      await runGetCommand();
-      await expectSkill(content: editedContent);
+        // Run again
+        fakeDialogSupport.multiSelectResults.add({0});
+        await runGetCommand();
 
-      expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        [contains('dep-skill1 (Local edits)')],
-        reason: 'then the prompt shows the Local edits state',
-      );
-      expect(fakeDialogSupport.allInitialSelected[0], isEmpty,
-          reason: 'then it is not selected by default');
-    });
+        expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill1 (Update available)'),
+        ], reason: 'then the prompt shows the Update available state');
+        expect(
+          fakeDialogSupport.allInitialSelected[0],
+          contains(0),
+          reason: 'then it is selected by default',
+        );
+      },
+    );
 
-    test('when running skills get after previously skipping the skill',
-        () async {
-      // First install, don't select any
-      fakeDialogSupport.multiSelectResults.add({});
-      await runGetCommand();
-      await expectSkill(isInstalled: false);
-      fakeDialogSupport.reset();
+    test(
+      'when running skills get after the installed skill is modified locally',
+      () async {
+        await runGetCommand(all: true);
+        await expectSkill();
 
-      // Install again, but select the previously skipped one.
-      fakeDialogSupport.multiSelectResults.add({0});
-      await runGetCommand();
+        // Modify installed skill locally
+        final installedSkillFile = File(
+          p.join(projectPath, '.agents', 'skills', 'dep-skill1', 'SKILL.md'),
+        );
+        final editedContent = '---\nname: dep-skill1\n---\nLocal edits\n';
+        await installedSkillFile.writeAsString(editedContent);
 
-      expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        [contains('dep-skill1 (Skipped previously)')],
-        reason: 'then the prompt shows the Skipped previously state',
-      );
-      expect(fakeDialogSupport.allInitialSelected[0], isEmpty,
-          reason: 'then it is not selected by default');
+        fakeDialogSupport.multiSelectResults.add({0});
+        await runGetCommand();
+        await expectSkill(content: editedContent);
 
-      await expectSkill();
-    });
+        expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill1 (Local edits)'),
+        ], reason: 'then the prompt shows the Local edits state');
+        expect(
+          fakeDialogSupport.allInitialSelected[0],
+          isEmpty,
+          reason: 'then it is not selected by default',
+        );
+      },
+    );
+
+    test(
+      'when running skills get after previously skipping the skill',
+      () async {
+        // First install, don't select any
+        fakeDialogSupport.multiSelectResults.add({});
+        await runGetCommand();
+        await expectSkill(isInstalled: false);
+        fakeDialogSupport.reset();
+
+        // Install again, but select the previously skipped one.
+        fakeDialogSupport.multiSelectResults.add({0});
+        await runGetCommand();
+
+        expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill1 (Skipped previously)'),
+        ], reason: 'then the prompt shows the Skipped previously state');
+        expect(
+          fakeDialogSupport.allInitialSelected[0],
+          isEmpty,
+          reason: 'then it is not selected by default',
+        );
+
+        await expectSkill();
+      },
+    );
 
     test('when running skills get after the source skill is deleted', () async {
       await runGetCommand(all: true);
 
       // Delete source skill
-      final sourceSkillDir =
-          Directory(p.join(depDir.io.path, 'skills', 'dep-skill1'));
+      final sourceSkillDir = Directory(
+        p.join(depDir.io.path, 'skills', 'dep-skill1'),
+      );
       await sourceSkillDir.delete(recursive: true);
 
       // Run again
@@ -195,44 +209,50 @@ environment:
       await runGetCommand();
 
       expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
+      expect(fakeDialogSupport.allMultiSelectOptions[0], [
+        contains('dep-skill1 (Removed)'),
+      ], reason: 'then the prompt shows the Removed state');
       expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        [contains('dep-skill1 (Removed)')],
-        reason: 'then the prompt shows the Removed state',
+        fakeDialogSupport.allInitialSelected[0],
+        contains(0),
+        reason: 'then it is selected by default to remove',
       );
-      expect(fakeDialogSupport.allInitialSelected[0], contains(0),
-          reason: 'then it is selected by default to remove');
 
       await expectSkill(isInstalled: false);
     });
 
-    test('when running skills get after a new skill is added to the source',
-        () async {
-      await runGetCommand(all: true);
+    test(
+      'when running skills get after a new skill is added to the source',
+      () async {
+        await runGetCommand(all: true);
 
-      // Add a new skill
-      final newSkillDir =
-          Directory(p.join(depDir.io.path, 'skills', 'dep-skill2'));
-      await newSkillDir.create(recursive: true);
-      final newSkillContent = '---\nname: dep-skill2\n---\nNew\n';
-      await File(p.join(newSkillDir.path, 'SKILL.md'))
-          .writeAsString(newSkillContent);
+        // Add a new skill
+        final newSkillDir = Directory(
+          p.join(depDir.io.path, 'skills', 'dep-skill2'),
+        );
+        await newSkillDir.create(recursive: true);
+        final newSkillContent = '---\nname: dep-skill2\n---\nNew\n';
+        await File(
+          p.join(newSkillDir.path, 'SKILL.md'),
+        ).writeAsString(newSkillContent);
 
-      // Run again and select the new skill
-      fakeDialogSupport.multiSelectResults.add({0});
-      await runGetCommand();
-      await expectSkill(skill: 'dep-skill2', content: newSkillContent);
+        // Run again and select the new skill
+        fakeDialogSupport.multiSelectResults.add({0});
+        await runGetCommand();
+        await expectSkill(skill: 'dep-skill2', content: newSkillContent);
 
-      expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
+        expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
 
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        [contains('dep-skill2 (New)')],
-        reason: 'then the prompt shows only the skill with the New state',
-      );
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill2 (New)'),
+        ], reason: 'then the prompt shows only the skill with the New state');
 
-      expect(fakeDialogSupport.allInitialSelected[0], isEmpty,
-          reason: 'then it is not selected by default');
-    });
+        expect(
+          fakeDialogSupport.allInitialSelected[0],
+          isEmpty,
+          reason: 'then it is not selected by default',
+        );
+      },
+    );
   });
 }

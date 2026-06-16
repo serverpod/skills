@@ -66,17 +66,17 @@ environment:
                 {
                   'name': 'dep1',
                   'rootUri': dep1Dir.io.uri.toString(),
-                  'packageUri': 'lib/'
+                  'packageUri': 'lib/',
                 },
                 {
                   'name': 'dep2',
                   'rootUri': dep2Dir.io.uri.toString(),
-                  'packageUri': 'lib/'
+                  'packageUri': 'lib/',
                 },
                 {
                   'name': 'dep3',
                   'rootUri': dep3Dir.io.uri.toString(),
-                  'packageUri': 'lib/'
+                  'packageUri': 'lib/',
                 },
               ],
             }),
@@ -88,32 +88,45 @@ environment:
 
       projectPath = projectRootDir.io.path;
       fakeDialogSupport = FakeDialogSupport();
-      skillsAdapter =
-          GenericAdapter(projectPath, dialogSupport: fakeDialogSupport);
+      skillsAdapter = GenericAdapter(
+        projectPath,
+        dialogSupport: fakeDialogSupport,
+      );
     });
 
-    test(
-        'when running `skills get` and the user only selects dep1 then only '
+    test('when running `skills get` and the user only selects dep1 then only '
         'dep1 should be installed', () async {
       fakeDialogSupport.multiSelectResults.addAll([
         {0},
-        {0}
+        {0},
       ]);
       final getCommand = GetCommand(
         dialogSupport: fakeDialogSupport,
-        gitRunner:
-            GitRunner(isAvailableOverride: () async => false), // skip registry
+        gitRunner: GitRunner(
+          isAvailableOverride: () async => false,
+        ), // skip registry
       );
       final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(getCommand);
 
-      await runner.run(
-          ['get', '--directory', projectPath, '--ide', Ide.generic.cliName]);
+      await runner.run([
+        'get',
+        '--directory',
+        projectPath,
+        '--ide',
+        Ide.generic.cliName,
+      ]);
 
-      expect(fakeDialogSupport.allInitialSelected.first, equals({0, 1}),
-          reason: 'then all packages should be selected by default');
-      expect(fakeDialogSupport.allInitialSelected.last, isEmpty,
-          reason: 'then new skills should not be selected by default');
+      expect(
+        fakeDialogSupport.allInitialSelected.first,
+        equals({0, 1}),
+        reason: 'then all packages should be selected by default',
+      );
+      expect(
+        fakeDialogSupport.allInitialSelected.last,
+        isEmpty,
+        reason: 'then new skills should not be selected by default',
+      );
 
       final dep1SkillDir = Directory(
         p.join(skillsAdapter.skillsDirectory, 'dep1-skill'),
@@ -138,7 +151,40 @@ environment:
     });
 
     test(
-        'when running `skills get --package dep1` (non-interactive) then only dep1 '
+      'when running `skills get --package dep1` (non-interactive) then only dep1 '
+      'should be installed',
+      () async {
+        final getCommand = GetCommand(
+          dialogSupport: null,
+          gitRunner: GitRunner(isAvailableOverride: () async => false),
+        );
+        final runner = SkillsCommandRunner('skills', 'Test')
+          ..addCommand(getCommand);
+
+        await runner.run([
+          'get',
+          '--directory',
+          projectPath,
+          '--ide',
+          Ide.generic.cliName,
+          '--package',
+          'dep1',
+          '--all', // install all skills from dep1
+        ]);
+
+        final dep1SkillDir = Directory(
+          p.join(skillsAdapter.skillsDirectory, 'dep1-skill'),
+        );
+        final dep2SkillDir = Directory(
+          p.join(skillsAdapter.skillsDirectory, 'dep2-skill'),
+        );
+
+        expect(await dep1SkillDir.exists(), isTrue);
+        expect(await dep2SkillDir.exists(), isFalse);
+      },
+    );
+
+    test('when running `skills get --all` (non-interactive) then all skills '
         'should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
@@ -153,39 +199,7 @@ environment:
         projectPath,
         '--ide',
         Ide.generic.cliName,
-        '--package',
-        'dep1',
-        '--all' // install all skills from dep1
-      ]);
-
-      final dep1SkillDir = Directory(
-        p.join(skillsAdapter.skillsDirectory, 'dep1-skill'),
-      );
-      final dep2SkillDir = Directory(
-        p.join(skillsAdapter.skillsDirectory, 'dep2-skill'),
-      );
-
-      expect(await dep1SkillDir.exists(), isTrue);
-      expect(await dep2SkillDir.exists(), isFalse);
-    });
-
-    test(
-        'when running `skills get --all` (non-interactive) then all skills '
-        'should be installed', () async {
-      final getCommand = GetCommand(
-        dialogSupport: null,
-        gitRunner: GitRunner(isAvailableOverride: () async => false),
-      );
-      final runner = SkillsCommandRunner('skills', 'Test')
-        ..addCommand(getCommand);
-
-      await runner.run([
-        'get',
-        '--directory',
-        projectPath,
-        '--ide',
-        Ide.generic.cliName,
-        '--all'
+        '--all',
       ]);
 
       final dep1SkillDir = Directory(
@@ -199,8 +213,7 @@ environment:
       expect(await dep2SkillDir.exists(), isTrue);
     });
 
-    test(
-        'when running `skills get` without package arguments and NO dialog '
+    test('when running `skills get` without package arguments and NO dialog '
         'support then no skills should be installed', () async {
       final getCommand = GetCommand(
         dialogSupport: null,
@@ -229,37 +242,39 @@ environment:
     });
 
     test(
-        'when running `skills get --package dep3 --all` and dep3 has no skills '
-        'then it should log that no skills were found in dep3', () async {
-      final logMessages = <String>[];
-      final subscription = Logger('skills get').onRecord.listen((r) {
-        logMessages.add(r.message);
-      });
+      'when running `skills get --package dep3 --all` and dep3 has no skills '
+      'then it should log that no skills were found in dep3',
+      () async {
+        final logMessages = <String>[];
+        final subscription = Logger('skills get').onRecord.listen((r) {
+          logMessages.add(r.message);
+        });
 
-      final getCommand = GetCommand(
-        dialogSupport: null,
-        gitRunner: GitRunner(isAvailableOverride: () async => false),
-      );
-      final runner = SkillsCommandRunner('skills', 'Test')
-        ..addCommand(getCommand);
+        final getCommand = GetCommand(
+          dialogSupport: null,
+          gitRunner: GitRunner(isAvailableOverride: () async => false),
+        );
+        final runner = SkillsCommandRunner('skills', 'Test')
+          ..addCommand(getCommand);
 
-      await runner.run([
-        'get',
-        '--directory',
-        projectPath,
-        '--ide',
-        Ide.generic.cliName,
-        '--package',
-        'dep3',
-        '--all'
-      ]);
+        await runner.run([
+          'get',
+          '--directory',
+          projectPath,
+          '--ide',
+          Ide.generic.cliName,
+          '--package',
+          'dep3',
+          '--all',
+        ]);
 
-      await subscription.cancel();
+        await subscription.cancel();
 
-      expect(
-        logMessages,
-        contains('No skills found in the given package dep3.'),
-      );
-    });
+        expect(
+          logMessages,
+          contains('No skills found in the given package dep3.'),
+        );
+      },
+    );
   });
 }
