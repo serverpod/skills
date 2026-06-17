@@ -373,9 +373,11 @@ Future<_SkillStatesResult> _computeSkillStates({
           <IdeAdapter, _SkillState>{};
 
       for (final adapter in ideAdapters) {
-        final newHash = await adapter.computeSourceSkillHash(
-          io.Directory(skill.skillPath),
-        );
+        final newHash = skill is OrphanedSkill
+            ? null
+            : await adapter.computeSourceSkillHash(
+                io.Directory(skill.skillPath),
+              );
         var state = _SkillState.isNew;
         final currentSkillEntry = manifest
             .packagesForIde(adapter.ide.cliName)[skill.packageName]

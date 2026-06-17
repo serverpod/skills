@@ -89,7 +89,11 @@ environment:
     }) async {
       await d.dir('project', [
         d.dir('.agents', [
-          d.dir('skills', [isInstalled ? d.dir(skill) : d.nothing(skill)]),
+          d.dir('skills', [
+            isInstalled
+                ? d.dir(skill, [d.file('SKILL.md', content)])
+                : d.nothing(skill),
+          ]),
         ]),
       ]).validate();
     }
@@ -154,7 +158,7 @@ environment:
 
         fakeDialogSupport.multiSelectResults.add({0});
         await runGetCommand();
-        await expectSkill(content: editedContent);
+        await expectSkill(content: defaultSkillContent);
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
         expect(fakeDialogSupport.allMultiSelectOptions[0], [
@@ -252,6 +256,60 @@ environment:
           isEmpty,
           reason: 'then it is not selected by default',
         );
+      },
+    );
+    test(
+      'when running skills get with --all it applies all changes without prompting',
+      () async {
+        // Set up the base state with two skills
+        final skill2Dir = Directory(
+          p.join(depDir.io.path, 'skills', 'dep-skill2'),
+        );
+        await skill2Dir.create(recursive: true);
+        await File(
+          p.join(skill2Dir.path, 'SKILL.md'),
+        ).writeAsString('---\nname: dep-skill2\n---\n');
+
+        await runGetCommand(all: true);
+        await expectSkill(skill: 'dep-skill1');
+        await expectSkill(
+          skill: 'dep-skill2',
+          content: '---\nname: dep-skill2\n---\n',
+        );
+
+        // 1. Delete dep-skill1 (Removed)
+        await Directory(
+          p.join(depDir.io.path, 'skills', 'dep-skill1'),
+        ).delete(recursive: true);
+
+        // 2. Modify dep-skill2 (Update available)
+        final editedContent = '---\nname: dep-skill2\n---\nUpdated\n';
+        await File(
+          p.join(skill2Dir.path, 'SKILL.md'),
+        ).writeAsString(editedContent);
+
+        // 3. Add dep-skill3 (New)
+        final skill3Dir = Directory(
+          p.join(depDir.io.path, 'skills', 'dep-skill3'),
+        );
+        await skill3Dir.create(recursive: true);
+        final newSkillContent = '---\nname: dep-skill3\n---\n';
+        await File(
+          p.join(skill3Dir.path, 'SKILL.md'),
+        ).writeAsString(newSkillContent);
+
+        fakeDialogSupport.reset();
+        await runGetCommand(all: true);
+
+        expect(
+          fakeDialogSupport.allMultiSelectOptions,
+          isEmpty,
+          reason: 'then should not show any prompts',
+        );
+
+        await expectSkill(skill: 'dep-skill1', isInstalled: false);
+        await expectSkill(skill: 'dep-skill2', content: editedContent);
+        await expectSkill(skill: 'dep-skill3', content: newSkillContent);
       },
     );
   });
