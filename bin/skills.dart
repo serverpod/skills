@@ -18,7 +18,7 @@ Future<void> main(List<String> arguments) async {
       _ when log.level >= Level.WARNING => yellow,
       _ => null,
     };
-    io.stdout.writeln(wrapWith(log.message, [if (color != null) color]));
+    io.stdout.writeln(wrapWith(log.message, [?color]));
   });
 
   DialogSupport? dialogSupport;
