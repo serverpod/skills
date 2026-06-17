@@ -65,7 +65,7 @@ class RulesAdapter extends IdeAdapter {
     );
     await targetFile.writeAsString(buffer.toString());
 
-    final hash = await tryCalculateFileHash(targetFile);
+    final hash = await computeInstalledSkillHash(skill.skillName);
     if (hash == null) {
       throw StateError(
         'Failed to install skill ${skill.skillName} from ${skill.skillPath}',
@@ -88,5 +88,17 @@ class RulesAdapter extends IdeAdapter {
 
     await targetFile.delete();
     return true;
+  }
+
+  @override
+  Future<String?> computeInstalledSkillHash(String skill) async {
+    final targetFile = File(p.join(skillsDirectory, '$skill$fileExtension'));
+    return await tryCalculateFileHash(targetFile);
+  }
+
+  @override
+  Future<String?> computeSourceSkillHash(Directory skillDir) async {
+    final targetFile = File(p.join(skillDir.path, 'SKILL.md'));
+    return await tryCalculateFileHash(targetFile);
   }
 }

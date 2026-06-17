@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:logging/logging.dart';
 
 import '../core/skill_scanner.dart';
@@ -29,6 +31,19 @@ abstract class IdeAdapter {
 
   /// Creates the skills directory if it doesn't exist.
   Future<void> ensureSkillsDirectory();
+
+  /// Returns the current hash of an installed [skill] as currently installed.
+  ///
+  /// Returns `null` if it cannot be computed (typically due to the directory
+  /// not existing).
+  Future<String?> computeInstalledSkillHash(String skill);
+
+  /// Returns the current hash of a skill located at [skillDir], as it would be
+  /// if installed by this package.
+  ///
+  /// Returns `null` if it cannot be computed (typically due to the directory
+  /// not existing).
+  Future<String?> computeSourceSkillHash(Directory skillDir);
 }
 
 /// The result type for [IdeAdapter.installSkill].

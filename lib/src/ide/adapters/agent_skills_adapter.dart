@@ -40,11 +40,11 @@ abstract class AgentSkillsAdapter extends IdeAdapter {
     await targetDir.create(recursive: true);
 
     await _copyDirectory(Directory(skill.skillPath), targetDir);
-
-    return (
-      name: skill.skillName,
-      contentHash: await calculateDirectoryHash(targetDir),
-    );
+    final hash = await computeInstalledSkillHash(skill.skillName);
+    if (hash == null) {
+      throw StateError('Failed to install skill at ${targetDir.path}.');
+    }
+    return (name: skill.skillName, contentHash: hash);
   }
 
   @override
@@ -59,6 +59,16 @@ abstract class AgentSkillsAdapter extends IdeAdapter {
     await targetDir.delete(recursive: true);
     return true;
   }
+
+  @override
+  Future<String?> computeInstalledSkillHash(String skill) async =>
+      await tryCalculateDirectoryHash(
+        Directory(p.join(skillsDirectory, skill)),
+      );
+
+  @override
+  Future<String?> computeSourceSkillHash(Directory skillDir) async =>
+      await tryCalculateDirectoryHash(skillDir);
 
   Future<void> _copyDirectory(Directory source, Directory target) async {
     await for (final entity in source.list(recursive: false)) {

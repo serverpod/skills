@@ -282,9 +282,7 @@ class SkillInstaller {
           InstalledSkillEntry(
             name: skill.skillName,
             installedAt: DateTime.now().toUtc(),
-            contentHash: await calculateDirectoryHash(
-              io.Directory(skill.skillPath),
-            ),
+            contentHash: null,
             isInstalled: false,
           ),
         );

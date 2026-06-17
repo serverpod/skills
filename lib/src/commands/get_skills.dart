@@ -4,7 +4,6 @@ import 'package:io/ansi.dart' as ansi;
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/skills_command.dart';
 import 'package:skills/src/core/advisory_checker.dart';
 import 'package:skills/src/core/git_runner.dart';
@@ -371,13 +370,13 @@ Future<_SkillStatesResult> _computeSkillStates({
     sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
 
     for (final skill in sourceSkills) {
-      final newHash = skill is OrphanedSkill
-          ? null
-          : await calculateDirectoryHash(io.Directory(skill.skillPath));
       final statesForSkill = allSkillStates[skill] =
           <IdeAdapter, _SkillState>{};
 
       for (final adapter in ideAdapters) {
+        final newHash = await adapter.computeSourceSkillHash(
+          io.Directory(skill.skillPath),
+        );
         var state = _SkillState.isNew;
         final currentSkillEntry = manifest
             .packagesForIde(adapter.ide.cliName)[skill.packageName]
@@ -391,12 +390,9 @@ Future<_SkillStatesResult> _computeSkillStates({
           } else if (skill is OrphanedSkill) {
             state = _SkillState.removed;
           } else {
-            final targetDir = io.Directory(
-              p.join(adapter.skillsDirectory, skill.skillName),
+            final currentHash = await adapter.computeInstalledSkillHash(
+              skill.skillName,
             );
-            final currentHash = await targetDir.exists()
-                ? await calculateDirectoryHash(targetDir)
-                : null;
             final installedHash = currentSkillEntry.contentHash;
             if (installedHash != null && currentHash != installedHash) {
               state = _SkillState.localEdits;
