@@ -105,7 +105,7 @@ Future<bool> getSkills({
 
   Map<Ide, Set<String>>? selectedSkillNamesByIde;
 
-  // If given a list of skills, remove all other ones.
+  // Log about any unrecognized skills
   if (skillNames.isNotEmpty) {
     final foundSkillNames = skills.map((s) => s.skillName).toSet();
     final missingSkills = skillNames.difference(foundSkillNames);
@@ -115,7 +115,6 @@ Future<bool> getSkills({
         '${missingSkills.join(', ')}',
       );
     }
-    skills.removeWhere((s) => !skillNames.contains(s.skillName));
   }
 
   final ideAdapters = [
@@ -168,8 +167,14 @@ Future<bool> getSkills({
     }
   }
 
-  // Only prompt or print if we didn't specify specific skills or --all
-  if (skillNames.isEmpty && !allFlag) {
+  // Use `skillNames` or the `--all` flag as the selection if provided,
+  // otherwise prompt for which skills to install or log the available skills.
+  if (skillNames.isNotEmpty) {
+    selectedSkillNamesByIde = {};
+    for (final ide in ides) {
+      selectedSkillNamesByIde[ide] = skillNames;
+    }
+  } else if (!allFlag) {
     final promptResult = await _promptForSkillsToInstall(
       sortedSourceIds: sortedSourceIds,
       skillsBySource: skillsBySource,
@@ -187,7 +192,6 @@ Future<bool> getSkills({
   }
 
   final installer = SkillInstaller(dialogSupport);
-
   for (final ide in ides) {
     final result = await installer.installSkillsForIde(
       ide: ide,
@@ -196,6 +200,7 @@ Future<bool> getSkills({
       selectedSkills: selectedSkillNamesByIde?[ide],
       previousManifest: manifest,
       globalConfig: globalConfig,
+      packageNames: packageNames,
     );
     if (result == null) {
       logger.warning('Installation aborted for IDE ${ide.cliName}');

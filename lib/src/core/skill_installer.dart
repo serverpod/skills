@@ -110,6 +110,7 @@ class SkillInstaller {
     required SkillManifest previousManifest,
     required GlobalConfig globalConfig,
     Set<String>? selectedSkills,
+    Set<String> packageNames = const {},
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     if (adapter is AgentSkillsAdapter) {
@@ -169,6 +170,7 @@ class SkillInstaller {
       manifest: updatedManifest,
       selectedSkills: selectedSkills,
       adapter: adapter,
+      packageNames: packageNames,
     );
 
     return SkillInstallResult(
@@ -366,6 +368,9 @@ class SkillInstaller {
 
   /// Cleans up any packages that were in the manifest but no longer exist
   /// in the skills list at all.
+  ///
+  /// If [packageNames] is not empty, then we will only consider the given
+  /// packages for cleanup.
   Future<SkillManifest> _cleanupMissingPackages({
     required Ide ide,
     required String rootPath,
@@ -373,12 +378,17 @@ class SkillInstaller {
     required SkillManifest manifest,
     required Set<String>? selectedSkills,
     required IdeAdapter adapter,
+    required Set<String> packageNames,
   }) async {
     var updatedManifest = manifest;
     final allPkgs = updatedManifest.packagesForIde(ide.cliName).keys.toSet();
     final missingPkgs = allPkgs.difference(skillsByPackage.keys.toSet());
 
     for (final pkgName in missingPkgs) {
+      if (packageNames.isNotEmpty && !packageNames.contains(pkgName)) {
+        continue;
+      }
+
       final existingEntry = updatedManifest.packagesForIde(
         ide.cliName,
       )[pkgName]!;

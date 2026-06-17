@@ -305,10 +305,7 @@ environment:
         // Verify both are installed
         await d.dir('project', [
           d.dir('.agents', [
-            d.dir('skills', [
-              d.dir('dep1-skill'),
-              d.dir('dep2-skill'),
-            ]),
+            d.dir('skills', [d.dir('dep1-skill'), d.dir('dep2-skill')]),
           ]),
         ]).validate();
 
@@ -329,10 +326,7 @@ environment:
         // Verify dep2-skill is STILL installed
         await d.dir('project', [
           d.dir('.agents', [
-            d.dir('skills', [
-              d.dir('dep1-skill'),
-              d.dir('dep2-skill'),
-            ]),
+            d.dir('skills', [d.dir('dep1-skill'), d.dir('dep2-skill')]),
           ]),
         ]).validate();
       },
