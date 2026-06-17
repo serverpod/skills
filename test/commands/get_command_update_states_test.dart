@@ -132,9 +132,11 @@ environment:
         await runGetCommand();
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-        expect(fakeDialogSupport.allMultiSelectOptions[0], [
-          contains('dep-skill1 (Update available)'),
-        ], reason: 'then the prompt shows the Update available state');
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[0],
+          [contains('dep-skill1 (Update available)')],
+          reason: 'then the prompt shows the Update available state',
+        );
         expect(
           fakeDialogSupport.allInitialSelected[0],
           contains(0),
@@ -161,9 +163,11 @@ environment:
         await expectSkill(content: defaultSkillContent);
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-        expect(fakeDialogSupport.allMultiSelectOptions[0], [
-          contains('dep-skill1 (Local edits)'),
-        ], reason: 'then the prompt shows the Local edits state');
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[0],
+          [contains('dep-skill1 (Local edits)')],
+          reason: 'then the prompt shows the Local edits state',
+        );
         expect(
           fakeDialogSupport.allInitialSelected[0],
           isEmpty,
@@ -186,9 +190,11 @@ environment:
         await runGetCommand();
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-        expect(fakeDialogSupport.allMultiSelectOptions[0], [
-          contains('dep-skill1 (Skipped previously)'),
-        ], reason: 'then the prompt shows the Skipped previously state');
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[0],
+          [contains('dep-skill1 (Skipped previously)')],
+          reason: 'then the prompt shows the Skipped previously state',
+        );
         expect(
           fakeDialogSupport.allInitialSelected[0],
           isEmpty,
@@ -213,9 +219,11 @@ environment:
       await runGetCommand();
 
       expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-      expect(fakeDialogSupport.allMultiSelectOptions[0], [
-        contains('dep-skill1 (Removed)'),
-      ], reason: 'then the prompt shows the Removed state');
+      expect(
+        fakeDialogSupport.allMultiSelectOptions[0],
+        [contains('dep-skill1 (Removed)')],
+        reason: 'then the prompt shows the Removed state',
+      );
       expect(
         fakeDialogSupport.allInitialSelected[0],
         contains(0),
@@ -247,9 +255,11 @@ environment:
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
 
-        expect(fakeDialogSupport.allMultiSelectOptions[0], [
-          contains('dep-skill2 (New)'),
-        ], reason: 'then the prompt shows only the skill with the New state');
+        expect(
+          fakeDialogSupport.allMultiSelectOptions[0],
+          [contains('dep-skill2 (New)')],
+          reason: 'then the prompt shows only the skill with the New state',
+        );
 
         expect(
           fakeDialogSupport.allInitialSelected[0],
