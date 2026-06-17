@@ -18,7 +18,6 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/core/workspace_resolver.dart';
 import 'package:skills/src/ide/ide.dart';
 import 'package:skills/src/core/dialog_support.dart';
-import 'package:skills/src/core/hash_utils.dart';
 import 'package:skills/src/ide/ide_adapter_factory.dart';
 import 'package:skills/src/models/global_config.dart';
 

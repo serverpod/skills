@@ -1,8 +1,5 @@
-import 'dart:io' as io;
-
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:skills/src/core/hash_utils.dart';
 
 import '../ide/ide.dart';
 import '../ide/adapters/agent_skills_adapter.dart';
