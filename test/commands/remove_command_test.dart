@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
@@ -10,6 +9,7 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import '../fake_dialog_support.dart';
+import '../utils.dart';
 
 void main() {
   late CommandRunner runner;
@@ -30,25 +30,11 @@ void main() {
     late SkillManifest manifest;
 
     setUp(() async {
+      await d.dir('dep1', [pubspec('dep1')]).create();
+      await d.dir('dep2', [pubspec('dep2')]).create();
+
       final projectRootDir = d.dir('project', [
-        d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
-        d.dir('.dart_tool', [
-          d.file(
-            'package_config.json',
-            jsonEncode({
-              'configVersion': 2,
-              'packages': [
-                {'name': 'test_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                {'name': 'dep1', 'rootUri': '../../dep1', 'packageUri': 'lib/'},
-                {'name': 'dep2', 'rootUri': '../../dep2', 'packageUri': 'lib/'},
-              ],
-            }),
-          ),
-        ]),
+        pubspec('test_app', dependencies: [.new('dep1'), .new('dep2')]),
         d.dir('.cursor', [
           d.dir('skills', [
             d.dir('dep1-skill-1', [d.file('SKILL.md', 'content')]),
@@ -60,6 +46,7 @@ environment:
       await projectRootDir.create();
 
       projectPath = projectRootDir.io.path;
+      await Process.run('dart', ['pub', 'get'], workingDirectory: projectPath);
 
       manifest = SkillManifest(
         installations: {
@@ -143,6 +130,7 @@ environment:
           d.dir('.cursor', [
             d.dir('skills', [d.nothing('dep1-skill'), d.nothing('dep2-skill')]),
           ]),
+          d.file('pubspec.lock', anything),
           d.dir('.dart_tool', [d.nothing('skills')]),
         ]).validate();
       },
@@ -171,11 +159,7 @@ environment:
   group('Given a project with no managed skills', () {
     test('when removing then manifest remains empty', () async {
       await d.dir('empty_project', [
-        d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
+        pubspec('test_app'),
         d.dir('.cursor', [d.dir('skills')]),
       ]).create();
       var projectPath = d.dir('empty_project').io.path;
@@ -203,11 +187,7 @@ environment:
 
     setUp(() async {
       await d.dir('multi_project', [
-        d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
+        pubspec('test_app'),
         d.dir('.cursor', [
           d.dir('skills', [
             d.dir('dep1-skill', [

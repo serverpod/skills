@@ -289,7 +289,10 @@ Steps to analyze.
 
       group('without dialog support', () {
         setUp(() async {
-          adapter = GenericAdapter(d.path('project_migration'));
+          adapter = GenericAdapter(
+            d.path('project_migration'),
+            dialogSupport: null,
+          );
         });
 
         test('when migrating skills then known skills are migrated', () async {

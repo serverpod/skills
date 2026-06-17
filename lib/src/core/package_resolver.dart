@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
+import 'package:skills/src/models/package_graph.dart';
 
 import 'workspace_resolver.dart';
 
@@ -29,6 +31,8 @@ class ResolvedPackage {
 ///   you have a [WorkspaceLayout].
 class PackageResolver {
   final String projectPath;
+
+  static final logger = Logger('PackageResolver');
 
   const PackageResolver(this.projectPath);
 
@@ -73,7 +77,8 @@ class PackageResolver {
   ///
   /// Reads each unique `package_config.json`, merges the results, and filters
   /// out workspace member packages (those are the user's own code, not
-  /// external dependencies that might ship skills).
+  /// external dependencies that might ship skills). Also filters out transitive
+  /// dependencies.
   ///
   /// If [packageNames] is non-empty, only those packages are returned.
   static Future<List<ResolvedPackage>> resolveWorkspace(
@@ -92,29 +97,60 @@ class PackageResolver {
 
     for (final configPath in configPaths) {
       final configFile = File(configPath);
-      if (!configFile.existsSync()) continue;
-
+      if (!await configFile.exists()) continue;
       final config = await loadPackageConfig(configFile);
-      for (final package in config.packages) {
-        if (memberNames.contains(package.name)) continue;
 
-        if (packageNames.isNotEmpty && !packageNames.contains(package.name)) {
-          continue;
-        }
-
-        final rootUri = package.root;
-        if (rootUri.scheme != 'file') continue;
-
-        final rootPath = rootUri.toFilePath();
-        if (!seenPaths.add(rootPath)) continue;
-
-        results.add(
-          ResolvedPackage(
-            name: package.name,
-            rootPath: rootPath,
-            originalPackageConfigPath: configPath,
-          ),
+      // package_graph.json files always exist next to the package config.
+      final packageGraphFile = File(
+        p.join(p.dirname(configPath), 'package_graph.json'),
+      );
+      if (!await packageGraphFile.exists()) {
+        logger.warning(
+          'Missing `package_graph.json` file at ${packageGraphFile.path}',
         );
+        continue;
+      }
+      final packageGraph = await PackageGraph.fromFile(packageGraphFile);
+
+      for (final packageEntry in packageGraph.packages) {
+        /// We only care about the workspace packages dependencies.
+        if (!memberNames.contains(packageEntry.name)) continue;
+
+        for (final dependency in [
+          ...packageEntry.dependencies,
+          ...packageEntry.devDependencies,
+        ]) {
+          if (packageNames.isNotEmpty && !packageNames.contains(dependency)) {
+            continue;
+          }
+
+          final packageConfigEntry = config[dependency];
+          if (packageConfigEntry == null) {
+            logger.severe(
+              'Missing dependency "$dependency" in package config.',
+            );
+            continue;
+          }
+
+          final rootUri = packageConfigEntry.root;
+          if (rootUri.scheme != 'file') {
+            logger.warning(
+              'Skipping skills for "$dependency" due to non-file URI: '
+              '$rootUri',
+            );
+          }
+
+          final rootPath = rootUri.toFilePath();
+          if (!seenPaths.add(rootPath)) continue;
+
+          results.add(
+            ResolvedPackage(
+              name: dependency,
+              rootPath: rootPath,
+              originalPackageConfigPath: configPath,
+            ),
+          );
+        }
       }
     }
 

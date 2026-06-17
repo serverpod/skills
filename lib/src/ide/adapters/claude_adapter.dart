@@ -25,7 +25,6 @@ class ClaudeAdapter extends AgentSkillsAdapter {
 
     final targetDir = Directory(p.join(skillsDirectory, skill.skillName));
     final skillMd = File(p.join(targetDir.path, 'SKILL.md'));
-
     if (await skillMd.exists()) {
       var content = await skillMd.readAsString();
       if (!content.contains('user-invocable:')) {

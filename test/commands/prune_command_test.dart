@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -7,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/prune_command.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import '../fake_dialog_support.dart';
+import '../utils.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -28,39 +28,11 @@ void main() {
           await Directory(testRootPath).delete(recursive: true);
         });
 
-        await d
-            .dir('pkg_a', [
-              d.dir('lib', [d.file('pkg_a.dart', '')]),
-            ])
-            .create(testRootPath);
+        await d.dir('pkg_a', [pubspec('pkg_a')]).create(testRootPath);
 
         await d
             .dir('project', [
-              d.file('pubspec.yaml', '''
-name: my_app
-environment:
-  sdk: ^3.0.0
-'''),
-              d.dir('.dart_tool', [
-                d.file(
-                  'package_config.json',
-                  jsonEncode({
-                    'configVersion': 2,
-                    'packages': [
-                      {
-                        'name': 'my_app',
-                        'rootUri': '../',
-                        'packageUri': 'lib/',
-                      },
-                      {
-                        'name': 'pkg_a',
-                        'rootUri': '../../pkg_a',
-                        'packageUri': 'lib/',
-                      },
-                    ],
-                  }),
-                ),
-              ]),
+              pubspec('my_app', dependencies: [.new('pkg_a')]),
               d.dir('.cursor', [
                 d.dir('skills', [
                   d.dir('pkg_a-skill-1', [
@@ -147,26 +119,7 @@ environment:
 
         await d
             .dir('project', [
-              d.file('pubspec.yaml', '''
-name: my_app
-environment:
-  sdk: ^3.0.0
-'''),
-              d.dir('.dart_tool', [
-                d.file(
-                  'package_config.json',
-                  jsonEncode({
-                    'configVersion': 2,
-                    'packages': [
-                      {
-                        'name': 'my_app',
-                        'rootUri': '../',
-                        'packageUri': 'lib/',
-                      },
-                    ],
-                  }),
-                ),
-              ]),
+              pubspec('my_app'),
               d.dir('.cursor', [
                 d.dir('skills', [
                   d.dir('old_pkg-skill', [
@@ -231,22 +184,7 @@ environment:
 
       await d
           .dir('no_skills_project', [
-            d.file('pubspec.yaml', '''
-name: my_app
-environment:
-  sdk: ^3.0.0
-'''),
-            d.dir('.dart_tool', [
-              d.file(
-                'package_config.json',
-                jsonEncode({
-                  'configVersion': 2,
-                  'packages': [
-                    {'name': 'my_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                  ],
-                }),
-              ),
-            ]),
+            pubspec('my_app'),
             d.dir('.cursor', [d.dir('skills')]),
           ])
           .create(testRootPath);
@@ -271,35 +209,11 @@ environment:
         await Directory(testRootPath).delete(recursive: true);
       });
 
-      await d
-          .dir('pkg_a', [
-            d.dir('lib', [d.file('pkg_a.dart', '')]),
-          ])
-          .create(testRootPath);
+      await d.dir('pkg_a', [pubspec('pkg_a')]).create(testRootPath);
 
       await d
           .dir('project', [
-            d.file('pubspec.yaml', '''
-name: my_app
-environment:
-  sdk: ^3.0.0
-'''),
-            d.dir('.dart_tool', [
-              d.file(
-                'package_config.json',
-                jsonEncode({
-                  'configVersion': 2,
-                  'packages': [
-                    {'name': 'my_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                    {
-                      'name': 'pkg_a',
-                      'rootUri': '../../pkg_a',
-                      'packageUri': 'lib/',
-                    },
-                  ],
-                }),
-              ),
-            ]),
+            pubspec('my_app', dependencies: [.new('pkg_a')]),
             d.dir('.cursor', [
               d.dir('skills', [
                 d.dir('pkg_a-skill', [

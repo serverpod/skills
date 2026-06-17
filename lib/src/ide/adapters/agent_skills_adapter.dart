@@ -55,7 +55,6 @@ abstract class AgentSkillsAdapter extends IdeAdapter {
     }
 
     // Prompting is handled by the calling layer (e.g. `skills get` dialog).
-
     await targetDir.delete(recursive: true);
     return true;
   }

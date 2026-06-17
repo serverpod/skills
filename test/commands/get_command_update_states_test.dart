@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -11,6 +10,7 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import '../fake_dialog_support.dart';
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -26,7 +26,7 @@ void main() {
 
     setUp(() async {
       depDir = d.dir('dep', [
-        d.dir('lib', [d.file('dep.dart', '')]),
+        pubspec('dep'),
         d.dir('skills', [
           d.dir('dep-skill1', [d.file('SKILL.md', defaultSkillContent)]),
         ]),
@@ -34,27 +34,7 @@ void main() {
       await depDir.create();
 
       final projectRootDir = d.dir('project', [
-        d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
-        d.dir('.dart_tool', [
-          d.file(
-            'package_config.json',
-            jsonEncode({
-              'configVersion': 2,
-              'packages': [
-                {'name': 'test_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                {
-                  'name': 'dep',
-                  'rootUri': depDir.io.uri.toString(),
-                  'packageUri': 'lib/',
-                },
-              ],
-            }),
-          ),
-        ]),
+        pubspec('test_app', dependencies: [.new('dep')]),
         d.dir('.agents', [d.dir('skills')]),
       ]);
       await projectRootDir.create();
@@ -132,11 +112,9 @@ environment:
         await runGetCommand();
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-        expect(
-          fakeDialogSupport.allMultiSelectOptions[0],
-          [contains('dep-skill1 (Update available)')],
-          reason: 'then the prompt shows the Update available state',
-        );
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill1 (Update available)'),
+        ], reason: 'then the prompt shows the Update available state');
         expect(
           fakeDialogSupport.allInitialSelected[0],
           contains(0),
@@ -163,11 +141,9 @@ environment:
         await expectSkill(content: defaultSkillContent);
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-        expect(
-          fakeDialogSupport.allMultiSelectOptions[0],
-          [contains('dep-skill1 (Local edits)')],
-          reason: 'then the prompt shows the Local edits state',
-        );
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill1 (Local edits)'),
+        ], reason: 'then the prompt shows the Local edits state');
         expect(
           fakeDialogSupport.allInitialSelected[0],
           isEmpty,
@@ -190,11 +166,9 @@ environment:
         await runGetCommand();
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-        expect(
-          fakeDialogSupport.allMultiSelectOptions[0],
-          [contains('dep-skill1 (Skipped previously)')],
-          reason: 'then the prompt shows the Skipped previously state',
-        );
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill1 (Skipped previously)'),
+        ], reason: 'then the prompt shows the Skipped previously state');
         expect(
           fakeDialogSupport.allInitialSelected[0],
           isEmpty,
@@ -219,11 +193,9 @@ environment:
       await runGetCommand();
 
       expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
-      expect(
-        fakeDialogSupport.allMultiSelectOptions[0],
-        [contains('dep-skill1 (Removed)')],
-        reason: 'then the prompt shows the Removed state',
-      );
+      expect(fakeDialogSupport.allMultiSelectOptions[0], [
+        contains('dep-skill1 (Removed)'),
+      ], reason: 'then the prompt shows the Removed state');
       expect(
         fakeDialogSupport.allInitialSelected[0],
         contains(0),
@@ -255,11 +227,9 @@ environment:
 
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
 
-        expect(
-          fakeDialogSupport.allMultiSelectOptions[0],
-          [contains('dep-skill2 (New)')],
-          reason: 'then the prompt shows only the skill with the New state',
-        );
+        expect(fakeDialogSupport.allMultiSelectOptions[0], [
+          contains('dep-skill2 (New)'),
+        ], reason: 'then the prompt shows only the skill with the New state');
 
         expect(
           fakeDialogSupport.allInitialSelected[0],

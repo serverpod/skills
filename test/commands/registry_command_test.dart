@@ -1,14 +1,17 @@
 import 'dart:io';
+
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/commands/registry_command.dart';
 import 'package:skills/src/commands/skills_command_runner.dart';
+import 'package:skills/src/core/registry_repos.dart';
 import 'package:skills/src/models/global_config.dart';
 import 'package:skills/src/models/skill_manifest.dart';
-import 'package:skills/src/core/registry_repos.dart';
-import '../fake_dialog_support.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../fake_dialog_support.dart';
+import '../utils.dart';
 
 void main() {
   group('RegistryCommand', () {
@@ -19,7 +22,7 @@ void main() {
 
     setUp(() async {
       await d.dir('project', [
-        d.file('pubspec.yaml', 'name: test_app'),
+        pubspec('test_app'),
         d.dir('.dart_skills', []),
       ]).create();
       projectPath = d.path('project');
@@ -348,7 +351,7 @@ void main() {
             globalConfig = globalConfig.withRegistry(repo);
 
             await d.dir('project', [
-              d.file('pubspec.yaml', 'name: test_app'),
+              pubspec('test_app'),
               d.dir('.dart_skills', []),
               d.dir('.cursor', [
                 d.dir('skills', [

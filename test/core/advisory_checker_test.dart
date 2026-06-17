@@ -10,15 +10,15 @@ import 'package:skills/src/core/package_resolver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
+import '../utils.dart';
+
 void main() {
   final logger = Logger('advisory_checker_test');
   late List<ResolvedPackage> packages;
 
   group('Given a single package', () {
     setUp(() async {
-      await d.dir('pkg1', [
-        d.file('pubspec.yaml', 'name: pkg1\nversion: 1.0.0\n'),
-      ]).create();
+      await d.dir('pkg1', [pubspec('pkg1')]).create();
 
       packages = [
         ResolvedPackage(
@@ -156,12 +156,8 @@ packages:
 
   group('Given multiple packages from different version solves', () {
     setUp(() async {
-      await d.dir('pkg1', [
-        d.file('pubspec.yaml', 'name: pkg1\nversion: 1.0.0\n'),
-      ]).create();
-      await d.dir('pkg2', [
-        d.file('pubspec.yaml', 'name: pkg2\nversion: 2.0.0\n'),
-      ]).create();
+      await d.dir('pkg1', [pubspec('pkg1')]).create();
+      await d.dir('pkg2', [pubspec('pkg2', version: '2.0.0')]).create();
       await d.dir('project1', [
         d.file('pubspec.lock', '''
 packages:

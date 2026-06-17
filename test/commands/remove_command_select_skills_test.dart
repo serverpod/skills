@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -6,6 +5,7 @@ import 'package:skills/src/commands/remove_command.dart';
 import 'package:skills/src/commands/skills_command_runner.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import '../fake_dialog_support.dart';
+import '../utils.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -25,25 +25,11 @@ void main() {
       final removeCommand = RemoveCommand(dialogSupport: fakeDialogSupport);
       runner = SkillsCommandRunner('skills', 'test')..addCommand(removeCommand);
 
+      await d.dir('dep1', [pubspec('dep1')]).create();
+      await d.dir('dep2', [pubspec('dep2')]).create();
+
       final projectRootDir = d.dir('project', [
-        d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
-        d.dir('.dart_tool', [
-          d.file(
-            'package_config.json',
-            jsonEncode({
-              'configVersion': 2,
-              'packages': [
-                {'name': 'test_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                {'name': 'dep1', 'rootUri': '../../dep1', 'packageUri': 'lib/'},
-                {'name': 'dep2', 'rootUri': '../../dep2', 'packageUri': 'lib/'},
-              ],
-            }),
-          ),
-        ]),
+        pubspec('test_app', dependencies: [.new('dep1'), .new('dep2')]),
         d.dir('.cursor', [
           d.dir('skills', [
             d.dir('dep1-skill-1', [d.file('SKILL.md', 'content')]),
@@ -56,6 +42,7 @@ environment:
       await projectRootDir.create();
 
       projectPath = projectRootDir.io.path;
+      await Process.run('dart', ['pub', 'get'], workingDirectory: projectPath);
 
       manifest = SkillManifest(
         installations: {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -12,6 +11,8 @@ import 'package:skills/src/ide/ide.dart';
 import '../fake_dialog_support.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+import '../utils.dart';
 
 void main() {
   group(
@@ -27,7 +28,7 @@ void main() {
 
       setUp(() async {
         final dep1Dir = d.dir('dep1', [
-          d.dir('lib', [d.file('dep1.dart', '')]),
+          pubspec('dep1'),
           d.dir('skills', [
             d.dir('dep1-skill1', [
               d.file('SKILL.md', '---\nname: dep1-skill1\n---\n'),
@@ -40,7 +41,7 @@ void main() {
         await dep1Dir.create();
 
         final dep2Dir = d.dir('dep2', [
-          d.dir('lib', [d.file('dep2.dart', '')]),
+          pubspec('dep2'),
           d.dir('skills', [
             d.dir('dep2-skill1', [
               d.file('SKILL.md', '---\nname: dep2-skill1\n---\n'),
@@ -50,32 +51,7 @@ void main() {
         await dep2Dir.create();
 
         final projectRootDir = d.dir('project', [
-          d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
-          d.dir('.dart_tool', [
-            d.file(
-              'package_config.json',
-              jsonEncode({
-                'configVersion': 2,
-                'packages': [
-                  {'name': 'test_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                  {
-                    'name': 'dep1',
-                    'rootUri': dep1Dir.io.uri.toString(),
-                    'packageUri': 'lib/',
-                  },
-                  {
-                    'name': 'dep2',
-                    'rootUri': dep2Dir.io.uri.toString(),
-                    'packageUri': 'lib/',
-                  },
-                ],
-              }),
-            ),
-          ]),
+          pubspec('project', dependencies: [.new('dep1'), .new('dep2')]),
           d.dir('.cursor', [d.dir('skills')]),
         ]);
         await projectRootDir.create();
@@ -112,10 +88,7 @@ environment:
         expect(fakeDialogSupport.allMultiSelectOptions, hasLength(1));
         expect(
           fakeDialogSupport.allMultiSelectOptions[0],
-          unorderedEquals([
-            contains('dep1-skill1 (New)'),
-            contains('dep1-skill2 (New)'),
-          ]),
+          unorderedEquals([contains('dep1-skill1'), contains('dep1-skill2')]),
         );
         expect(fakeDialogSupport.allInitialSelected[0], isEmpty);
         expect(
@@ -204,7 +177,7 @@ environment:
 
       setUp(() async {
         final dep1Dir = d.dir('dep1', [
-          d.dir('lib', [d.file('dep1.dart', '')]),
+          pubspec('dep1'),
           d.dir('skills', [
             d.dir('dep1-skill1', [
               d.file('SKILL.md', '---\nname: dep1-skill1\n---\n'),
@@ -217,7 +190,7 @@ environment:
         await dep1Dir.create();
 
         final dep2Dir = d.dir('dep2', [
-          d.dir('lib', [d.file('dep2.dart', '')]),
+          pubspec('dep2'),
           d.dir('skills', [
             d.dir('dep2-skill1', [
               d.file('SKILL.md', '---\nname: dep2-skill1\n---\n'),
@@ -230,32 +203,7 @@ environment:
         await dep2Dir.create();
 
         final projectRootDir = d.dir('project', [
-          d.file('pubspec.yaml', '''
-name: test_app
-environment:
-  sdk: ^3.0.0
-'''),
-          d.dir('.dart_tool', [
-            d.file(
-              'package_config.json',
-              jsonEncode({
-                'configVersion': 2,
-                'packages': [
-                  {'name': 'test_app', 'rootUri': '../', 'packageUri': 'lib/'},
-                  {
-                    'name': 'dep1',
-                    'rootUri': dep1Dir.io.uri.toString(),
-                    'packageUri': 'lib/',
-                  },
-                  {
-                    'name': 'dep2',
-                    'rootUri': dep2Dir.io.uri.toString(),
-                    'packageUri': 'lib/',
-                  },
-                ],
-              }),
-            ),
-          ]),
+          pubspec('project', dependencies: [.new('dep1'), .new('dep2')]),
           d.dir('.cursor', [d.dir('skills')]),
         ]);
         await projectRootDir.create();
