@@ -95,15 +95,25 @@ class RegistryScanner {
       final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
       if (!await skillMdFile.exists()) continue;
 
-      final frontmatter = SkillFrontmatter.fromSkillContent(
-        await skillMdFile.readAsString(),
-      );
+      SkillFrontmatter? frontmatter;
+      try {
+        frontmatter = SkillFrontmatter.fromSkillContent(
+          await skillMdFile.readAsString(),
+        );
+      } on FormatException catch (e) {
+        _logger.warning(
+          'Skipping skill at path ${skillMdFile.path} due to formatting '
+          'error: $e',
+        );
+        continue;
+      }
       if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
 
-      final hyphenIndex = frontmatter.name.indexOf('-');
+      final basename = p.basename(skillMdFile.path);
+      final hyphenIndex = basename.indexOf('-');
       if (hyphenIndex <= 0) continue;
 
-      final packageName = frontmatter.name.substring(0, hyphenIndex);
+      final packageName = basename.substring(0, hyphenIndex);
       skills.add(
         ScannedSkill(
           packageName: packageName,
@@ -134,9 +144,18 @@ class RegistryScanner {
 
         final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
         if (!await skillMdFile.exists()) continue;
-        final frontmatter = SkillFrontmatter.fromSkillContent(
-          await skillMdFile.readAsString(),
-        );
+        SkillFrontmatter? frontmatter;
+        try {
+          frontmatter = SkillFrontmatter.fromSkillContent(
+            await skillMdFile.readAsString(),
+          );
+        } on FormatException catch (e) {
+          _logger.warning(
+            'Skipping skill at path ${skillMdFile.path} due to formatting '
+            'error: $e',
+          );
+          continue;
+        }
         if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
 
         skills.add(

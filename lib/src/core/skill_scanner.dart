@@ -63,14 +63,24 @@ class SkillScanner {
       final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
       if (!await skillMdFile.exists()) continue;
 
-      final frontmatter = SkillFrontmatter.fromSkillContent(
-        await skillMdFile.readAsString(),
-      );
+      SkillFrontmatter? frontmatter;
+      try {
+        frontmatter = SkillFrontmatter.fromSkillContent(
+          await skillMdFile.readAsString(),
+        );
+      } on FormatException catch (e) {
+        logger.warning(
+          'Skipping skill at path ${skillMdFile.path} due to formatting '
+          'error: $e',
+        );
+        continue;
+      }
       if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
 
-      if (!frontmatter.name.startsWith(prefix)) {
+      final basename = p.basename(skillMdFile.path);
+      if (!basename.startsWith(prefix)) {
         logger.warning(
-          'Skipping skill "${frontmatter.name}" in ${package.name} '
+          'Skipping skill "$basename" in ${package.name} '
           '-- name must start with "${package.name}-"',
         );
         continue;
