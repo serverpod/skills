@@ -5,6 +5,7 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/adapters/cursor_adapter.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -28,27 +29,24 @@ void main() {
       setUp(() async {
         await d.dir('source_pkg', [
           d.dir('skills', [
-            d.dir('source_pkg-my-skill', [
-              d.file('SKILL.md', '''
----
-name: source_pkg-my-skill
-description: A test skill.
----
+            skillDir(
+              'source_pkg-my-skill',
+              extraFrontMatter: 'description: A test skill.',
+              skillContent: '''# My Skill
 
-# My Skill
-
-Instructions here.
-'''),
-              d.dir('scripts', [d.file('run.sh', '#!/bin/bash\necho hello')]),
-              d.dir('references', [d.file('guide.md', '# Guide')]),
-            ]),
+Instructions here.''',
+              extraContents: [
+                d.dir('scripts', [d.file('run.sh', '#!/bin/bash\necho hello')]),
+                d.dir('references', [d.file('guide.md', '# Guide')]),
+              ],
+            ),
           ]),
         ]).create();
 
         skill = ScannedSkill(
           packageName: 'source_pkg',
-          skillName: 'source_pkg-my-skill',
           skillPath: d.path('source_pkg/skills/source_pkg-my-skill'),
+          frontmatter: .new('source_pkg-my-skill', isInternal: false),
         );
       });
 
@@ -107,13 +105,11 @@ Instructions here.
         await d.dir('project', [
           d.dir('.cursor', [
             d.dir('skills', [
-              d.dir('pkg-old-skill', [
-                d.file(
-                  'SKILL.md',
-                  '---\nname: pkg-old-skill\n'
-                      'description: old\n---\nOld.',
-                ),
-              ]),
+              skillDir(
+                'pkg-old-skill',
+                extraFrontMatter: 'description: old',
+                skillContent: 'Old.',
+              ),
             ]),
           ]),
         ]).create();

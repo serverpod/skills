@@ -29,24 +29,13 @@ void main() {
       setUp(() async {
         final dep1Dir = d.dir('dep1', [
           pubspec('dep1'),
-          d.dir('skills', [
-            d.dir('dep1-skill1', [
-              d.file('SKILL.md', '---\nname: dep1-skill1\n---\n'),
-            ]),
-            d.dir('dep1-skill2', [
-              d.file('SKILL.md', '---\nname: dep1-skill2\n---\n'),
-            ]),
-          ]),
+          d.dir('skills', [skillDir('dep1-skill1'), skillDir('dep1-skill2')]),
         ]);
         await dep1Dir.create();
 
         final dep2Dir = d.dir('dep2', [
           pubspec('dep2'),
-          d.dir('skills', [
-            d.dir('dep2-skill1', [
-              d.file('SKILL.md', '---\nname: dep2-skill1\n---\n'),
-            ]),
-          ]),
+          d.dir('skills', [skillDir('dep2-skill1')]),
         ]);
         await dep2Dir.create();
 
@@ -174,27 +163,13 @@ void main() {
       setUp(() async {
         final dep1Dir = d.dir('dep1', [
           pubspec('dep1'),
-          d.dir('skills', [
-            d.dir('dep1-skill1', [
-              d.file('SKILL.md', '---\nname: dep1-skill1\n---\n'),
-            ]),
-            d.dir('dep1-skill2', [
-              d.file('SKILL.md', '---\nname: dep1-skill2\n---\n'),
-            ]),
-          ]),
+          d.dir('skills', [skillDir('dep1-skill1'), skillDir('dep1-skill2')]),
         ]);
         await dep1Dir.create();
 
         final dep2Dir = d.dir('dep2', [
           pubspec('dep2'),
-          d.dir('skills', [
-            d.dir('dep2-skill1', [
-              d.file('SKILL.md', '---\nname: dep2-skill1\n---\n'),
-            ]),
-            d.dir('dep2-skill2', [
-              d.file('SKILL.md', '---\nname: dep2-skill2\n---\n'),
-            ]),
-          ]),
+          d.dir('skills', [skillDir('dep2-skill1'), skillDir('dep2-skill2')]),
         ]);
         await dep2Dir.create();
 

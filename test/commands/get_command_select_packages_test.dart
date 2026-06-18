@@ -27,21 +27,13 @@ void main() {
     setUp(() async {
       final dep1Dir = d.dir('dep1', [
         pubspec('dep1'),
-        d.dir('skills', [
-          d.dir('dep1-skill', [
-            d.file('SKILL.md', '---\nname: dep1-skill\n---\n'),
-          ]),
-        ]),
+        d.dir('skills', [skillDir('dep1-skill')]),
       ]);
       await dep1Dir.create();
 
       final dep2Dir = d.dir('dep2', [
         pubspec('dep2'),
-        d.dir('skills', [
-          d.dir('dep2-skill', [
-            d.file('SKILL.md', '---\nname: dep2-skill\n---\n'),
-          ]),
-        ]),
+        d.dir('skills', [skillDir('dep2-skill')]),
       ]);
       await dep2Dir.create();
 

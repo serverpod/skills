@@ -7,6 +7,7 @@ import 'package:skills/src/core/registry_repos.dart';
 import '../fake_dialog_support.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   group('Registry migration', () {
@@ -26,9 +27,7 @@ packages:
             d.dir('repos', [
               d.dir('owner1', [
                 d.dir('repo1', [
-                  d.dir('skills', [
-                    d.dir('pkg-a', [d.file('SKILL.md', '')]),
-                  ]),
+                  d.dir('skills', [skillDir('pkg-a')]),
                 ]),
               ]),
             ]),
@@ -245,9 +244,7 @@ packages:
           d.dir('repos', [
             d.dir('owner1', [
               d.dir('repo1', [
-                d.dir('skills', [
-                  d.dir('pkg-a', [d.file('SKILL.md', '')]),
-                ]),
+                d.dir('skills', [skillDir('pkg-a')]),
               ]),
             ]),
           ]),

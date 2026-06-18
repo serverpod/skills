@@ -35,18 +35,8 @@ void main() {
               pubspec('my_app', dependencies: [.new('pkg_a')]),
               d.dir('.cursor', [
                 d.dir('skills', [
-                  d.dir('pkg_a-skill-1', [
-                    d.file(
-                      'SKILL.md',
-                      '---\nname: pkg_a-skill-1\ndescription: a\n---\n',
-                    ),
-                  ]),
-                  d.dir('pkg_b-skill-2', [
-                    d.file(
-                      'SKILL.md',
-                      '---\nname: pkg_b-skill-2\ndescription: b\n---\n',
-                    ),
-                  ]),
+                  skillDir('pkg_a-skill-1', extraFrontMatter: 'description: a'),
+                  skillDir('pkg_b-skill-2', extraFrontMatter: 'description: b'),
                 ]),
               ]),
             ])
@@ -122,12 +112,7 @@ void main() {
               pubspec('my_app'),
               d.dir('.cursor', [
                 d.dir('skills', [
-                  d.dir('old_pkg-skill', [
-                    d.file(
-                      'SKILL.md',
-                      '---\nname: old_pkg-skill\ndescription: x\n---\n',
-                    ),
-                  ]),
+                  skillDir('old_pkg-skill', extraFrontMatter: 'description: x'),
                 ]),
               ]),
             ])
@@ -216,12 +201,7 @@ void main() {
             pubspec('my_app', dependencies: [.new('pkg_a')]),
             d.dir('.cursor', [
               d.dir('skills', [
-                d.dir('pkg_a-skill', [
-                  d.file(
-                    'SKILL.md',
-                    '---\nname: pkg_a-skill\ndescription: a\n---\n',
-                  ),
-                ]),
+                skillDir('pkg_a-skill', extraFrontMatter: 'description: a'),
                 d.dir('unref-skill', [
                   d.file(
                     'SKILL.md',
@@ -232,12 +212,7 @@ void main() {
             ]),
             d.dir('.claude', [
               d.dir('skills', [
-                d.dir('pkg_a-skill', [
-                  d.file(
-                    'SKILL.md',
-                    '---\nname: pkg_a-skill\ndescription: a\n---\n',
-                  ),
-                ]),
+                skillDir('pkg_a-skill', extraFrontMatter: 'description: a'),
                 d.dir('unref-skill', [
                   d.file(
                     'SKILL.md',

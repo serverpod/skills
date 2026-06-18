@@ -6,6 +6,7 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/adapters/opencode_adapter.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -29,25 +30,20 @@ void main() {
       setUp(() async {
         await d.dir('opencode_pkg', [
           d.dir('skills', [
-            d.dir('opencode_pkg-code-review', [
-              d.file('SKILL.md', '''
----
-name: opencode_pkg-code-review
-description: Reviews code.
----
+            skillDir(
+              'opencode_pkg-code-review',
+              extraFrontMatter: 'description: Reviews code.',
+              skillContent: '''# Code Review
 
-# Code Review
-
-Review guidelines here.
-'''),
-            ]),
+Review guidelines here.''',
+            ),
           ]),
         ]).create();
 
         skill = ScannedSkill(
           packageName: 'opencode_pkg',
-          skillName: 'opencode_pkg-code-review',
           skillPath: d.path('opencode_pkg/skills/opencode_pkg-code-review'),
+          frontmatter: .new('opencode_pkg-code-review', isInternal: false),
         );
       });
 
@@ -92,13 +88,11 @@ Review guidelines here.
       await d.dir('project', [
         d.dir('.opencode', [
           d.dir('skills', [
-            d.dir('pkg-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: pkg-skill\n'
-                    'description: x\n---\nbody',
-              ),
-            ]),
+            skillDir(
+              'pkg-skill',
+              extraFrontMatter: 'description: x',
+              skillContent: 'body',
+            ),
           ]),
         ]),
       ]).create();

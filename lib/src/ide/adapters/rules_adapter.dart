@@ -60,18 +60,18 @@ class RulesAdapter implements IdeAdapter {
     }
 
     final targetFile = File(
-      p.join(skillsDirectory, '${skill.skillName}$fileExtension'),
+      p.join(skillsDirectory, '${skill.basename}$fileExtension'),
     );
     await targetFile.writeAsString(buffer.toString());
 
     final hash = await tryCalculateFileHash(targetFile);
     if (hash == null) {
       throw StateError(
-        'Failed to install skill ${skill.skillName} from ${skill.skillPath}',
+        'Failed to install skill ${skill.basename} from ${skill.skillPath}',
       );
     }
 
-    return (name: skill.skillName, contentHash: hash);
+    return (name: skill.basename, contentHash: hash);
   }
 
   @override

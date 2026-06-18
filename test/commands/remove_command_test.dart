@@ -37,9 +37,9 @@ void main() {
         pubspec('test_app', dependencies: [.new('dep1'), .new('dep2')]),
         d.dir('.cursor', [
           d.dir('skills', [
-            d.dir('dep1-skill-1', [d.file('SKILL.md', 'content')]),
-            d.dir('dep1-skill-2', [d.file('SKILL.md', 'content')]),
-            d.dir('dep2-skill-3', [d.file('SKILL.md', 'content')]),
+            skillDir('dep1-skill-1'),
+            skillDir('dep1-skill-2'),
+            skillDir('dep2-skill-3'),
           ]),
         ]),
       ]);
@@ -190,34 +190,30 @@ void main() {
         pubspec('test_app'),
         d.dir('.cursor', [
           d.dir('skills', [
-            d.dir('dep1-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: pkg-skill\ndescription: a\n---\nBody A',
-              ),
-            ]),
-            d.dir('dep2-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: dep2-skill\ndescription: a\n---\nBody A',
-              ),
-            ]),
+            skillDir(
+              'dep1-skill',
+              extraFrontMatter: 'description: a',
+              skillContent: 'Body A',
+            ),
+            skillDir(
+              'dep2-skill',
+              extraFrontMatter: 'description: a',
+              skillContent: 'Body A',
+            ),
           ]),
         ]),
         d.dir('.claude', [
           d.dir('skills', [
-            d.dir('dep1-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: dep1-skill\ndescription: a\n---\nBody A',
-              ),
-            ]),
-            d.dir('dep2-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: dep2-skill\ndescription: a\n---\nBody A',
-              ),
-            ]),
+            skillDir(
+              'dep1-skill',
+              extraFrontMatter: 'description: a',
+              skillContent: 'Body A',
+            ),
+            skillDir(
+              'dep2-skill',
+              extraFrontMatter: 'description: a',
+              skillContent: 'Body A',
+            ),
           ]),
         ]),
       ]).create();

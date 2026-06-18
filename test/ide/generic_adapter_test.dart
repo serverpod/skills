@@ -6,7 +6,7 @@ import 'package:skills/src/ide/adapters/generic_adapter.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
-
+import '../utils.dart';
 import '../fake_dialog_support.dart';
 
 void main() {
@@ -35,25 +35,18 @@ void main() {
       setUp(() async {
         await d.dir('ag_pkg', [
           d.dir('skills', [
-            d.dir('ag_pkg-data-analysis', [
-              d.file('SKILL.md', '''
----
-name: ag_pkg-data-analysis
-description: Analyzes data.
----
-
-# Data Analysis
-
-Steps to analyze.
-'''),
-            ]),
+            skillDir(
+              'ag_pkg-data-analysis',
+              extraFrontMatter: 'description: Analyzes data.',
+              skillContent: '\n# Data Analysis\n\nSteps to analyze.',
+            ),
           ]),
         ]).create();
 
         skill = ScannedSkill(
           packageName: 'ag_pkg',
-          skillName: 'ag_pkg-data-analysis',
           skillPath: d.path('ag_pkg/skills/ag_pkg-data-analysis'),
+          frontmatter: .new('ag_pkg-data-analysis', isInternal: false),
         );
       });
 
@@ -94,13 +87,11 @@ Steps to analyze.
       await d.dir('project', [
         d.dir('.agents', [
           d.dir('skills', [
-            d.dir('pkg-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: pkg-skill\n'
-                    'description: x\n---\nbody',
-              ),
-            ]),
+            skillDir(
+              'pkg-skill',
+              extraFrontMatter: 'description: x',
+              skillContent: 'body',
+            ),
           ]),
         ]),
       ]).create();
@@ -125,8 +116,8 @@ Steps to analyze.
         await d.dir('project_migration', [
           d.dir('.agent', [
             d.dir('skills', [
-              d.dir('old-skill', [d.file('SKILL.md', 'content')]),
-              d.dir('unregistered-skill', [d.file('SKILL.md', 'content')]),
+              skillDir('old-skill'),
+              skillDir('unregistered-skill'),
             ]),
           ]),
         ]).create();

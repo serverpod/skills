@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:skills/src/core/constants.dart';
 
 import 'registry_repos.dart';
 import 'skill_scanner.dart';
@@ -18,8 +19,6 @@ class RegistryScanner {
 
   const RegistryScanner();
 
-  /// Scans all [repos] under [rootPath] and returns [ScannedSkill]s.
-  ///
   /// Scans all [repos] under [rootPath] and returns [ScannedSkill]s.
   Future<List<ScannedSkill>> scan(
     String rootPath, {
@@ -93,21 +92,25 @@ class RegistryScanner {
     await for (final entity in skillsDir.list()) {
       if (entity is! Directory) continue;
 
-      final skillName = p.basename(entity.path);
       final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
       if (!await skillMdFile.exists()) continue;
 
-      final hyphenIndex = skillName.indexOf('-');
+      final frontmatter = SkillFrontmatter.fromSkillContent(
+        await skillMdFile.readAsString(),
+      );
+      if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
+
+      final hyphenIndex = frontmatter.name.indexOf('-');
       if (hyphenIndex <= 0) continue;
 
-      final packageName = skillName.substring(0, hyphenIndex);
+      final packageName = frontmatter.name.substring(0, hyphenIndex);
       skills.add(
         ScannedSkill(
           packageName: packageName,
-          skillName: skillName,
           skillPath: entity.path,
           registryUrl: registryUrl,
           isGlobal: isGlobal,
+          frontmatter: frontmatter,
         ),
       );
     }
@@ -129,17 +132,20 @@ class RegistryScanner {
       await for (final entity in packageEntity.list()) {
         if (entity is! Directory) continue;
 
-        final skillName = p.basename(entity.path);
         final skillMdFile = File(p.join(entity.path, 'SKILL.md'));
         if (!await skillMdFile.exists()) continue;
+        final frontmatter = SkillFrontmatter.fromSkillContent(
+          await skillMdFile.readAsString(),
+        );
+        if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
 
         skills.add(
           ScannedSkill(
             packageName: packageName,
-            skillName: skillName,
             skillPath: entity.path,
             registryUrl: registryUrl,
             isGlobal: isGlobal,
+            frontmatter: frontmatter,
           ),
         );
       }

@@ -6,6 +6,7 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/adapters/claude_adapter.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -29,25 +30,18 @@ void main() {
       setUp(() async {
         await d.dir('claude_pkg', [
           d.dir('skills', [
-            d.dir('claude_pkg-code-review', [
-              d.file('SKILL.md', '''
----
-name: claude_pkg-code-review
-description: Reviews code.
----
-
-# Code Review
-
-Review guidelines here.
-'''),
-            ]),
+            skillDir(
+              'claude_pkg-code-review',
+              extraFrontMatter: 'description: Reviews code.',
+              skillContent: '\n# Code Review\n\nReview guidelines here.',
+            ),
           ]),
         ]).create();
 
         skill = ScannedSkill(
           packageName: 'claude_pkg',
-          skillName: 'claude_pkg-code-review',
           skillPath: d.path('claude_pkg/skills/claude_pkg-code-review'),
+          frontmatter: .new('claude_pkg-code-review', isInternal: false),
         );
       });
 
@@ -121,8 +115,8 @@ user-invocable: true
 
         skill = ScannedSkill(
           packageName: 'claude_pkg_true',
-          skillName: 'claude_pkg_true-review',
           skillPath: d.path('claude_pkg_true/skills/claude_pkg_true-review'),
+          frontmatter: .new('claude_pkg_true-review', isInternal: false),
         );
       });
 
@@ -164,8 +158,8 @@ user-invocable: false
 
         skill = ScannedSkill(
           packageName: 'claude_pkg_true',
-          skillName: 'claude_pkg_true-review',
           skillPath: d.path('claude_pkg_true/skills/claude_pkg_true-review'),
+          frontmatter: .new('claude_pkg_true-review', isInternal: false),
         );
       });
 
@@ -213,10 +207,10 @@ metadata:
 
           skill = ScannedSkill(
             packageName: 'claude_pkg_nested',
-            skillName: 'claude_pkg_nested-deploy',
             skillPath: d.path(
               'claude_pkg_nested/skills/claude_pkg_nested-deploy',
             ),
+            frontmatter: .new('claude_pkg_nested-deploy', isInternal: false),
           );
         });
 
@@ -271,8 +265,8 @@ description: Empty body skill.
 
         skill = ScannedSkill(
           packageName: 'claude_pkg_nobody',
-          skillName: 'claude_pkg_nobody-empty',
           skillPath: d.path('claude_pkg_nobody/skills/claude_pkg_nobody-empty'),
+          frontmatter: .new('claude_pkg_nobody-empty', isInternal: false),
         );
       });
 
@@ -305,13 +299,11 @@ user-invocable: false
       await d.dir('project', [
         d.dir('.claude', [
           d.dir('skills', [
-            d.dir('pkg-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: pkg-skill\n'
-                    'description: x\n---\nbody',
-              ),
-            ]),
+            skillDir(
+              'pkg-skill',
+              extraFrontMatter: 'description: x',
+              skillContent: 'body',
+            ),
           ]),
         ]),
       ]).create();

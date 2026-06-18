@@ -149,7 +149,7 @@ Future<bool> getSkills({
   }
 
   if (skillNames.isNotEmpty) {
-    final foundSkillNames = skills.map((s) => s.skillName).toSet();
+    final foundSkillNames = skills.map((s) => s.basename).toSet();
     final missingSkills = skillNames.difference(foundSkillNames);
     if (missingSkills.isNotEmpty) {
       logger.warning(
@@ -157,17 +157,17 @@ Future<bool> getSkills({
         '${missingSkills.join(', ')}',
       );
     }
-    skills.removeWhere((s) => !skillNames.contains(s.skillName));
+    skills.removeWhere((s) => !skillNames.contains(s.basename));
   } else if (!allFlag) {
     if (dialogSupport == null) {
       // Just print the available skills if no dialog support and the user did not
       // specify --all or --skill.
       logger.info('Available skills:');
       final sortedSkills = List<ScannedSkill>.from(skills)
-        ..sort((a, b) => a.skillName.compareTo(b.skillName));
+        ..sort((a, b) => a.basename.compareTo(b.basename));
       for (final skill in sortedSkills) {
         logger.info(
-          '  ${skill.skillName} (from ${_getSourceDisplayName(skill)})',
+          '  ${skill.basename} (from ${_getSourceDisplayName(skill)})',
         );
       }
       logger.info(
@@ -223,10 +223,8 @@ Future<bool> getSkills({
         for (final sourceId in sortedSourceIds) {
           final sourceSkills = skillsBySource[sourceId]!;
           if (sourceSkills.length > 1) {
-            sourceSkills.sort((a, b) => a.skillName.compareTo(b.skillName));
-            final skillNamesList = sourceSkills
-                .map((s) => s.skillName)
-                .toList();
+            sourceSkills.sort((a, b) => a.basename.compareTo(b.basename));
+            final skillNamesList = sourceSkills.map((s) => s.basename).toList();
             final initialSelected = Iterable<int>.generate(
               sourceSkills.length,
             ).toSet();

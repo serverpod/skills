@@ -6,6 +6,7 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/adapters/copilot_adapter.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -29,25 +30,20 @@ void main() {
       setUp(() async {
         await d.dir('copilot_pkg', [
           d.dir('skills', [
-            d.dir('copilot_pkg-testing', [
-              d.file('SKILL.md', '''
----
-name: copilot_pkg-testing
-description: Testing best practices.
----
+            skillDir(
+              'copilot_pkg-testing',
+              extraFrontMatter: 'description: Testing best practices.',
+              skillContent: '''# Testing
 
-# Testing
-
-Write tests like this.
-'''),
-            ]),
+Write tests like this.''',
+            ),
           ]),
         ]).create();
 
         skill = ScannedSkill(
           packageName: 'copilot_pkg',
-          skillName: 'copilot_pkg-testing',
           skillPath: d.path('copilot_pkg/skills/copilot_pkg-testing'),
+          frontmatter: .new('copilot_pkg-testing', isInternal: false),
         );
       });
 
@@ -92,13 +88,11 @@ Write tests like this.
       await d.dir('project', [
         d.dir('.github', [
           d.dir('skills', [
-            d.dir('pkg-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: pkg-skill\n'
-                    'description: x\n---\nbody',
-              ),
-            ]),
+            skillDir(
+              'pkg-skill',
+              extraFrontMatter: 'description: x',
+              skillContent: 'body',
+            ),
           ]),
         ]),
       ]).create();

@@ -103,7 +103,7 @@ class SkillInstaller {
       skillsByPackage.putIfAbsent(
         skill.packageName,
         () => {},
-      )[skill.skillName] ??= skill;
+      )[skill.basename] ??= skill;
     }
 
     var updatedManifest = manifest;
@@ -136,9 +136,9 @@ class SkillInstaller {
 
       for (final skill in pkgSkills) {
         // We aborted uninstalling this skill, just copy its old install entry.
-        if (abortedSkills.remove(skill.skillName)) {
+        if (abortedSkills.remove(skill.basename)) {
           final existing = existingEntry!.skills.firstWhere(
-            (s) => s.name == skill.skillName,
+            (s) => s.name == skill.basename,
           );
           installedSkills.add(existing);
           continue;
@@ -157,7 +157,7 @@ class SkillInstaller {
         installed.add(
           InstalledSkillInfo(
             ideName: ide.cliName,
-            skillName: skill.skillName,
+            skillName: skill.basename,
             packageName: pkgName,
             registryUrl: skill.registryUrl,
             isGlobal: skill.isGlobal,

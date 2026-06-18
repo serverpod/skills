@@ -6,6 +6,7 @@ import 'package:skills/src/core/registry_repos.dart';
 import 'package:skills/src/core/registry_sync.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -19,9 +20,7 @@ void main() {
         final projectPath = d.path('project');
 
         await d.dir('local_repo', [
-          d.dir('skills', [
-            d.dir('pkg-skill', [d.file('SKILL.md', '')]),
-          ]),
+          d.dir('skills', [skillDir('pkg-skill')]),
         ]).create();
         final localPath = p.normalize(p.absolute(d.path('local_repo')));
         expect(
@@ -70,9 +69,14 @@ void main() {
           registryRepoPath(projectPath, RegistryRepo(cloneUrl: fileUrl)),
         );
         expect(await repoDir.exists(), isTrue);
-        final skillDir = Directory(p.join(repoDir.path, 'skills', 'pkg-skill'));
-        expect(await skillDir.exists(), isTrue);
-        expect(await File(p.join(skillDir.path, 'SKILL.md')).exists(), isTrue);
+        final installedSkillDir = Directory(
+          p.join(repoDir.path, 'skills', 'pkg-skill'),
+        );
+        expect(await installedSkillDir.exists(), isTrue);
+        expect(
+          await File(p.join(installedSkillDir.path, 'SKILL.md')).exists(),
+          isTrue,
+        );
       },
     );
 

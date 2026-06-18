@@ -59,3 +59,24 @@ version: $version
   }
   return d.file('pubspec.yaml', buffer.toString());
 }
+
+/// Creates a skill directory named [name] with a simple SKILL.md file in it
+/// which just has the [name] and no content by default.
+///
+/// Add extra front matter with [extraFrontMatter], and real skill instructions
+/// with [skillContent]. Add additional files with [extraContents].
+d.DirectoryDescriptor skillDir(
+  String name, {
+  String extraFrontMatter = '',
+  String skillContent = '',
+  Iterable<d.Descriptor>? extraContents,
+}) => d.dir(name, [
+  d.file('SKILL.md', '''
+---
+name: $name
+$extraFrontMatter
+---
+$skillContent
+'''),
+  ...?extraContents,
+]);

@@ -354,9 +354,7 @@ void main() {
               pubspec('test_app'),
               d.dir('.dart_skills', []),
               d.dir('.cursor', [
-                d.dir('skills', [
-                  d.dir('skill_a', [d.file('SKILL.md', '')]),
-                ]),
+                d.dir('skills', [skillDir('skill_a')]),
               ]),
             ]).create();
 

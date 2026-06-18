@@ -15,15 +15,15 @@ void main() {
         final dartSkills = [
           ScannedSkill(
             packageName: 'pkg_a',
-            skillName: 'pkg_a-dart-skill',
+            frontmatter: .new('pkg_a-dart-skill', isInternal: false),
             skillPath: '/dart/pkg_a/skills/pkg_a-dart-skill',
           ),
         ];
         final registrySkills = [
           ScannedSkill(
             packageName: 'pkg_a',
-            skillName: 'pkg_a-registry-skill',
             skillPath: '/repos/owner/repo/skills/pkg_a-registry-skill',
+            frontmatter: .new('pkg_a-registry-skill', isInternal: false),
           ),
         ];
         final resolved = {'pkg_a'};
@@ -35,7 +35,7 @@ void main() {
         );
 
         expect(result, hasLength(1));
-        expect(result.single.skillName, equals('pkg_a-dart-skill'));
+        expect(result.single.basename, equals('pkg_a-dart-skill'));
       },
     );
 
@@ -46,8 +46,8 @@ void main() {
         final registrySkills = [
           ScannedSkill(
             packageName: 'pkg_b',
-            skillName: 'pkg_b-buttons',
             skillPath: '/repos/flutter/skills/skills/pkg_b-buttons',
+            frontmatter: .new('pkg_b-buttons', isInternal: false),
           ),
         ];
         final resolved = {'pkg_b'};
@@ -59,7 +59,7 @@ void main() {
         );
 
         expect(result, hasLength(1));
-        expect(result.single.skillName, equals('pkg_b-buttons'));
+        expect(result.single.basename, equals('pkg_b-buttons'));
       },
     );
 
@@ -68,8 +68,8 @@ void main() {
       final registrySkills = [
         ScannedSkill(
           packageName: 'other_pkg',
-          skillName: 'other_pkg-foo',
           skillPath: '/repos/skills/other_pkg-foo',
+          frontmatter: .new('other_pkg-foo', isInternal: false),
         ),
       ];
       final resolved = {'pkg_a'}; // only pkg_a is a dependency
@@ -87,20 +87,20 @@ void main() {
       final dartSkills = [
         ScannedSkill(
           packageName: 'pkg_a',
-          skillName: 'pkg_a-dart',
           skillPath: '/dart/pkg_a/skills/pkg_a-dart',
+          frontmatter: .new('pkg_a-dart', isInternal: false),
         ),
       ];
       final registrySkills = [
         ScannedSkill(
           packageName: 'pkg_a',
-          skillName: 'pkg_a-registry',
           skillPath: '/repos/skills/pkg_a-registry',
+          frontmatter: .new('pkg_a-registry', isInternal: false),
         ),
         ScannedSkill(
           packageName: 'pkg_b',
-          skillName: 'pkg_b-registry',
           skillPath: '/repos/skills/pkg_b-registry',
+          frontmatter: .new('pkg_b-registry', isInternal: false),
         ),
       ];
       final resolved = {'pkg_a', 'pkg_b'};
@@ -113,7 +113,7 @@ void main() {
 
       expect(result, hasLength(2));
       expect(
-        result.map((s) => s.skillName).toSet(),
+        result.map((s) => s.basename).toSet(),
         equals({'pkg_a-dart', 'pkg_b-registry'}),
       );
     });

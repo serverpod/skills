@@ -32,10 +32,10 @@ void main() {
         pubspec('test_app', dependencies: [.new('dep1'), .new('dep2')]),
         d.dir('.cursor', [
           d.dir('skills', [
-            d.dir('dep1-skill-1', [d.file('SKILL.md', 'content')]),
-            d.dir('dep1-skill-2', [d.file('SKILL.md', 'content')]),
-            d.dir('dep2-skill-1', [d.file('SKILL.md', 'content')]),
-            d.dir('dep2-skill-2', [d.file('SKILL.md', 'content')]),
+            skillDir('dep1-skill-1'),
+            skillDir('dep1-skill-2'),
+            skillDir('dep2-skill-1'),
+            skillDir('dep2-skill-2'),
           ]),
         ]),
       ]);

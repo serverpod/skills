@@ -54,8 +54,8 @@ void main() {
       scannedSkills = [
         ScannedSkill(
           packageName: 'pkg_a',
-          skillName: 'pkg_a-skill',
           skillPath: p.join(d.path('pkg_a'), 'skills', 'pkg_a-skill'),
+          frontmatter: .new('pkg_a-skill', isInternal: false),
         ),
       ];
     });
@@ -128,8 +128,8 @@ void main() {
       scannedSkills = [
         ScannedSkill(
           packageName: 'pkg_a',
-          skillName: 'pkg_a-skill2',
           skillPath: p.join(d.path('pkg_a'), 'skills', 'pkg_a-skill2'),
+          frontmatter: .new('pkg_a-skill2', isInternal: false),
         ),
       ];
     });

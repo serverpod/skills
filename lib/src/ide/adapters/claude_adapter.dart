@@ -24,7 +24,7 @@ class ClaudeAdapter extends AgentSkillsAdapter {
   Future<InstallSkillResult> installSkill(ScannedSkill skill) async {
     var result = await super.installSkill(skill);
 
-    final targetDir = Directory(p.join(skillsDirectory, skill.skillName));
+    final targetDir = Directory(p.join(skillsDirectory, skill.basename));
     final skillMd = File(p.join(targetDir.path, 'SKILL.md'));
     if (await skillMd.exists()) {
       var content = await skillMd.readAsString();

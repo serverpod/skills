@@ -4,6 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:skills/src/models/skill_metadata.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -48,18 +49,13 @@ Body content.
 
   group('Given a SKILL.md file on disk', () {
     test('when parsing from file then returns correct metadata', () async {
-      await d.dir('test-pkg-test-skill', [
-        d.file('SKILL.md', '''
----
-name: test-pkg-test-skill
-description: A file-based test skill.
----
+      await skillDir(
+        'test-pkg-test-skill',
+        extraFrontMatter: 'description: A file-based test skill.',
+        skillContent: '''# Test Skill
 
-# Test Skill
-
-Instructions.
-'''),
-      ]).create();
+Instructions.''',
+      ).create();
 
       final skillFile = File(d.path('test-pkg-test-skill/SKILL.md'));
       final metadata = await SkillMetadata.parse(skillFile);

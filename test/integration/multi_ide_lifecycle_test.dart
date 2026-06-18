@@ -9,6 +9,7 @@ import 'package:skills/src/models/global_config.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   late List<ScannedSkill> pkgASkills;
@@ -24,68 +25,53 @@ void main() {
     // Source packages with skills.
     await d.dir('pkg_a', [
       d.dir('skills', [
-        d.dir('pkg_a-code-gen', [
-          d.file('SKILL.md', '''
----
-name: pkg_a-code-gen
-description: Code generation skill.
----
+        skillDir(
+          'pkg_a-code-gen',
+          extraFrontMatter: 'description: Code generation skill.',
+          skillContent: '''# Code Generation
 
-# Code Generation
-
-Instructions for code generation.
-'''),
-        ]),
+Instructions for code generation.''',
+        ),
       ]),
     ]).create();
 
     await d.dir('pkg_b', [
       d.dir('skills', [
-        d.dir('pkg_b-testing', [
-          d.file('SKILL.md', '''
----
-name: pkg_b-testing
-description: Testing skill.
----
+        skillDir(
+          'pkg_b-testing',
+          extraFrontMatter: 'description: Testing skill.',
+          skillContent: '''# Testing
 
-# Testing
+Instructions for testing.''',
+        ),
+        skillDir(
+          'pkg_b-debugging',
+          extraFrontMatter: 'description: Debugging skill.',
+          skillContent: '''# Debugging
 
-Instructions for testing.
-'''),
-        ]),
-        d.dir('pkg_b-debugging', [
-          d.file('SKILL.md', '''
----
-name: pkg_b-debugging
-description: Debugging skill.
----
-
-# Debugging
-
-Instructions for debugging.
-'''),
-        ]),
+Instructions for debugging.''',
+        ),
       ]),
     ]).create();
 
     pkgASkills = [
       ScannedSkill(
         packageName: 'pkg_a',
-        skillName: 'pkg_a-code-gen',
         skillPath: d.path('pkg_a/skills/pkg_a-code-gen'),
+        frontmatter: .new('pkg_a-code-gen', isInternal: false),
       ),
     ];
 
     pkgBSkills = [
       ScannedSkill(
         packageName: 'pkg_b',
-        skillName: 'pkg_b-testing',
         skillPath: d.path('pkg_b/skills/pkg_b-testing'),
+        frontmatter: .new('pkg_b-testing', isInternal: false),
       ),
       ScannedSkill(
         packageName: 'pkg_b',
-        skillName: 'pkg_b-debugging',
         skillPath: d.path('pkg_b/skills/pkg_b-debugging'),
+        frontmatter: .new('pkg_b-debugging', isInternal: false),
       ),
     ];
   });

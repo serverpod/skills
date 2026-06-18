@@ -4,6 +4,7 @@ import 'package:skills/src/core/registry_repos.dart';
 import 'package:skills/src/core/registry_scanner.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -30,12 +31,8 @@ void main() {
               d.dir('repos', [
                 d.dir(registryRepo.pathSegment, [
                   d.dir('skills', [
-                    d.dir('my_pkg-buttons', [
-                      d.file('SKILL.md', '---\nname: my_pkg-buttons\n---\n'),
-                    ]),
-                    d.dir('my_pkg-forms', [
-                      d.file('SKILL.md', '---\nname: my_pkg-forms\n---\n'),
-                    ]),
+                    skillDir('my_pkg-buttons'),
+                    skillDir('my_pkg-forms'),
                   ]),
                 ]),
               ]),
@@ -52,12 +49,12 @@ void main() {
 
         expect(skills, hasLength(2));
         expect(
-          skills.map((s) => s.skillName).toSet(),
+          skills.map((s) => s.basename).toSet(),
           equals({'my_pkg-buttons', 'my_pkg-forms'}),
         );
         for (final s in skills) {
           expect(s.packageName, equals('my_pkg'));
-          expect(s.skillPath, contains(p.join('skills', s.skillName)));
+          expect(s.skillPath, contains(p.join('skills', s.basename)));
         }
       },
     );
@@ -75,21 +72,11 @@ void main() {
                 d.dir(registryRepo.pathSegment, [
                   d.dir('skills', [
                     d.dir('riverpod', [
-                      d.dir('riverpod-get-started', [
-                        d.file(
-                          'SKILL.md',
-                          '---\nname: riverpod-get-started\n---\n',
-                        ),
-                      ]),
-                      d.dir('riverpod-testing', [
-                        d.file(
-                          'SKILL.md',
-                          '---\nname: riverpod-testing\n---\n',
-                        ),
-                      ]),
+                      skillDir('riverpod-get-started'),
+                      skillDir('riverpod-testing'),
                     ]),
                     d.dir('flutter_riverpod', [
-                      d.dir('flutter_riverpod-hooks', [d.file('SKILL.md', '')]),
+                      skillDir('flutter_riverpod-hooks'),
                     ]),
                   ]),
                 ]),
@@ -111,7 +98,7 @@ void main() {
           equals({'riverpod', 'flutter_riverpod'}),
         );
         expect(
-          skills.map((s) => s.skillName).toSet(),
+          skills.map((s) => s.basename).toSet(),
           equals({
             'riverpod-get-started',
             'riverpod-testing',
@@ -128,11 +115,7 @@ void main() {
             d.dir('repos', [
               d.dir('a', [
                 d.dir('b', [
-                  d.dir('skills', [
-                    d.dir('no_hyphen', [
-                      d.file('SKILL.md', '---\nname: no_hyphen\n---\n'),
-                    ]),
-                  ]),
+                  d.dir('skills', [skillDir('no_hyphen')]),
                 ]),
               ]),
             ]),
@@ -185,14 +168,10 @@ void main() {
           d.dir('skills', [
             d.dir('repos', [
               d.dir(registryRepos[0].pathSegment, [
-                d.dir('skills', [
-                  d.dir('pkg-a', [d.file('SKILL.md', '')]),
-                ]),
+                d.dir('skills', [skillDir('pkg-a')]),
               ]),
               d.dir(registryRepos[1].pathSegment, [
-                d.dir('skills', [
-                  d.dir('pkg-b', [d.file('SKILL.md', '')]),
-                ]),
+                d.dir('skills', [skillDir('pkg-b')]),
               ]),
             ]),
           ]),
@@ -207,10 +186,82 @@ void main() {
       );
       expect(skills, hasLength(2));
       expect(skills.map((s) => s.packageName).toSet(), equals({'pkg'}));
-      expect(
-        skills.map((s) => s.skillName).toSet(),
-        equals({'pkg-a', 'pkg-b'}),
-      );
+      expect(skills.map((s) => s.basename).toSet(), equals({'pkg-a', 'pkg-b'}));
     });
+
+    test('when flat layout has internal skill then it is skipped', () async {
+      const registryRepo = RegistryRepo(
+        cloneUrl: 'https://github.com/owner/repo.git',
+      );
+      await d.dir('project', [
+        d.dir('.dart_tool', [
+          d.dir('skills', [
+            d.dir('repos', [
+              d.dir(registryRepo.pathSegment, [
+                d.dir('skills', [
+                  skillDir('my_pkg-public'),
+                  skillDir(
+                    'my_pkg-private',
+                    extraFrontMatter: '''metadata:
+  internal: true''',
+                  ),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]).create();
+
+      const scanner = RegistryScanner();
+      final skills = await scanner.scan(
+        d.path('project'),
+        isGlobal: false,
+        repos: [registryRepo],
+      );
+
+      expect(skills, hasLength(1));
+      expect(skills.first.basename, equals('my_pkg-public'));
+      expect(skills.first.frontmatter.isInternal, isFalse);
+    });
+
+    test(
+      'when groupedByPackage layout has internal skill then it is skipped',
+      () async {
+        const registryRepo = RegistryRepo(
+          cloneUrl: 'https://github.com/owner/repo.git',
+        );
+        await d.dir('project', [
+          d.dir('.dart_tool', [
+            d.dir('skills', [
+              d.dir('repos', [
+                d.dir(registryRepo.pathSegment, [
+                  d.dir('skills', [
+                    d.dir('riverpod', [
+                      skillDir('riverpod-public'),
+                      skillDir(
+                        'riverpod-private',
+                        extraFrontMatter: '''metadata:
+  internal: true''',
+                      ),
+                    ]),
+                  ]),
+                ]),
+              ]),
+            ]),
+          ]),
+        ]).create();
+
+        const scanner = RegistryScanner();
+        final skills = await scanner.scan(
+          d.path('project'),
+          isGlobal: false,
+          repos: [registryRepo],
+        );
+
+        expect(skills, hasLength(1));
+        expect(skills.first.packageName, equals('riverpod'));
+        expect(skills.first.basename, equals('riverpod-public'));
+      },
+    );
   });
 }

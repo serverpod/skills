@@ -36,14 +36,7 @@ void main() {
         await d
             .dir('dep_with_skills', [
               pubspec('dep_with_skills'),
-              d.dir('skills', [
-                d.dir('dep_with_skills-code-gen', [
-                  d.file(
-                    'SKILL.md',
-                    '---\nname: dep_with_skills-code-gen\n---\n',
-                  ),
-                ]),
-              ]),
+              d.dir('skills', [skillDir('dep_with_skills-code-gen')]),
             ])
             .create(testRootPath);
 
@@ -71,10 +64,10 @@ void main() {
           'cursor',
         ]);
 
-        final skillDir = Directory(
+        final installedSkillDir = Directory(
           p.join(projectPath, '.cursor', 'skills', 'dep_with_skills-code-gen'),
         );
-        expect(await skillDir.exists(), isTrue);
+        expect(await installedSkillDir.exists(), isTrue);
         final manifestFile = File(SkillManifest.pathIn(projectPath));
         expect(await manifestFile.exists(), isTrue);
       },
@@ -83,11 +76,7 @@ void main() {
     test('when installing from global registry then adds back-link to global '
         'config', () async {
       final mockRegistry = d.dir('mock_registry', [
-        d.dir('skills', [
-          d.dir('pkg-skill', [
-            d.file('SKILL.md', '---\nname: pkg-skill\n---\n'),
-          ]),
-        ]),
+        d.dir('skills', [skillDir('pkg-skill')]),
       ]);
       await mockRegistry.create();
       final registryPath = mockRegistry.io.path;

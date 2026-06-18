@@ -27,30 +27,20 @@ void main() {
       await d.dir('dep_with_skills', [
         pubspec('dep_with_skills'),
         d.dir('skills', [
-          d.dir('dep_with_skills-code-gen', [
-            d.file('SKILL.md', '''
----
-name: dep_with_skills-code-gen
-description: Generates code from templates.
----
+          skillDir(
+            'dep_with_skills-code-gen',
+            extraFrontMatter: 'description: Generates code from templates.',
+            skillContent: '''# Code Generator
 
-# Code Generator
+Use this to generate boilerplate code.''',
+          ),
+          skillDir(
+            'dep_with_skills-api-helper',
+            extraFrontMatter: 'description: Helps design APIs.',
+            skillContent: '''# API Helper
 
-Use this to generate boilerplate code.
-'''),
-          ]),
-          d.dir('dep_with_skills-api-helper', [
-            d.file('SKILL.md', '''
----
-name: dep_with_skills-api-helper
-description: Helps design APIs.
----
-
-# API Helper
-
-API design guidelines.
-'''),
-          ]),
+API design guidelines.''',
+          ),
         ]),
       ]).create();
 
@@ -71,17 +61,17 @@ API design guidelines.
         final skills = [
           ScannedSkill(
             packageName: 'dep_with_skills',
-            skillName: 'dep_with_skills-code-gen',
             skillPath: d.path(
               'dep_with_skills/skills/dep_with_skills-code-gen',
             ),
+            frontmatter: .new('dep_with_skills-code-gen', isInternal: false),
           ),
           ScannedSkill(
             packageName: 'dep_with_skills',
-            skillName: 'dep_with_skills-api-helper',
             skillPath: d.path(
               'dep_with_skills/skills/dep_with_skills-api-helper',
             ),
+            frontmatter: .new('dep_with_skills-api-helper', isInternal: false),
           ),
         ];
 
@@ -118,8 +108,8 @@ API design guidelines.
 
         final skill = ScannedSkill(
           packageName: 'dep_with_skills',
-          skillName: 'dep_with_skills-code-gen',
           skillPath: d.path('dep_with_skills/skills/dep_with_skills-code-gen'),
+          frontmatter: .new('dep_with_skills-code-gen', isInternal: false),
         );
 
         final installedName = (await adapter.installSkill(skill)).name;
@@ -160,28 +150,22 @@ API design guidelines.
       await d.dir('project', [
         d.dir('.cursor', [
           d.dir('skills', [
-            d.dir('old_pkg-old-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: old_pkg-old-skill\ndescription: old\n---\nOld',
-              ),
-            ]),
+            skillDir(
+              'old_pkg-old-skill',
+              extraFrontMatter: 'description: old',
+              skillContent: 'Old',
+            ),
           ]),
         ]),
       ]).create();
 
       await d.dir('old_pkg_source', [
         d.dir('skills', [
-          d.dir('old_pkg-new-skill', [
-            d.file('SKILL.md', '''
----
-name: old_pkg-new-skill
-description: Replacement.
----
-
-New skill body.
-'''),
-          ]),
+          skillDir(
+            'old_pkg-new-skill',
+            extraFrontMatter: 'description: Replacement.',
+            skillContent: 'New skill body.',
+          ),
         ]),
       ]).create();
 
@@ -197,8 +181,8 @@ New skill body.
 
       final skill = ScannedSkill(
         packageName: 'old_pkg',
-        skillName: 'old_pkg-new-skill',
         skillPath: d.path('old_pkg_source/skills/old_pkg-new-skill'),
+        frontmatter: .new('old_pkg-new-skill', isInternal: false),
       );
       await adapter.installSkill(skill);
 
@@ -252,12 +236,11 @@ New skill body.
           ),
           d.dir('lib', [d.file('dep.dart', '')]),
           d.dir('skills', [
-            d.dir('dep_with_skills-test-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: dep_with_skills-test-skill\ndescription: Test\n---\n\nOriginal content',
-              ),
-            ]),
+            skillDir(
+              'dep_with_skills-test-skill',
+              extraFrontMatter: 'description: Test',
+              skillContent: '\nOriginal content',
+            ),
           ]),
         ]).create();
 

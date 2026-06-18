@@ -6,6 +6,7 @@ import 'package:skills/src/core/skill_scanner.dart';
 import 'package:skills/src/ide/adapters/cline_adapter.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+import '../utils.dart';
 
 void main() {
   setUpAll(() {
@@ -29,25 +30,20 @@ void main() {
       setUp(() async {
         await d.dir('cline_pkg', [
           d.dir('skills', [
-            d.dir('cline_pkg-debugging', [
-              d.file('SKILL.md', '''
----
-name: cline_pkg-debugging
-description: Debugging techniques.
----
+            skillDir(
+              'cline_pkg-debugging',
+              extraFrontMatter: 'description: Debugging techniques.',
+              skillContent: '''# Debugging
 
-# Debugging
-
-Debugging steps.
-'''),
-            ]),
+Debugging steps.''',
+            ),
           ]),
         ]).create();
 
         skill = ScannedSkill(
           packageName: 'cline_pkg',
-          skillName: 'cline_pkg-debugging',
           skillPath: d.path('cline_pkg/skills/cline_pkg-debugging'),
+          frontmatter: .new('cline_pkg-debugging', isInternal: false),
         );
       });
 
@@ -92,13 +88,11 @@ Debugging steps.
       await d.dir('project', [
         d.dir('.cline', [
           d.dir('skills', [
-            d.dir('pkg-skill', [
-              d.file(
-                'SKILL.md',
-                '---\nname: pkg-skill\n'
-                    'description: x\n---\nbody',
-              ),
-            ]),
+            skillDir(
+              'pkg-skill',
+              extraFrontMatter: 'description: x',
+              skillContent: 'body',
+            ),
           ]),
         ]),
       ]).create();

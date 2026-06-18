@@ -32,7 +32,7 @@ abstract class AgentSkillsAdapter implements IdeAdapter {
 
   @override
   Future<InstallSkillResult> installSkill(ScannedSkill skill) async {
-    final targetDir = Directory(p.join(skillsDirectory, skill.skillName));
+    final targetDir = Directory(p.join(skillsDirectory, skill.basename));
 
     if (await targetDir.exists()) {
       await targetDir.delete(recursive: true);
@@ -42,7 +42,7 @@ abstract class AgentSkillsAdapter implements IdeAdapter {
     await _copyDirectory(Directory(skill.skillPath), targetDir);
 
     return (
-      name: skill.skillName,
+      name: skill.basename,
       contentHash: await calculateDirectoryHash(targetDir),
     );
   }
