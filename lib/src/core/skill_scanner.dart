@@ -77,7 +77,7 @@ class SkillScanner {
       }
       if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
 
-      final basename = p.basename(skillMdFile.path);
+      final basename = p.basename(entity.path);
       if (!basename.startsWith(prefix)) {
         logger.warning(
           'Skipping skill "$basename" in ${package.name} '

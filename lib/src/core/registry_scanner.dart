@@ -109,7 +109,7 @@ class RegistryScanner {
       }
       if (frontmatter.isInternal && !shouldInstallInternalSkills) continue;
 
-      final basename = p.basename(skillMdFile.path);
+      final basename = p.basename(entity.path);
       final hyphenIndex = basename.indexOf('-');
       if (hyphenIndex <= 0) continue;
 

@@ -104,6 +104,64 @@ Instructions.''',
     },
   );
 
+  group('Given a package with a malformed skill', () {
+    test(
+      'when scanning then the malformed skill is skipped and a warning is logged',
+      () async {
+        final logs = <LogRecord>[];
+        final subscription = logger.onRecord.listen(logs.add);
+
+        await d.dir('malformed_pkg', [
+          d.dir('skills', [
+            skillDir(
+              'malformed_pkg-valid',
+              extraFrontMatter: 'description: Valid skill.',
+              skillContent: 'Body.',
+            ),
+            d.dir('malformed_pkg-invalid', [
+              // Malformed frontmatter (e.g., missing name)
+              d.file('SKILL.md', '''
+---
+description: Invalid skill.
+---
+Body.
+'''),
+            ]),
+          ]),
+        ]).create();
+
+        final package = ResolvedPackage(
+          name: 'malformed_pkg',
+          rootPath: d.path('malformed_pkg'),
+          originalPackageConfigPath: d.path(
+            p.join('.dart_tool', 'package_config.json'),
+          ),
+        );
+
+        final scanner = SkillScanner(logger);
+        final skills = await scanner.scanPackage(package);
+
+        await subscription.cancel();
+
+        expect(skills, hasLength(1));
+        expect(skills.first.basename, equals('malformed_pkg-valid'));
+
+        expect(
+          logs,
+          contains(
+            isA<LogRecord>()
+                .having((r) => r.level, 'level', equals(Level.WARNING))
+                .having(
+                  (r) => r.message,
+                  'message',
+                  contains('due to formatting error'),
+                ),
+          ),
+        );
+      },
+    );
+  });
+
   group('Given a package without a skills directory', () {
     test('when scanning then returns empty list', () async {
       await d.dir('no_skills_package', [
