@@ -127,15 +127,11 @@ Future<bool> getSkills({
   );
 
   if (skillsBySource.isEmpty) {
-    if (skills.isEmpty) {
-      final plural = resolvedPackageNames.length > 1 ? 's' : '';
-      final filterDescription = resolvedPackageNames.isNotEmpty
-          ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
-          : '';
-      logger.info('No skills found$filterDescription.');
-    } else {
-      logger.info('No skills selected to install.');
-    }
+    final plural = resolvedPackageNames.length > 1 ? 's' : '';
+    final filterDescription = resolvedPackageNames.isNotEmpty
+        ? ' in the given package$plural ${resolvedPackageNames.join(', ')}'
+        : '';
+    logger.info('No skills found$filterDescription.');
     return false;
   }
 
