@@ -372,11 +372,12 @@ Future<_SkillStatesResult> _computeSkillStates({
           <IdeAdapter, _SkillState>{};
 
       for (final adapter in ideAdapters) {
-        final newHash = skill is OrphanedSkill
-            ? null
-            : await adapter.computeSourceSkillHash(
-                io.Directory(skill.skillPath),
-              );
+        final newHash = switch (skill.skillPath) {
+          null => null,
+          String path => await adapter.computeSourceSkillHash(
+            io.Directory(path),
+          ),
+        };
         var state = _SkillState.isNew;
         final currentSkillEntry = manifest
             .packagesForIde(adapter.ide.cliName)[skill.packageName]
@@ -432,7 +433,7 @@ Future<bool> _promptForPackagesWithDiffs({
   final packagesWithDiffs = <String>{};
   for (final sourceId in sourceIdsWithDiff) {
     final firstSkill = skillsBySource[sourceId]!.first;
-    if (firstSkill is OrphanedSkill || firstSkill.registryUrl == null) {
+    if (firstSkill.registryUrl == null) {
       packagesWithDiffs.add(firstSkill.packageName);
     }
   }
@@ -618,13 +619,10 @@ Future<String?> _getGitCommit(String repoPath) async {
 }
 
 String _getSourceId(ScannedSkill skill) {
-  return skill is OrphanedSkill
-      ? 'unknown'
-      : skill.registryUrl ?? 'pkg:${skill.packageName}';
+  return skill.registryUrl ?? 'pkg:${skill.packageName}';
 }
 
 String _getSourceDisplayName(ScannedSkill skill) {
-  if (skill is OrphanedSkill) return 'unknown';
   if (skill.registryUrl != null) {
     return 'registry ${skill.registryUrl!}';
   } else {
@@ -689,20 +687,20 @@ typedef _DialogOption = ({
 /// that.
 class OrphanedSkill implements ScannedSkill {
   @override
-  bool get isGlobal => throw UnimplementedError();
+  bool get isGlobal => false;
 
   @override
   final String packageName;
 
   @override
-  String? get registryUrl => throw UnimplementedError();
+  String? get registryUrl => null;
 
   @override
   final String skillName;
 
-  /// Not a real skill, this shouldn't be called.
+  /// Not a real skill, has no path
   @override
-  String get skillPath => throw UnimplementedError();
+  String? get skillPath => null;
 
   OrphanedSkill({required this.packageName, required this.skillName});
 }
