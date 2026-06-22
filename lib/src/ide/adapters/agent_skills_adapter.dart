@@ -38,8 +38,8 @@ abstract class AgentSkillsAdapter extends IdeAdapter {
       await targetDir.delete(recursive: true);
     }
     await targetDir.create(recursive: true);
-
-    await _copyDirectory(Directory(skill.skillPath), targetDir);
+    assert(skill.skillPath != null, 'Cannot install a skill without a path');
+    await _copyDirectory(Directory(skill.skillPath!), targetDir);
     final hash = await computeInstalledSkillHash(skill.skillName);
     if (hash == null) {
       throw StateError('Failed to install skill at ${targetDir.path}.');
