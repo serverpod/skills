@@ -151,7 +151,10 @@ Future<bool> getSkills({
   final allSkillStates = skillStatesResult.allSkillStates;
   final sourceIdsWithDiff = skillStatesResult.sourceIdsWithDiff;
 
-  if (!allFlag && dialogSupport != null && packageNames.isEmpty && skillNames.isEmpty) {
+  if (!allFlag &&
+      dialogSupport != null &&
+      packageNames.isEmpty &&
+      skillNames.isEmpty) {
     final continueInstall = await _promptForPackagesWithDiffs(
       sourceIdsWithDiff: sourceIdsWithDiff,
       skillsBySource: skillsBySource,
