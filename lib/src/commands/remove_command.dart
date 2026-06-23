@@ -18,22 +18,24 @@ class RemoveCommand extends SkillsCommand {
   RemoveCommand({DialogSupport? dialogSupport})
     : _dialogSupport = dialogSupport {
     addIdeOption(argParser);
-    argParser.addMultiOption(
-      'package',
-      abbr: 'p',
-      help: 'Remove skills for these packages.',
-    );
-    argParser.addMultiOption(
-      'skill',
-      abbr: 's',
-      help: 'Remove specific skills.',
-    );
-    argParser.addFlag(
-      'all',
-      abbr: 'a',
-      help: 'Remove all managed skills.',
-      negatable: false,
-    );
+    argParser
+      ..addMultiOption(
+        'package',
+        abbr: 'p',
+        help: 'Remove skills for these packages.',
+      )
+      ..addMultiOption('git', help: 'Remove skills from these git repos only.')
+      ..addMultiOption(
+        'skill',
+        abbr: 's',
+        help: 'Only remove these specific skills.',
+      )
+      ..addFlag(
+        'all',
+        abbr: 'a',
+        help: 'Remove all managed skills.',
+        negatable: false,
+      );
   }
 
   @override
@@ -52,6 +54,10 @@ class RemoveCommand extends SkillsCommand {
     var manifest = loaded;
 
     final packagesToRemove = argResults.multiOption('package').toSet();
+    final sourcesToRemove = {
+      ...packagesToRemove.map((p) => 'package:$p'),
+      ...argResults.multiOption('git'),
+    };
     final skillsToRemove = argResults.multiOption('skill').toSet();
     final allFlag = argResults.flag('all');
 
@@ -71,7 +77,7 @@ class RemoveCommand extends SkillsCommand {
     // Prompt the user for the packages to remove if possible and not given.
     if (_dialogSupport != null &&
         !allFlag &&
-        packagesToRemove.isEmpty &&
+        sourcesToRemove.isEmpty &&
         skillsToRemove.isEmpty) {
       final allPackages = {
         for (final ide in targetIdes)
@@ -79,16 +85,16 @@ class RemoveCommand extends SkillsCommand {
       }.toList()..sort();
       final selectedIndices = await _dialogSupport.showMultiSelectDialog(
         allPackages,
-        title: 'Select packages to remove skills for:',
+        title: 'Select sources to remove skills for:',
       );
       if (selectedIndices != null) {
-        packagesToRemove.addAll(selectedIndices.map((i) => allPackages[i]));
+        sourcesToRemove.addAll(selectedIndices.map((i) => allPackages[i]));
       } else {
         logger.info('Skill removal aborted.');
         return;
       }
-      if (packagesToRemove.isEmpty) {
-        logger.info('No packages selected for removal.');
+      if (sourcesToRemove.isEmpty) {
+        logger.info('No sources selected for removal.');
         return;
       }
     }
@@ -170,7 +176,7 @@ class RemoveCommand extends SkillsCommand {
         ide: ide,
         rootPath: rootPath,
         manifest: manifest,
-        packageNames: packagesToRemove,
+        sourceUris: sourcesToRemove,
         skillNames: skillsToRemove,
       );
       manifest = result.manifest;

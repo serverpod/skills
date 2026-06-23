@@ -5,7 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:skills/src/core/exceptions.dart';
 
 import '../core/dialog_support.dart';
-import '../core/registry_repos.dart';
+import '../core/git_repos.dart';
 import '../models/global_config.dart';
 import '../models/skill_manifest.dart';
 
@@ -33,7 +33,7 @@ Future<void> runMigrations(
     updatedManifest = SkillManifest(
       version: SkillManifest.currentVersion,
       installations: updatedManifest.installations,
-      registries: updatedManifest.registries,
+      gitRepos: updatedManifest.gitRepos,
     );
   }
 
@@ -56,13 +56,13 @@ Future<SkillManifest> maybeDoRegistryMigration(
   final globalConfigFile = File(globalConfigPath);
   var globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
 
-  final reposDirPath = registryReposPath(rootPath);
+  final reposDirPath = gitReposPath(rootPath);
   final reposDir = Directory(reposDirPath);
   if (!await reposDir.exists()) {
     return manifest;
   }
 
-  final existingRepos = <RegistryRepo>[];
+  final existingRepos = <GitRepo>[];
   try {
     await for (final entity in reposDir.list()) {
       if (entity is Directory) {
@@ -72,7 +72,7 @@ Future<SkillManifest> maybeDoRegistryMigration(
             final name = p.basename(subEntity.path);
 
             existingRepos.add(
-              RegistryRepo(cloneUrl: 'https://github.com/$owner/$name.git'),
+              GitRepo(cloneUrl: 'https://github.com/$owner/$name.git'),
             );
           }
         }
@@ -82,9 +82,9 @@ Future<SkillManifest> maybeDoRegistryMigration(
     // Ignore errors listing directories.
   }
 
-  final reposToMigrate = <RegistryRepo>[];
+  final reposToMigrate = <GitRepo>[];
   for (final repo in existingRepos) {
-    if (globalConfig.registries.any((r) => r.cloneUrl == repo.cloneUrl)) {
+    if (globalConfig.gitRepos.any((r) => r.cloneUrl == repo.cloneUrl)) {
       _logger.info(
         'Skipping migration for ${repo.cloneUrl} as it is already in global '
         'config.',
@@ -123,9 +123,9 @@ Future<SkillManifest> maybeDoRegistryMigration(
 
         if (index == 0 || index == 1) {
           if (index == 0) {
-            globalConfig = globalConfig.withRegistry(repo);
+            globalConfig = globalConfig.withGitRepo(repo);
           } else {
-            updatedManifest = updatedManifest.withRegistry(repo);
+            updatedManifest = updatedManifest.withGitRepo(repo);
           }
 
           // Rename old directory to new URL-encoded format
@@ -168,7 +168,7 @@ Future<SkillManifest> maybeDoRegistryMigration(
     await globalConfig.save(globalConfigFile);
   } else {
     for (final repo in reposToMigrate) {
-      updatedManifest = updatedManifest.withRegistry(repo);
+      updatedManifest = updatedManifest.withGitRepo(repo);
       _logger.info(
         'Automatically kept ${repo.cloneUrl} local (non-interactive).',
       );
@@ -178,6 +178,6 @@ Future<SkillManifest> maybeDoRegistryMigration(
   return SkillManifest(
     version: manifest.version,
     installations: updatedManifest.installations,
-    registries: updatedManifest.registries,
+    gitRepos: updatedManifest.gitRepos,
   );
 }

@@ -66,15 +66,20 @@ class PruneCommand extends SkillsCommand {
     for (final ide in targetIdes) {
       final pkgs = manifest.packagesForIde(ide.cliName);
       final pkgsToPrune = pkgs.keys
-          .where((name) => !referencedNames.contains(name))
+          .where(
+            (uri) =>
+                uri.startsWith('package:') &&
+                !referencedNames.contains(uri.substring('package:'.length)),
+          )
           .toSet();
       prunedPackages.addAll(pkgsToPrune);
+      if (pkgsToPrune.isEmpty) continue;
 
       final result = await installer.removeSkillsForIde(
         ide: ide,
         rootPath: rootPath,
         manifest: manifest,
-        packageNames: pkgsToPrune,
+        sourceUris: pkgsToPrune,
       );
       manifest = result.manifest;
       totalRemoved += result.removedCount;

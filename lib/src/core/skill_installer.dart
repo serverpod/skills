@@ -32,15 +32,13 @@ class SkillInstallResult {
 class InstalledSkillInfo {
   final String ideName;
   final String skillName;
-  final String packageName;
-  final String? registryUrl;
+  final String sourceUri;
   final bool isGlobal;
 
   const InstalledSkillInfo({
     required this.ideName,
     required this.skillName,
-    required this.packageName,
-    this.registryUrl,
+    required this.sourceUri,
     this.isGlobal = false,
   });
 }
@@ -107,7 +105,7 @@ class SkillInstaller {
     required SkillManifest previousManifest,
     required GlobalConfig globalConfig,
     Set<String>? selectedSkills,
-    Set<String> packageNames = const {},
+    Set<String> sourceUris = const {},
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     if (adapter is AgentSkillsAdapter) {
@@ -117,17 +115,17 @@ class SkillInstaller {
     }
     await adapter.ensureSkillsDirectory();
 
-    final skillsByPackage = _groupSkillsByPackage(skills);
+    final skillsBySource = _groupSkillsBySource(skills);
 
     var updatedManifest = previousManifest;
     final installedSkillInfos = <InstalledSkillInfo>[];
 
-    for (final entry in skillsByPackage.entries) {
-      final pkgName = entry.key;
-      final pkgSkills = entry.value.values;
+    for (final entry in skillsBySource.entries) {
+      final sourceUri = entry.key;
+      final sourceSkills = entry.value.values;
 
       final existingPkgs = updatedManifest.packagesForIde(ide.cliName);
-      final existingEntry = existingPkgs[pkgName];
+      final existingEntry = existingPkgs[sourceUri];
 
       final skippedSkills = await _uninstallExistingSkills(
         existingEntry: existingEntry,
@@ -135,8 +133,8 @@ class SkillInstaller {
         adapter: adapter,
       );
 
-      final result = await _installPackageSkills(
-        pkgSkills: pkgSkills,
+      final result = await _installSkills(
+        skills: sourceSkills,
         skippedSkills: skippedSkills,
         selectedSkills: selectedSkills,
         existingEntry: existingEntry,
@@ -155,7 +153,7 @@ class SkillInstaller {
 
       updatedManifest = updatedManifest.withPackage(
         ide.cliName,
-        pkgName,
+        sourceUri,
         PackageSkillsEntry(skills: result.updatedSkillEntries),
       );
     }
@@ -163,11 +161,11 @@ class SkillInstaller {
     updatedManifest = await _cleanupMissingPackages(
       ide: ide,
       rootPath: rootPath,
-      skillsByPackage: skillsByPackage,
+      skillsBySource: skillsBySource,
       manifest: updatedManifest,
       selectedSkills: selectedSkills,
       adapter: adapter,
-      packageNames: packageNames,
+      sourceUris: sourceUris,
     );
 
     return SkillInstallResult(
@@ -177,19 +175,17 @@ class SkillInstaller {
     );
   }
 
-  /// Converts [skills] to a nested map, keyed by package name and then skill
+  /// Converts [skills] to a nested map, keyed by source URI and then skill
   /// name.
-  Map<String, Map<String, ScannedSkill>> _groupSkillsByPackage(
+  Map<String, Map<String, ScannedSkill>> _groupSkillsBySource(
     List<ScannedSkill> skills,
   ) {
-    final skillsByPackage = <String, Map<String, ScannedSkill>>{};
+    final skillsBySource = <String, Map<String, ScannedSkill>>{};
     for (final skill in skills) {
-      skillsByPackage.putIfAbsent(
-        skill.packageName,
-        () => {},
-      )[skill.skillName] ??= skill;
+      skillsBySource.putIfAbsent(skill.sourceUri, () => {})[skill.skillName] ??=
+          skill;
     }
-    return skillsByPackage;
+    return skillsBySource;
   }
 
   /// Uninstalls the [selectedSkills] (or all if not given) in [existingEntry].
@@ -235,7 +231,7 @@ class SkillInstaller {
     }
   }
 
-  /// Installs [pkgSkills], filtered by only the [selectedSkills] if provided.
+  /// Installs [skills], filtered by only the [selectedSkills] if provided.
   ///
   /// If any skill appears in [skippedSkills], those also will not be installed,
   /// because it means they were not properly uninstalled. The [skippedSkills]
@@ -247,8 +243,8 @@ class SkillInstaller {
   ///
   /// A modified local [manifest] and [globalConfig] are returned as a part of
   /// the [_PackageInstallResult].
-  Future<_PackageInstallResult> _installPackageSkills({
-    required Iterable<ScannedSkill> pkgSkills,
+  Future<_PackageInstallResult> _installSkills({
+    required Iterable<ScannedSkill> skills,
     required Set<String> skippedSkills,
     required Set<String>? selectedSkills,
     required PackageSkillsEntry? existingEntry,
@@ -263,7 +259,7 @@ class SkillInstaller {
     var updatedGlobalConfig = globalConfig;
     var updatedManifest = manifest;
 
-    for (final skill in pkgSkills) {
+    for (final skill in skills) {
       // We skipped uninstalling this skill, just copy its old install entry.
       if (skippedSkills.remove(skill.skillName)) {
         final existing = existingEntry!.skills.firstWhere(
@@ -303,16 +299,15 @@ class SkillInstaller {
         InstalledSkillInfo(
           ideName: ide.cliName,
           skillName: skill.skillName,
-          packageName: skill.packageName,
-          registryUrl: skill.registryUrl,
+          sourceUri: skill.sourceUri,
           isGlobal: skill.isGlobal,
         ),
       );
 
-      // Update local/global manifests for registries so that we have a back
-      // link from each registry to where its skills were installed, for
+      // update local/global manifests for gitRepos so that we have a back
+      // link from each gitRepo to where its skills were installed, for
       // cleanup later on.
-      if (skill.registryUrl case var registryUrl?) {
+      if (skill.gitUrl case var gitUrl?) {
         final installLocation = p.join(
           rootPath,
           ide.skillsRelativePath,
@@ -320,32 +315,32 @@ class SkillInstaller {
         );
 
         if (skill.isGlobal) {
-          final index = updatedGlobalConfig.registries.indexWhere(
-            (r) => r.cloneUrl == registryUrl,
+          final index = updatedGlobalConfig.gitRepos.indexWhere(
+            (r) => r.cloneUrl == gitUrl,
           );
           if (index >= 0) {
-            final repo = updatedGlobalConfig.registries[index];
+            final repo = updatedGlobalConfig.gitRepos[index];
             updatedGlobalConfig = GlobalConfig(
-              registries: [
-                ...updatedGlobalConfig.registries.sublist(0, index),
+              gitRepos: [
+                ...updatedGlobalConfig.gitRepos.sublist(0, index),
                 repo.withInstall(installLocation),
-                ...updatedGlobalConfig.registries.sublist(index + 1),
+                ...updatedGlobalConfig.gitRepos.sublist(index + 1),
               ],
             );
           }
         } else {
-          final index = updatedManifest.registries.indexWhere(
-            (r) => r.cloneUrl == registryUrl,
+          final index = updatedManifest.gitRepos.indexWhere(
+            (r) => r.cloneUrl == gitUrl,
           );
           if (index >= 0) {
-            final repo = updatedManifest.registries[index];
+            final repo = updatedManifest.gitRepos[index];
             updatedManifest = SkillManifest(
               version: updatedManifest.version,
               installations: updatedManifest.installations,
-              registries: [
-                ...updatedManifest.registries.sublist(0, index),
+              gitRepos: [
+                ...updatedManifest.gitRepos.sublist(0, index),
                 repo.withInstall(installLocation),
-                ...updatedManifest.registries.sublist(index + 1),
+                ...updatedManifest.gitRepos.sublist(index + 1),
               ],
             );
           }
@@ -369,18 +364,18 @@ class SkillInstaller {
   Future<SkillManifest> _cleanupMissingPackages({
     required Ide ide,
     required String rootPath,
-    required Map<String, Map<String, ScannedSkill>> skillsByPackage,
+    required Map<String, Map<String, ScannedSkill>> skillsBySource,
     required SkillManifest manifest,
     required Set<String>? selectedSkills,
     required IdeAdapter adapter,
-    required Set<String> packageNames,
+    required Set<String> sourceUris,
   }) async {
     var updatedManifest = manifest;
     final allPkgs = updatedManifest.packagesForIde(ide.cliName).keys.toSet();
-    final missingPkgs = allPkgs.difference(skillsByPackage.keys.toSet());
+    final missingPkgs = allPkgs.difference(skillsBySource.keys.toSet());
 
     for (final pkgName in missingPkgs) {
-      if (packageNames.isNotEmpty && !packageNames.contains(pkgName)) {
+      if (sourceUris.isNotEmpty && !sourceUris.contains(pkgName)) {
         continue;
       }
 
@@ -419,13 +414,13 @@ class SkillInstaller {
 
   /// Removes skills for [ide] from [manifest].
   ///
-  /// If [packageNames] is not empty, only those packages skills are removed.
+  /// If [sourceUris] is not empty, only those sources skills are removed.
   /// If [skillNames] is not empty, only those specific skills are removed.
   Future<SkillRemoveResult> removeSkillsForIde({
     required Ide ide,
     required String rootPath,
     required SkillManifest manifest,
-    Set<String> packageNames = const {},
+    Set<String> sourceUris = const {},
     Set<String> skillNames = const {},
   }) async {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
@@ -435,7 +430,7 @@ class SkillInstaller {
 
     for (final MapEntry(key: pkgName, value: PackageSkillsEntry(skills: skills))
         in pkgs.entries) {
-      if (packageNames.isNotEmpty && !packageNames.contains(pkgName)) {
+      if (sourceUris.isNotEmpty && !sourceUris.contains(pkgName)) {
         continue;
       }
 
