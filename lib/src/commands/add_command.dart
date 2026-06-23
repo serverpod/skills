@@ -6,7 +6,7 @@ import 'package:skills/src/commands/get_skills.dart';
 import '../core/dialog_support.dart';
 import '../core/git_repos.dart';
 import '../models/global_config.dart';
-import '../models/skill_manifest.dart';
+
 import 'options.dart';
 import 'skills_command.dart';
 
@@ -72,13 +72,6 @@ class AddCommand extends SkillsCommand {
         globalConfig = globalConfig.withGitRepo(repo);
         await globalConfig.save(globalConfigFile);
         logger.info('Added ${repo.cloneUrl} to global config.');
-      }
-    } else {
-      var manifest = await SkillManifest.loadOrEmptyFromRoot(rootPath);
-      if (!manifest.gitRepos.any((r) => r.cloneUrl == repo.cloneUrl)) {
-        manifest = manifest.withGitRepo(repo);
-        await manifest.save(manifestFile(rootPath));
-        logger.info('Added ${repo.cloneUrl} to local config.');
       }
     }
 

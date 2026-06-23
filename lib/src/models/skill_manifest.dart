@@ -36,16 +36,13 @@ class SkillManifest {
   /// The version of the manifest when it was loaded.
   final int version;
 
-  /// Outer key: IDE name, inner key: package name or git url.
+  /// Outer key: IDE name, inner key: package uri or git uri.
   final Map<String, Map<String, SkillsEntry>> installations;
 
   /// Configured git repos for this workspace.
-  final List<GitRepo> gitRepos;
-
   const SkillManifest({
     this.version = currentVersion,
     this.installations = const {},
-    this.gitRepos = const [],
   });
 
   /// Migrates existing state from `.dart_skills` to `.dart_tool/skills`.
@@ -117,30 +114,18 @@ class SkillManifest {
       return MapEntry(ideKey, pkgs);
     });
 
-    // fallback to `registries` for backwards compatibility
-    final reposJson =
-        (json['gitRepos'] ?? json['registries']) as List<dynamic>? ?? [];
-    final gitRepos = reposJson
-        .map((r) => GitRepo.fromJson(r as Map<String, dynamic>))
-        .toList();
-
-    return SkillManifest(
-      version: version,
-      installations: installations,
-      gitRepos: gitRepos,
-    );
+    return SkillManifest(version: version, installations: installations);
   }
 
   Map<String, dynamic> toJson() {
     return {
       'version': currentVersion,
       'installations': installations.map(
-        (ideKey, pkgs) => MapEntry(
-          ideKey,
-          pkgs.map((pkgKey, entry) => MapEntry(pkgKey, entry.toJson())),
+        (ide, entries) => MapEntry(
+          ide,
+          entries.map((uri, entry) => MapEntry(uri, entry.toJson())),
         ),
       ),
-      'gitRepos': gitRepos.map((r) => r.toJson()).toList(),
     };
   }
 
@@ -157,6 +142,20 @@ class SkillManifest {
   /// Returns the packages map for a given [ide], or empty if none.
   Map<String, SkillsEntry> sourceUrisForIde(String ide) =>
       installations[ide] ?? {};
+
+  /// Dynamically infers all git repositories currently installed by scanning
+  /// source URIs for all non-package: URIs.
+  List<GitRepo> get gitRepos {
+    final uris = <String>{};
+    for (final ide in installations.values) {
+      for (final uri in ide.keys) {
+        if (!uri.startsWith('package:')) {
+          uris.add(uri);
+        }
+      }
+    }
+    return uris.map((uri) => GitRepo(cloneUrl: uri)).toList();
+  }
 
   /// All installed skill entries for a given [ide].
   ///
@@ -184,7 +183,7 @@ class SkillManifest {
   SkillManifest withSourceUri(String ide, String sourceUri, SkillsEntry entry) {
     final updated = _deepCopy();
     updated.putIfAbsent(ide, () => {})[sourceUri] = entry;
-    return SkillManifest(installations: updated, gitRepos: gitRepos);
+    return SkillManifest(version: version, installations: updated);
   }
 
   /// Returns a copy with [sourceUri] removed from [ide].
@@ -192,31 +191,14 @@ class SkillManifest {
     final updated = _deepCopy();
     updated[ide]?.remove(sourceUri);
     if (updated[ide]?.isEmpty ?? false) updated.remove(ide);
-    return SkillManifest(installations: updated, gitRepos: gitRepos);
+    return SkillManifest(version: version, installations: updated);
   }
 
   /// Returns a copy with all packages removed for [ide].
   SkillManifest withoutIde(String ide) {
     final updated = _deepCopy();
     updated.remove(ide);
-    return SkillManifest(installations: updated, gitRepos: gitRepos);
-  }
-
-  /// Returns a copy with [repo] added.
-  SkillManifest withGitRepo(GitRepo repo) {
-    if (gitRepos.any((r) => r.cloneUrl == repo.cloneUrl)) return this;
-    return SkillManifest(
-      installations: installations,
-      gitRepos: [...gitRepos, repo],
-    );
-  }
-
-  /// Returns a copy with [repo] removed.
-  SkillManifest withoutGitRepo(GitRepo repo) {
-    return SkillManifest(
-      installations: installations,
-      gitRepos: gitRepos.where((r) => r.cloneUrl != repo.cloneUrl).toList(),
-    );
+    return SkillManifest(version: version, installations: updated);
   }
 
   Map<String, Map<String, SkillsEntry>> _deepCopy() {

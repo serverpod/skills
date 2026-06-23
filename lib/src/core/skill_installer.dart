@@ -328,22 +328,6 @@ class SkillInstaller {
               ],
             );
           }
-        } else {
-          final index = updatedManifest.gitRepos.indexWhere(
-            (r) => r.cloneUrl == gitUrl,
-          );
-          if (index >= 0) {
-            final repo = updatedManifest.gitRepos[index];
-            updatedManifest = SkillManifest(
-              version: updatedManifest.version,
-              installations: updatedManifest.installations,
-              gitRepos: [
-                ...updatedManifest.gitRepos.sublist(0, index),
-                repo.withInstall(installLocation),
-                ...updatedManifest.gitRepos.sublist(index + 1),
-              ],
-            );
-          }
         }
       }
     }

@@ -1,7 +1,7 @@
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:skills/src/core/registry_repos.dart';
-import 'package:skills/src/core/registry_scanner.dart';
+import 'package:skills/src/core/git_repos.dart';
+import 'package:skills/src/core/git_scanner.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -10,10 +10,10 @@ void main() {
     Logger.root.onRecord.listen((r) => printOnFailure(r.toString()));
   });
 
-  group('RegistryScanner', () {
+  group('GitScanner', () {
     test('when repos directory does not exist then returns empty', () async {
       await d.dir('project', []).create();
-      const scanner = RegistryScanner();
+      const scanner = GitScanner();
       final skills = await scanner.scan(d.path('project'), isGlobal: false);
       expect(skills, isEmpty);
     });
@@ -21,7 +21,7 @@ void main() {
     test(
       'when scanning flat layout then returns ScannedSkills with correct fields',
       () async {
-        const registryRepo = RegistryRepo(
+        const registryRepo = GitRepo(
           cloneUrl: 'https://github.com/owner/repo.git',
         );
         await d.dir('project', [
@@ -43,7 +43,7 @@ void main() {
           ]),
         ]).create();
 
-        const scanner = RegistryScanner();
+        const scanner = GitScanner();
         final skills = await scanner.scan(
           d.path('project'),
           isGlobal: false,
@@ -56,7 +56,7 @@ void main() {
           equals({'my_pkg-buttons', 'my_pkg-forms'}),
         );
         for (final s in skills) {
-          expect(s.packageName, equals('my_pkg'));
+          expect(s.gitUrl, equals('https://github.com/owner/repo.git'));
           expect(s.skillPath, contains(p.join('skills', s.skillName)));
         }
       },
@@ -65,7 +65,7 @@ void main() {
     test(
       'when scanning groupedByPackage layout then returns ScannedSkills',
       () async {
-        const registryRepo = RegistryRepo(
+        const registryRepo = GitRepo(
           cloneUrl: 'https://github.com/owner/repo.git',
         );
         await d.dir('project', [
@@ -98,7 +98,7 @@ void main() {
           ]),
         ]).create();
 
-        const scanner = RegistryScanner();
+        const scanner = GitScanner();
         final skills = await scanner.scan(
           d.path('project'),
           isGlobal: false,
@@ -107,8 +107,8 @@ void main() {
 
         expect(skills, hasLength(3));
         expect(
-          skills.map((s) => s.packageName).toSet(),
-          equals({'riverpod', 'flutter_riverpod'}),
+          skills.map((s) => s.gitUrl).toSet(),
+          equals({'https://github.com/owner/repo.git'}),
         );
         expect(
           skills.map((s) => s.skillName).toSet(),
@@ -140,11 +140,11 @@ void main() {
         ]),
       ]).create();
 
-      const scanner = RegistryScanner();
+      const scanner = GitScanner();
       final skills = await scanner.scan(
         d.path('project'),
         isGlobal: false,
-        repos: [const RegistryRepo(cloneUrl: 'https://github.com/a/b.git')],
+        repos: [const GitRepo(cloneUrl: 'https://github.com/a/b.git')],
       );
       expect(skills, isEmpty);
     });
@@ -166,19 +166,19 @@ void main() {
         ]),
       ]).create();
 
-      const scanner = RegistryScanner();
+      const scanner = GitScanner();
       final skills = await scanner.scan(
         d.path('project'),
         isGlobal: false,
-        repos: [const RegistryRepo(cloneUrl: 'https://github.com/a/b.git')],
+        repos: [const GitRepo(cloneUrl: 'https://github.com/a/b.git')],
       );
       expect(skills, isEmpty);
     });
 
     test('when multiple repos then aggregates skills from all', () async {
       const registryRepos = [
-        RegistryRepo(cloneUrl: 'https://github.com/owner1/repo1.git'),
-        RegistryRepo(cloneUrl: 'https://github.com/owner2/repo2.git'),
+        GitRepo(cloneUrl: 'https://github.com/owner1/repo1.git'),
+        GitRepo(cloneUrl: 'https://github.com/owner2/repo2.git'),
       ];
       await d.dir('project', [
         d.dir('.dart_tool', [
@@ -199,14 +199,20 @@ void main() {
         ]),
       ]).create();
 
-      const scanner = RegistryScanner();
+      const scanner = GitScanner();
       final skills = await scanner.scan(
         d.path('project'),
         isGlobal: false,
         repos: registryRepos,
       );
       expect(skills, hasLength(2));
-      expect(skills.map((s) => s.packageName).toSet(), equals({'pkg'}));
+      expect(
+        skills.map((s) => s.gitUrl).toSet(),
+        equals({
+          'https://github.com/owner1/repo1.git',
+          'https://github.com/owner2/repo2.git',
+        }),
+      );
       expect(
         skills.map((s) => s.skillName).toSet(),
         equals({'pkg-a', 'pkg-b'}),
