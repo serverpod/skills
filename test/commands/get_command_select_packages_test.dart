@@ -243,7 +243,7 @@ void main() {
 
         expect(
           logMessages,
-          contains('No skills found in the given package dep3.'),
+          contains('No skills found in the given source package:dep3.'),
         );
       },
     );

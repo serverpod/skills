@@ -263,7 +263,7 @@ packages:
       [],
       d.sandbox,
       logger,
-      registryRepoCommits: {'owner/repo': 'commit456'},
+      gitRepoCommits: {'https://github.com/a/b.git': '123'},
     );
   });
 }

@@ -124,7 +124,7 @@ class SkillInstaller {
       final sourceUri = entry.key;
       final sourceSkills = entry.value.values;
 
-      final existingPkgs = updatedManifest.packagesForIde(ide.cliName);
+      final existingPkgs = updatedManifest.sourceUrisForIde(ide.cliName);
       final existingEntry = existingPkgs[sourceUri];
 
       final skippedSkills = await _uninstallExistingSkills(
@@ -151,10 +151,10 @@ class SkillInstaller {
 
       _logOrphanedSkills(skippedSkills, adapter, rootPath);
 
-      updatedManifest = updatedManifest.withPackage(
+      updatedManifest = updatedManifest.withSourceUri(
         ide.cliName,
         sourceUri,
-        PackageSkillsEntry(skills: result.updatedSkillEntries),
+        SkillsEntry(skills: result.updatedSkillEntries),
       );
     }
 
@@ -193,7 +193,7 @@ class SkillInstaller {
   /// Returns a list of skills in [existingEntry] that were not uninstalled,
   /// either because it failed or they were not in [selectedSkills].
   Future<Set<String>> _uninstallExistingSkills({
-    required PackageSkillsEntry? existingEntry,
+    required SkillsEntry? existingEntry,
     required Set<String>? selectedSkills,
     required IdeAdapter adapter,
   }) async {
@@ -247,7 +247,7 @@ class SkillInstaller {
     required Iterable<ScannedSkill> skills,
     required Set<String> skippedSkills,
     required Set<String>? selectedSkills,
-    required PackageSkillsEntry? existingEntry,
+    required SkillsEntry? existingEntry,
     required Ide ide,
     required String rootPath,
     required IdeAdapter adapter,
@@ -371,7 +371,7 @@ class SkillInstaller {
     required Set<String> sourceUris,
   }) async {
     var updatedManifest = manifest;
-    final allPkgs = updatedManifest.packagesForIde(ide.cliName).keys.toSet();
+    final allPkgs = updatedManifest.sourceUrisForIde(ide.cliName).keys.toSet();
     final missingPkgs = allPkgs.difference(skillsBySource.keys.toSet());
 
     for (final pkgName in missingPkgs) {
@@ -379,7 +379,7 @@ class SkillInstaller {
         continue;
       }
 
-      final existingEntry = updatedManifest.packagesForIde(
+      final existingEntry = updatedManifest.sourceUrisForIde(
         ide.cliName,
       )[pkgName]!;
       final skippedSkills = <String>{};
@@ -400,13 +400,16 @@ class SkillInstaller {
         final keptSkills = existingEntry.skills
             .where((s) => skippedSkills.contains(s.name))
             .toList();
-        updatedManifest = updatedManifest.withPackage(
+        updatedManifest = updatedManifest.withSourceUri(
           ide.cliName,
           pkgName,
-          PackageSkillsEntry(skills: keptSkills),
+          SkillsEntry(skills: keptSkills),
         );
       } else {
-        updatedManifest = updatedManifest.withoutPackage(ide.cliName, pkgName);
+        updatedManifest = updatedManifest.withoutSourceUri(
+          ide.cliName,
+          pkgName,
+        );
       }
     }
     return updatedManifest;
@@ -426,16 +429,16 @@ class SkillInstaller {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     final removed = <RemovedSkillInfo>[];
 
-    final pkgs = manifest.packagesForIde(ide.cliName);
+    final pkgs = manifest.sourceUrisForIde(ide.cliName);
 
-    for (final MapEntry(key: pkgName, value: PackageSkillsEntry(skills: skills))
+    for (final MapEntry(key: pkgName, value: SkillsEntry(skills: skills))
         in pkgs.entries) {
       if (sourceUris.isNotEmpty && !sourceUris.contains(pkgName)) {
         continue;
       }
 
       if (skillNames.isEmpty) {
-        manifest = manifest.withoutPackage(ide.cliName, pkgName);
+        manifest = manifest.withoutSourceUri(ide.cliName, pkgName);
         for (final skill in skills) {
           await adapter.removeSkill(skill.name);
           removed.add(
@@ -459,12 +462,12 @@ class SkillInstaller {
           }
 
           if (skillsToKeep.isEmpty) {
-            manifest = manifest.withoutPackage(ide.cliName, pkgName);
+            manifest = manifest.withoutSourceUri(ide.cliName, pkgName);
           } else {
-            manifest = manifest.withPackage(
+            manifest = manifest.withSourceUri(
               ide.cliName,
               pkgName,
-              PackageSkillsEntry(skills: skillsToKeep),
+              SkillsEntry(skills: skillsToKeep),
             );
           }
         }

@@ -64,7 +64,7 @@ class PruneCommand extends SkillsCommand {
     final prunedPackages = <String>{};
 
     for (final ide in targetIdes) {
-      final pkgs = manifest.packagesForIde(ide.cliName);
+      final pkgs = manifest.sourceUrisForIde(ide.cliName);
       final pkgsToPrune = pkgs.keys
           .where(
             (uri) =>

@@ -338,7 +338,7 @@ Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
   }
 
   for (final adapter in ideAdapters) {
-    final existingPkgs = manifest.packagesForIde(adapter.ide.cliName);
+    final existingPkgs = manifest.sourceUrisForIde(adapter.ide.cliName);
     for (final MapEntry(key: sourceUri, value: entry) in existingPkgs.entries) {
       if (sourceNames.isNotEmpty && !sourceNames.contains(sourceUri)) {
         // Also handle the case where sourceNames uses package name without 'package:' prefix
@@ -401,7 +401,7 @@ Future<_SkillStatesResult> _computeSkillStates({
         };
         var state = _SkillState.isNew;
         final currentSkillEntry = manifest
-            .packagesForIde(adapter.ide.cliName)[skill.sourceUri]
+            .sourceUrisForIde(adapter.ide.cliName)[skill.sourceUri]
             ?.skills
             .where((s) => s.name == skill.skillName)
             .firstOrNull;

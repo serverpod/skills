@@ -81,7 +81,7 @@ class RemoveCommand extends SkillsCommand {
         skillsToRemove.isEmpty) {
       final allPackages = {
         for (final ide in targetIdes)
-          ...manifest.packagesForIde(ide.cliName).keys,
+          ...manifest.sourceUrisForIde(ide.cliName).keys,
       }.toList()..sort();
       final selectedIndices = await _dialogSupport.showMultiSelectDialog(
         allPackages,
@@ -105,8 +105,8 @@ class RemoveCommand extends SkillsCommand {
       final potentialSkills = {
         for (final ide in targetIdes)
           for (final MapEntry(key: package, value: entry)
-              in manifest.packagesForIde(ide.cliName).entries)
-            if (packagesToRemove.isEmpty || packagesToRemove.contains(package))
+              in manifest.sourceUrisForIde(ide.cliName).entries)
+            if (sourcesToRemove.isEmpty || sourcesToRemove.contains(package))
               ...entry.skills.map((skill) => skill.name),
       }.toList()..sort();
       final selectedIndices = await _dialogSupport.showMultiSelectDialog(
@@ -127,14 +127,13 @@ class RemoveCommand extends SkillsCommand {
     }
 
     // The fully filtered map of things to remove.
-    final Map</* IDE */ String, Map</* Package */ String, PackageSkillsEntry>>
+    final Map</* IDE */ String, Map</* Package */ String, SkillsEntry>>
     filteredSkills = {
       for (final ide in targetIdes)
         ide.cliName: {
-          for (final entry in manifest.packagesForIde(ide.cliName).entries)
-            if (packagesToRemove.isEmpty ||
-                packagesToRemove.contains(entry.key))
-              entry.key: PackageSkillsEntry(
+          for (final entry in manifest.sourceUrisForIde(ide.cliName).entries)
+            if (sourcesToRemove.isEmpty || sourcesToRemove.contains(entry.key))
+              entry.key: SkillsEntry(
                 skills: [
                   for (final skill in entry.value.skills)
                     if (skillsToRemove.isEmpty ||
