@@ -1,3 +1,5 @@
+import 'package:skills/src/core/git_repos.dart';
+
 import '../core/skill_installer.dart';
 import '../ide/ide.dart';
 import '../models/skill_manifest.dart';
@@ -56,7 +58,9 @@ class RemoveCommand extends SkillsCommand {
     final packagesToRemove = argResults.multiOption('package').toSet();
     final sourcesToRemove = {
       ...packagesToRemove.map((p) => 'package:$p'),
-      ...argResults.multiOption('git'),
+      ...argResults
+          .multiOption('git')
+          .map((arg) => parseGitRepoArg(arg, usage).cloneUrl),
     };
     final skillsToRemove = argResults.multiOption('skill').toSet();
     final allFlag = argResults.flag('all');

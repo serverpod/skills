@@ -1,5 +1,6 @@
 import 'package:skills/src/commands/get_skills.dart';
 import 'package:skills/src/core/dialog_support.dart';
+import 'package:skills/src/core/git_repos.dart';
 
 import '../core/git_runner.dart';
 import 'options.dart';
@@ -63,7 +64,9 @@ class GetCommand extends SkillsCommand {
     final packageUris = argResults
         .multiOption('package')
         .map((p) => 'package:$p');
-    final gitUris = argResults.multiOption('git');
+    final gitUris = argResults
+        .multiOption('git')
+        .map((arg) => parseGitRepoArg(arg, usage).cloneUrl);
     final sourceUris = {...packageUris, ...gitUris};
     final skillNames = argResults.multiOption('skill').toSet();
 

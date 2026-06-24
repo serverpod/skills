@@ -1,3 +1,4 @@
+import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/skill_manifest.dart';
@@ -48,4 +49,21 @@ String gitReposPath(String rootPath) {
 /// `<rootPath>/.dart_tool/skills/repos/<encoded-url>`.
 String gitRepoPath(String rootPath, GitRepo repo) {
   return p.join(gitReposPath(rootPath), repo.pathSegment);
+}
+
+/// Parses a registry argument into a [GitRepo].
+GitRepo parseGitRepoArg(String arg, String usage) {
+  if (arg.contains('/') && !arg.contains(':') && !arg.contains('@')) {
+    final parts = arg.split('/');
+    if (parts.length != 2) {
+      throw UsageException(
+        'Invalid registry format: $arg. Expected <owner>/<repo> or a Git URI.',
+        usage,
+      );
+    }
+    final url = 'https://github.com/${parts[0]}/${parts[1]}.git';
+    return GitRepo(cloneUrl: url);
+  } else {
+    return GitRepo(cloneUrl: arg);
+  }
 }

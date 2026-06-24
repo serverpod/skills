@@ -47,20 +47,11 @@ class AddCommand extends SkillsCommand {
   Future<void> run() async {
     final argResults = this.argResults!;
     final rest = argResults.rest;
-    if (rest.length != 1) {
-      throw UsageException(
-        'Must specify exactly one git repository URL to add, got '
-        '${rest.length}',
-        usage,
-      );
-    }
 
-    final gitUrl = rest.single;
+    final gitRepos = rest.map((arg) => parseGitRepoArg(arg, usage));
     final skillNames = argResults.multiOption('skill').toSet();
     final isGlobal = argResults.flag('global');
     final allFlag = argResults.flag('all');
-
-    final repo = GitRepo(cloneUrl: gitUrl);
 
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;
@@ -78,20 +69,30 @@ class AddCommand extends SkillsCommand {
       final globalConfigFile = File(globalConfigPath);
       var globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
 
-      if (!globalConfig.gitRepos.any((r) => r.cloneUrl == repo.cloneUrl)) {
-        globalConfig = globalConfig.withGitRepo(repo);
-        await globalConfig.save(globalConfigFile);
-        logger.info('Added ${repo.cloneUrl} to global config.');
+      for (var repo in gitRepos) {
+        if (!globalConfig.gitRepos.any((r) => r.cloneUrl == repo.cloneUrl)) {
+          globalConfig = globalConfig.withGitRepo(repo);
+          logger.info('Added ${repo.cloneUrl} to global config.');
+        }
       }
+      await globalConfig.save(globalConfigFile);
     } else {
       // Add the entries to the local config if not present.
       final localFile = manifestFile(workspace.rootPath);
       var manifest = await SkillManifest.loadOrEmpty(localFile);
       for (var ide in ides) {
-        if (manifest.sourceUrisForIde(ide.cliName).containsKey(gitUrl)) {
-          continue;
+        for (var repo in gitRepos) {
+          if (manifest
+              .sourceUrisForIde(ide.cliName)
+              .containsKey(repo.cloneUrl)) {
+            continue;
+          }
+          manifest = manifest.withSourceUri(
+            ide.cliName,
+            repo.cloneUrl,
+            SkillsEntry(),
+          );
         }
-        manifest = manifest.withSourceUri(ide.cliName, gitUrl, SkillsEntry());
       }
       await manifest.save(localFile);
     }
@@ -102,7 +103,7 @@ class AddCommand extends SkillsCommand {
       workspace: workspace,
       dialogSupport: dialogSupport,
       usage: usage,
-      sourceUris: {gitUrl},
+      sourceUris: {for (var repo in gitRepos) repo.cloneUrl},
       skillNames: skillNames,
       allFlag: allFlag,
     );
