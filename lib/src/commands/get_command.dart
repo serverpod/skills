@@ -57,6 +57,7 @@ class GetCommand extends SkillsCommand {
     final ides = await resolveIdes(
       argResults: argResults,
       projectPath: rootPath,
+      dialogSupport: _dialogSupport,
     );
 
     final packageUris = argResults
