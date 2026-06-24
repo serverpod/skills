@@ -265,14 +265,20 @@ Future<_GitData> _syncAndScanGitRepos({
         await gitScanner.scan(
           rootPath,
           isGlobal: true,
-          repos: globalConfig.gitRepos,
+          repos: [
+            for (var repo in globalConfig.gitRepos)
+              if (gitUris.isEmpty || gitUris.contains(repo.cloneUrl)) repo,
+          ],
         ),
       )
       ..addAll(
         await gitScanner.scan(
           rootPath,
           isGlobal: false,
-          repos: manifest.gitRepos,
+          repos:  [
+            for (var repo in manifest.gitRepos)
+              if (gitUris.isEmpty || gitUris.contains(repo.cloneUrl)) repo,
+          ],
         ),
       );
 
