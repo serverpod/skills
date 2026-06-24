@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:skills/src/commands/get_skills.dart';
+import 'package:skills/src/models/skill_manifest.dart';
 
 import '../core/dialog_support.dart';
 import '../core/git_repos.dart';
@@ -64,7 +65,15 @@ class AddCommand extends SkillsCommand {
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;
 
+    final ides = await resolveIdes(
+      argResults: argResults,
+      projectPath: rootPath,
+      dialogSupport: dialogSupport,
+    );
+    if (ides.isEmpty) return;
+
     if (isGlobal) {
+      // Add the entry to the global config if not present.
       final globalConfigPath = GlobalConfig.globalPath;
       final globalConfigFile = File(globalConfigPath);
       var globalConfig = await GlobalConfig.loadOrEmpty(globalConfigFile);
@@ -74,14 +83,18 @@ class AddCommand extends SkillsCommand {
         await globalConfig.save(globalConfigFile);
         logger.info('Added ${repo.cloneUrl} to global config.');
       }
+    } else {
+      // Add the entries to the local config if not present.
+      final localFile = manifestFile(workspace.rootPath);
+      var manifest = await SkillManifest.loadOrEmpty(localFile);
+      for (var ide in ides) {
+        if (manifest.sourceUrisForIde(ide.cliName).containsKey(gitUrl)) {
+          continue;
+        }
+        manifest = manifest.withSourceUri(ide.cliName, gitUrl, SkillsEntry());
+      }
+      await manifest.save(localFile);
     }
-
-    final ides = await resolveIdes(
-      argResults: argResults,
-      projectPath: rootPath,
-      dialogSupport: dialogSupport,
-    );
-    if (ides.isEmpty) return;
 
     await getSkills(
       ides: ides,
