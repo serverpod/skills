@@ -137,7 +137,7 @@ Future<bool> getSkills({
     skills: skills,
     ideAdapters: ideAdapters,
     manifest: manifest,
-    sourceNames: sourceUris,
+    sourceUris: sourceUris,
   );
 
   if (skillsBySource.isEmpty) {
@@ -320,16 +320,20 @@ Future<void> _checkSecurityAdvisories({
   }
 }
 
-/// Groups scanned [skills] by their source ID (package URI or Git URL).
+/// Groups scanned [skills] by their source URI.
 ///
 /// It also compares the scanned skills against the previously installed skills
 /// from the [manifest] to identify any skills that were removed or are no
-/// longer present in the dependencies, returning them as `RemovedSkill` instances.
+/// longer present in the dependencies, returning them as [OrphanedSkill]
+/// instances.
+///
+/// If [sourceUris] is non-empty, then only skills from those sources are
+/// returned.
 Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
   required List<ScannedSkill> skills,
   required List<IdeAdapter> ideAdapters,
   required SkillManifest manifest,
-  required Set<String> sourceNames,
+  required Set<String> sourceUris,
 }) {
   final skillsBySource = <String, List<ScannedSkill>>{};
   for (final skill in skills) {
@@ -340,13 +344,8 @@ Map<String, List<ScannedSkill>> _groupSkillsBySourceAndFindRemoved({
   for (final adapter in ideAdapters) {
     final existingPkgs = manifest.sourceUrisForIde(adapter.ide.cliName);
     for (final MapEntry(key: sourceUri, value: entry) in existingPkgs.entries) {
-      if (sourceNames.isNotEmpty && !sourceNames.contains(sourceUri)) {
-        // Also handle the case where sourceNames uses package name without 'package:' prefix
-        if (!sourceUri.startsWith('package:') ||
-            !sourceNames.contains(sourceUri.substring(8))) {
-          continue;
-        }
-      }
+      if (sourceUris.isNotEmpty && !sourceUris.contains(sourceUri)) continue;
+
       for (final existingSkill in entry.skills) {
         if (!existingSkill.isInstalled) continue;
 

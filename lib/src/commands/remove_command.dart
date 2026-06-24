@@ -127,15 +127,19 @@ class RemoveCommand extends SkillsCommand {
     }
 
     // The fully filtered map of things to remove.
-    final Map</* IDE */ String, Map</* Package */ String, SkillsEntry>>
+    final Map</* IDE */ String, Map</* Source URI */ String, SkillsEntry>>
     filteredSkills = {
       for (final ide in targetIdes)
         ide.cliName: {
-          for (final entry in manifest.sourceUrisForIde(ide.cliName).entries)
-            if (sourcesToRemove.isEmpty || sourcesToRemove.contains(entry.key))
-              entry.key: SkillsEntry(
+          for (final MapEntry(
+                key: sourceUri,
+                value: SkillsEntry(skills: skills),
+              )
+              in manifest.sourceUrisForIde(ide.cliName).entries)
+            if (sourcesToRemove.isEmpty || sourcesToRemove.contains(sourceUri))
+              sourceUri: SkillsEntry(
                 skills: [
-                  for (final skill in entry.value.skills)
+                  for (final skill in skills)
                     if (skillsToRemove.isEmpty ||
                         skillsToRemove.contains(skill.name))
                       skill,

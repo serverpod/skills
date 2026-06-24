@@ -22,6 +22,7 @@ class AddCommand extends SkillsCommand {
   final DialogSupport? dialogSupport;
 
   AddCommand({this.dialogSupport}) {
+    addIdeOption(argParser);
     argParser
       ..addFlag(
         'global',

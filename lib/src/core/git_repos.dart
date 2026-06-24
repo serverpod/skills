@@ -19,7 +19,7 @@ class GitRepo {
   }
 
   factory GitRepo.fromJson(Map<String, dynamic> json) {
-    final installs = (json['installs'] as List<dynamic>?)?.cast<String>() ?? [];
+    final installs = (json['installs'] as List<Object>?)?.cast<String>() ?? [];
     final cloneUrl = json['cloneUrl'] as String;
     return GitRepo(cloneUrl: cloneUrl, installs: installs);
   }
