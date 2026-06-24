@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:args/command_runner.dart';
 import 'package:skills/src/commands/get_skills.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 
