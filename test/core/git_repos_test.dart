@@ -1,3 +1,4 @@
+import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills/src/core/git_repos.dart';
@@ -37,6 +38,34 @@ void main() {
             Uri.encodeComponent(repo.cloneUrl),
           ),
         ),
+      );
+    });
+  });
+
+  group('parseGitRepoArg', () {
+    test('parses full https URL correctly', () {
+      final repo = parseGitRepoArg('https://github.com/foo/bar.git', 'usage');
+      expect(repo.cloneUrl, 'https://github.com/foo/bar.git');
+    });
+    test('parses SSH URL correctly', () {
+      final repo = parseGitRepoArg('git@github.com:foo/bar.git', 'usage');
+      expect(repo.cloneUrl, 'git@github.com:foo/bar.git');
+    });
+
+    test('parses file URI correctly', () {
+      final repo = parseGitRepoArg('file://some/path', 'usage');
+      expect(repo.cloneUrl, 'file://some/path');
+    });
+
+    test('parses owner/repo correctly', () {
+      final repo = parseGitRepoArg('foo/bar', 'usage');
+      expect(repo.cloneUrl, 'https://github.com/foo/bar.git');
+    });
+
+    test('throws UsageException for invalid format with slash', () {
+      expect(
+        () => parseGitRepoArg('foo/bar/baz', 'usage'),
+        throwsA(isA<UsageException>()),
       );
     });
   });

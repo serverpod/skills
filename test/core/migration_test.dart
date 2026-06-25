@@ -4,6 +4,7 @@ import 'package:skills/src/core/migration.dart';
 import 'package:skills/src/models/global_config.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 import 'package:skills/src/core/git_repos.dart';
+import 'package:skills/src/core/exceptions.dart';
 import '../fake_dialog_support.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -222,6 +223,22 @@ packages:
           expect(await repoDir.exists(), isFalse);
         },
       );
+
+      test('when user aborts dialog then throws UserAbortException', () async {
+        var manifest = const SkillManifest(version: 1);
+
+        fakeDialogSupport.singleSelectResults.add(null); // Abort dialog
+
+        manifest = maybeMigratePackageUris(manifest);
+        expect(
+          () => maybeDoRegistryMigration(
+            projectPath,
+            manifest,
+            fakeDialogSupport,
+          ),
+          throwsA(isA<UserAbortException>()),
+        );
+      });
 
       test(
         'when user selects to remove and uninstall then deletes from disk and '

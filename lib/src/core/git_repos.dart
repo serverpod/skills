@@ -54,11 +54,13 @@ String gitRepoPath(String rootPath, GitRepo repo) {
 
 /// Parses a git repo argument into a [GitRepo].
 GitRepo parseGitRepoArg(String arg, String usage) {
+  // Handle org/repo format.
   if (arg.contains('/') && !arg.contains(':') && !arg.contains('@')) {
     final parts = arg.split('/');
     if (parts.length != 2) {
       throw UsageException(
-        'Invalid git repo format: $arg. Expected <owner>/<repo> or a Git URI.',
+        'Invalid git repo format: $arg. Expected <owner>/<repo> or a Git URI. '
+        'If you intended this to be a file path, please a file:// URI instead.',
         usage,
       );
     }

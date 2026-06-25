@@ -6,6 +6,7 @@ import 'package:skills/src/models/skill_manifest.dart';
 
 import '../core/dialog_support.dart';
 import '../core/git_repos.dart';
+import '../core/git_runner.dart';
 import '../models/global_config.dart';
 
 import 'options.dart';
@@ -21,8 +22,9 @@ class AddCommand extends SkillsCommand {
       'Add a git repository as a skill source and install skills from it.';
 
   final DialogSupport? dialogSupport;
+  final GitRunner gitRunner;
 
-  AddCommand({this.dialogSupport}) {
+  AddCommand({this.dialogSupport, this.gitRunner = const GitRunner()}) {
     addIdeOption(argParser);
     argParser
       ..addFlag(
@@ -119,6 +121,7 @@ class AddCommand extends SkillsCommand {
       sourceUris: {for (var repo in gitRepos) repo.cloneUrl},
       skillNames: skillNames,
       allFlag: allFlag,
+      gitRunner: gitRunner,
     );
   }
 }
