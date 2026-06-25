@@ -104,29 +104,44 @@ void main() {
     test('succeeds when --all is passed', () async {
       await runner.run([
         'add',
-        '--directory', projectPath,
-        '--ide', 'cursor',
+        '--directory',
+        projectPath,
+        '--ide',
+        'cursor',
         '--all',
-        'owner/repo'
+        'owner/repo',
       ]);
 
       final localFile = File(SkillManifest.pathIn(projectPath));
       final manifest = await SkillManifest.loadOrEmpty(localFile);
-      expect(manifest.sourceUrisForIde('cursor').containsKey('https://github.com/owner/repo.git'), isTrue);
+      expect(
+        manifest
+            .sourceUrisForIde('cursor')
+            .containsKey('https://github.com/owner/repo.git'),
+        isTrue,
+      );
     });
 
     test('succeeds when specific skill names are passed', () async {
       await runner.run([
         'add',
-        '--directory', projectPath,
-        '--ide', 'cursor',
-        '--skill', 'my-skill',
-        'owner/repo'
+        '--directory',
+        projectPath,
+        '--ide',
+        'cursor',
+        '--skill',
+        'my-skill',
+        'owner/repo',
       ]);
 
       final localFile = File(SkillManifest.pathIn(projectPath));
       final manifest = await SkillManifest.loadOrEmpty(localFile);
-      expect(manifest.sourceUrisForIde('cursor').containsKey('https://github.com/owner/repo.git'), isTrue);
+      expect(
+        manifest
+            .sourceUrisForIde('cursor')
+            .containsKey('https://github.com/owner/repo.git'),
+        isTrue,
+      );
     });
   });
 }
