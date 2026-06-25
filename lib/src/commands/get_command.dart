@@ -1,3 +1,4 @@
+import 'package:args/command_runner.dart';
 import 'package:skills/src/commands/get_skills.dart';
 import 'package:skills/src/core/dialog_support.dart';
 import 'package:skills/src/core/git_repos.dart';
@@ -69,8 +70,14 @@ class GetCommand extends SkillsCommand {
         .map((arg) => parseGitRepoArg(arg, usage).cloneUrl);
     final sourceUris = {...packageUris, ...gitUris};
     final skillNames = argResults.multiOption('skill').toSet();
-
     final allFlag = argResults.flag('all');
+    if (skillNames.isNotEmpty && allFlag) {
+      throw UsageException(
+        '--all and --skill are mutually exclusive arguments, please provide '
+        'only one',
+        usage,
+      );
+    }
 
     await getSkills(
       ides: ides,

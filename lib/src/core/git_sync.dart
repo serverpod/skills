@@ -3,7 +3,7 @@ import 'dart:io';
 import 'git_runner.dart';
 import 'git_repos.dart';
 
-/// Syncs GitHub registry repos to the local `.dart_tool/skills/repos` directory.
+/// Syncs GitHub repos to the local `.dart_tool/skills/repos` directory.
 ///
 /// If a repo is not yet cloned, clones it. If it exists, runs git fetch and
 /// reset --hard to the remote HEAD. On clone/fetch failure, logs a warning
@@ -32,16 +32,18 @@ class GitSync {
       await reposDir.create(recursive: true);
     }
 
-    for (final repo in repos) {
-      final repoPath = gitRepoPath(rootPath, repo);
-      final dir = Directory(repoPath);
+    await Future.wait(
+      repos.map((repo) async {
+        final repoPath = gitRepoPath(rootPath, repo);
+        final dir = Directory(repoPath);
 
-      if (await dir.exists()) {
-        await _update(repoPath, repo, onProgress);
-      } else {
-        await _clone(rootPath, repoPath, repo, onProgress);
-      }
-    }
+        if (await dir.exists()) {
+          await _update(repoPath, repo, onProgress);
+        } else {
+          await _clone(rootPath, repoPath, repo, onProgress);
+        }
+      }),
+    );
   }
 
   Future<void> _clone(

@@ -413,16 +413,16 @@ class SkillInstaller {
     final adapter = createIdeAdapter(ide, rootPath, _dialogSupport);
     final removed = <RemovedSkillInfo>[];
 
-    final pkgs = manifest.sourceUrisForIde(ide.cliName);
+    final sourceUriInstalls = manifest.sourceUrisForIde(ide.cliName);
 
-    for (final MapEntry(key: pkgName, value: SkillsEntry(skills: skills))
-        in pkgs.entries) {
-      if (sourceUris.isNotEmpty && !sourceUris.contains(pkgName)) {
+    for (final MapEntry(key: sourceUri, value: SkillsEntry(skills: skills))
+        in sourceUriInstalls.entries) {
+      if (sourceUris.isNotEmpty && !sourceUris.contains(sourceUri)) {
         continue;
       }
 
       if (skillNames.isEmpty) {
-        manifest = manifest.withoutSourceUri(ide.cliName, pkgName);
+        manifest = manifest.withoutSourceUri(ide.cliName, sourceUri);
         for (final skill in skills) {
           await adapter.removeSkill(skill.name);
           removed.add(
@@ -446,11 +446,11 @@ class SkillInstaller {
           }
 
           if (skillsToKeep.isEmpty) {
-            manifest = manifest.withoutSourceUri(ide.cliName, pkgName);
+            manifest = manifest.withoutSourceUri(ide.cliName, sourceUri);
           } else {
             manifest = manifest.withSourceUri(
               ide.cliName,
-              pkgName,
+              sourceUri,
               SkillsEntry(skills: skillsToKeep),
             );
           }

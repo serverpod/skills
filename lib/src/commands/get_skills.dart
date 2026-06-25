@@ -27,7 +27,9 @@ import '../ide/ide_adapter.dart';
 ///
 /// If [sourceUris] or [skillNames] are provided and non-empty then only
 /// skills from those sources/repos or matching those names will be installed.
-/// For packages, entries in [sourceUris] should look like `package:<name>`.
+/// For packages, entries in [sourceUris] should look like `package:<name>`,
+/// and otherwise they should be git URIs which are compatible with the `git`
+/// CLI tool.
 ///
 /// Returns `true` on success or `false` otherwise.
 Future<bool> getSkills({

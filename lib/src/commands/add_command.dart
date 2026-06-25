@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:args/command_runner.dart';
 import 'package:skills/src/commands/get_skills.dart';
 import 'package:skills/src/models/skill_manifest.dart';
 
@@ -48,9 +49,22 @@ class AddCommand extends SkillsCommand {
     final rest = argResults.rest;
 
     final gitRepos = rest.map((arg) => parseGitRepoArg(arg, usage));
+    if (gitRepos.isEmpty) {
+      throw UsageException(
+        'Please provide at least one git url (or org/name) to add.',
+        usage,
+      );
+    }
     final skillNames = argResults.multiOption('skill').toSet();
     final isGlobal = argResults.flag('global');
     final allFlag = argResults.flag('all');
+    if (skillNames.isNotEmpty && allFlag) {
+      throw UsageException(
+        '--all and --skill are mutually exclusive arguments, please provide '
+        'only one',
+        usage,
+      );
+    }
 
     final workspace = await resolveWorkspace();
     final rootPath = workspace.rootPath;

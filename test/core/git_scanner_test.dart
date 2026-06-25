@@ -21,14 +21,12 @@ void main() {
     test(
       'when scanning flat layout then returns ScannedSkills with correct fields',
       () async {
-        const registryRepo = GitRepo(
-          cloneUrl: 'https://github.com/owner/repo.git',
-        );
+        const gitRepo = GitRepo(cloneUrl: 'https://github.com/owner/repo.git');
         await d.dir('project', [
           d.dir('.dart_tool', [
             d.dir('skills', [
               d.dir('repos', [
-                d.dir(registryRepo.pathSegment, [
+                d.dir(gitRepo.pathSegment, [
                   d.dir('skills', [
                     d.dir('my_pkg-buttons', [
                       d.file('SKILL.md', '---\nname: my_pkg-buttons\n---\n'),
@@ -47,7 +45,7 @@ void main() {
         final skills = await scanner.scan(
           d.path('project'),
           isGlobal: false,
-          repos: [registryRepo],
+          repos: [gitRepo],
         );
 
         expect(skills, hasLength(2));
@@ -65,14 +63,12 @@ void main() {
     test(
       'when scanning groupedByPackage layout then returns ScannedSkills',
       () async {
-        const registryRepo = GitRepo(
-          cloneUrl: 'https://github.com/owner/repo.git',
-        );
+        const gitRepo = GitRepo(cloneUrl: 'https://github.com/owner/repo.git');
         await d.dir('project', [
           d.dir('.dart_tool', [
             d.dir('skills', [
               d.dir('repos', [
-                d.dir(registryRepo.pathSegment, [
+                d.dir(gitRepo.pathSegment, [
                   d.dir('skills', [
                     d.dir('riverpod', [
                       d.dir('riverpod-get-started', [
@@ -102,7 +98,7 @@ void main() {
         final skills = await scanner.scan(
           d.path('project'),
           isGlobal: false,
-          repos: [registryRepo],
+          repos: [gitRepo],
         );
 
         expect(skills, hasLength(3));
@@ -176,7 +172,7 @@ void main() {
     });
 
     test('when multiple repos then aggregates skills from all', () async {
-      const registryRepos = [
+      const gitRepos = [
         GitRepo(cloneUrl: 'https://github.com/owner1/repo1.git'),
         GitRepo(cloneUrl: 'https://github.com/owner2/repo2.git'),
       ];
@@ -184,12 +180,12 @@ void main() {
         d.dir('.dart_tool', [
           d.dir('skills', [
             d.dir('repos', [
-              d.dir(registryRepos[0].pathSegment, [
+              d.dir(gitRepos[0].pathSegment, [
                 d.dir('skills', [
                   d.dir('pkg-a', [d.file('SKILL.md', '')]),
                 ]),
               ]),
-              d.dir(registryRepos[1].pathSegment, [
+              d.dir(gitRepos[1].pathSegment, [
                 d.dir('skills', [
                   d.dir('pkg-b', [d.file('SKILL.md', '')]),
                 ]),
@@ -203,7 +199,7 @@ void main() {
       final skills = await scanner.scan(
         d.path('project'),
         isGlobal: false,
-        repos: registryRepos,
+        repos: gitRepos,
       );
       expect(skills, hasLength(2));
       expect(

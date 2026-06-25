@@ -1,3 +1,4 @@
+import 'package:args/command_runner.dart';
 import 'package:skills/src/core/git_repos.dart';
 
 import '../core/skill_installer.dart';
@@ -64,6 +65,13 @@ class RemoveCommand extends SkillsCommand {
     };
     final skillsToRemove = argResults.multiOption('skill').toSet();
     final allFlag = argResults.flag('all');
+    if (skillsToRemove.isNotEmpty && allFlag) {
+      throw UsageException(
+        '--all and --skill are mutually exclusive arguments, please provide '
+        'only one',
+        usage,
+      );
+    }
 
     // Determine which IDEs to remove from: --ide narrows to one,
     // otherwise all IDEs in the manifest.
@@ -108,9 +116,9 @@ class RemoveCommand extends SkillsCommand {
       // All the available skills filtered by selected packages
       final potentialSkills = {
         for (final ide in targetIdes)
-          for (final MapEntry(key: package, value: entry)
+          for (final MapEntry(key: sourceUri, value: entry)
               in manifest.sourceUrisForIde(ide.cliName).entries)
-            if (sourcesToRemove.isEmpty || sourcesToRemove.contains(package))
+            if (sourcesToRemove.isEmpty || sourcesToRemove.contains(sourceUri))
               ...entry.skills.map((skill) => skill.name),
       }.toList()..sort();
       final selectedIndices = await _dialogSupport.showMultiSelectDialog(

@@ -352,6 +352,7 @@ void main() {
       );
     });
   });
+
   group('Given a project with skills from a git repo', () {
     late String projectPath;
     late SkillManifest manifest;
@@ -362,6 +363,7 @@ void main() {
         d.dir('.cursor', [
           d.dir('skills', [
             d.dir('git-repo-skill-1', [d.file('SKILL.md', 'content')]),
+            d.dir('ssh-git-repo-skill-1', [d.file('SKILL.md', 'ssh content')]),
           ]),
         ]),
       ]);
@@ -377,6 +379,14 @@ void main() {
               skills: [
                 InstalledSkillEntry(
                   name: 'git-repo-skill-1',
+                  installedAt: DateTime.utc(2026),
+                ),
+              ],
+            ),
+            'git@github.com:zip/zap.git': SkillsEntry(
+              skills: [
+                InstalledSkillEntry(
+                  name: 'ssh-git-repo-skill-1',
                   installedAt: DateTime.utc(2026),
                 ),
               ],
@@ -404,9 +414,38 @@ void main() {
 
         await d.dir('project2', [
           d.dir('.cursor', [
-            d.dir('skills', [d.nothing('git-repo-skill-1')]),
+            d.dir('skills', [
+              d.nothing('git-repo-skill-1'),
+              d.dir('ssh-git-repo-skill-1'),
+            ]),
           ]),
-          d.nothing(SkillManifest.configDirPath),
+          d.dir(SkillManifest.configDirPath),
+        ]).validate();
+      },
+    );
+
+    test(
+      'when running `skills remove --git git@github.com:zip/zap.git` then removes only those skills',
+      () async {
+        fakeDialogSupport.multiSelectResults.add({0});
+        await runner.run([
+          'remove',
+          '--directory',
+          projectPath,
+          '--ide',
+          'cursor',
+          '--git',
+          'git@github.com:zip/zap.git',
+        ]);
+
+        await d.dir('project2', [
+          d.dir('.cursor', [
+            d.dir('skills', [
+              d.dir('git-repo-skill-1'),
+              d.nothing('ssh-git-repo-skill-1'),
+            ]),
+          ]),
+          d.dir(SkillManifest.configDirPath),
         ]).validate();
       },
     );

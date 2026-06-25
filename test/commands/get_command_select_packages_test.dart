@@ -75,7 +75,7 @@ void main() {
         dialogSupport: fakeDialogSupport,
         gitRunner: GitRunner(
           isAvailableOverride: () async => false,
-        ), // skip registry
+        ), // skip git repos
       );
       final runner = SkillsCommandRunner('skills', 'Test')
         ..addCommand(getCommand);

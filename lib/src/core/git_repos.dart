@@ -5,6 +5,7 @@ import '../models/skill_manifest.dart';
 
 /// A git repository with a clone URL.
 class GitRepo {
+  /// The URL to pass to `git clone`. Any compatible URI is allowed.
   final String cloneUrl;
 
   /// Absolute paths where this repo is installed.
@@ -51,13 +52,13 @@ String gitRepoPath(String rootPath, GitRepo repo) {
   return p.join(gitReposPath(rootPath), repo.pathSegment);
 }
 
-/// Parses a registry argument into a [GitRepo].
+/// Parses a git repo argument into a [GitRepo].
 GitRepo parseGitRepoArg(String arg, String usage) {
   if (arg.contains('/') && !arg.contains(':') && !arg.contains('@')) {
     final parts = arg.split('/');
     if (parts.length != 2) {
       throw UsageException(
-        'Invalid registry format: $arg. Expected <owner>/<repo> or a Git URI.',
+        'Invalid git repo format: $arg. Expected <owner>/<repo> or a Git URI.',
         usage,
       );
     }

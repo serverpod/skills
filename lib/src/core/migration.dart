@@ -125,8 +125,10 @@ Future<SkillManifest> maybeDoRegistryMigration(
       );
 
       if (index != null) {
-        final uri = Uri.tryParse(repo.cloneUrl);
-        final owner = uri!.pathSegments[uri.pathSegments.length - 2];
+        // Previous registries were hard coded to just a couple github
+        // registries, so this code has some assumptions about github URIs.
+        final uri = Uri.parse(repo.cloneUrl);
+        final owner = uri.pathSegments[uri.pathSegments.length - 2];
         final name = uri.pathSegments.last.replaceAll('.git', '');
         final repoPath = p.join(reposDirPath, owner, name);
         final repoDir = Directory(repoPath);
